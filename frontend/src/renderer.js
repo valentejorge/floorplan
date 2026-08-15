@@ -249,6 +249,16 @@ export function loadMapData(data) {
           const tooltip = document.getElementById('asset-tooltip');
           if (tooltip) tooltip.classList.remove('visible');
         });
+        
+        group.on('click tap', () => {
+          if (window.selectAsset) window.selectAsset(asset);
+          
+          import('./engine.js').then(({ getTransformer }) => {
+            const tr = getTransformer();
+            tr.nodes([group]);
+            tr.getLayer().batchDraw();
+          });
+        });
       }
 
       assetsLayer.add(group);
@@ -281,34 +291,26 @@ function populateObjectExplorer(assets) {
   
   itAssets.forEach(asset => {
     const item = document.createElement('div');
-    item.className = 'explorer-item';
-    item.style.padding = '8px 12px';
-    item.style.borderBottom = '1px solid var(--fp-border)';
-    item.style.cursor = 'pointer';
-    item.style.display = 'flex';
-    item.style.alignItems = 'center';
-    item.style.gap = '8px';
-    item.style.fontSize = '12px';
-    
-    // Hover effect
-    item.onmouseenter = () => item.style.backgroundColor = '#f8fafc';
-    item.onmouseleave = () => item.style.backgroundColor = 'transparent';
+    item.className = 'fp-explorer__item';
+    item.dataset.hwId = asset.hardware_id;
     
     const dotColor = asset.status === 'offline' ? '#e53e3e' : 
                      asset.status === 'warning' ? '#d69e2e' : '#5cb85c';
                      
     item.innerHTML = `
-      <div style="width:8px;height:8px;border-radius:50%;background-color:${dotColor};"></div>
-      <div style="font-weight:600;color:var(--fp-text);flex:1;">${asset.hardware_name}</div>
-      <div style="color:var(--fp-text-muted);font-size:11px;">${asset.type}</div>
+      <div class="fp-explorer__item-icon" style="background-color:${dotColor}; width:8px; height:8px; border-radius:50%; box-shadow:0 0 6px ${dotColor}66;"></div>
+      <div class="fp-explorer__item-name">${asset.hardware_name}</div>
+      <div style="color:var(--fp-text-muted);font-size:10px;text-transform:uppercase;">${asset.type}</div>
     `;
     
     item.onclick = () => {
+      if (window.selectAsset) window.selectAsset(asset);
+
       // Find asset in Konva
-      const group = assetsLayer.getChildren().find(node => node.id() === asset.id);
+      const group = assetsLayer.getChildren().find(node => String(node.id()) === String(asset.id));
       if (group) {
-        import('./engine.js').then(({ stage }) => {
-          // Pulse effect on the found asset
+        import('./engine.js').then(({ stage, getTransformer }) => {
+          // Pulse effect
           const pulse = new Konva.Circle({
             x: group.x(), y: group.y(),
             radius: 30, stroke: '#961B7E', strokeWidth: 2, opacity: 1
@@ -318,6 +320,11 @@ function populateObjectExplorer(assets) {
             node: pulse, duration: 1, radius: 100, opacity: 0,
             onFinish: () => pulse.destroy()
           }).play();
+          
+          // Select with Transformer
+          const tr = getTransformer();
+          tr.nodes([group]);
+          tr.getLayer().batchDraw();
         });
       }
     };

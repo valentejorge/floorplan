@@ -48,6 +48,51 @@ window.checkEditMode = function() {
   });
 };
 
+window.selectAsset = function(assetData) {
+  const panel = document.getElementById('properties-panel');
+  if (!panel) return;
+  
+  if (!assetData) {
+    panel.innerHTML = `
+      <div class="fp-properties__title">Properties</div>
+      <div style="color:var(--fp-text-muted);font-size:11px;">No selection</div>
+    `;
+    return;
+  }
+
+  const mac = assetData.mac || `00:1A:2B:3C:4D:${assetData.hardware_id.toString().substring(0,2)}`;
+  const user = assetData.user || (assetData.type === 'desktop' ? 'jorge.silva' : 'system');
+  const desc = assetData.description || `Equipamento ${assetData.type} padrão`;
+  const dotColor = assetData.status === 'offline' ? '#e53e3e' : assetData.status === 'warning' ? '#d69e2e' : '#5cb85c';
+
+  panel.innerHTML = `
+    <div class="fp-properties__title">Properties</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;font-weight:600;color:var(--fp-text);">
+      <div style="width:8px;height:8px;border-radius:50%;background:${dotColor};box-shadow:0 0 8px ${dotColor}80;"></div>
+      ${assetData.hardware_name}
+    </div>
+    <div class="fp-properties__row"><span>ID</span><span>${assetData.hardware_id}</span></div>
+    <div class="fp-properties__row"><span>Type</span><span style="text-transform:uppercase;">${assetData.type}</span></div>
+    <div class="fp-properties__row"><span>IP</span><span>${assetData.ip || '—'}</span></div>
+    <div class="fp-properties__row"><span>MAC</span><span>${mac}</span></div>
+    <div class="fp-properties__row"><span>User</span><span>${user}</span></div>
+    <div class="fp-properties__row"><span>Details</span><span title="${desc}" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${desc}</span></div>
+  `;
+
+  // Update selection in explorer list
+  const explorerBody = document.getElementById('explorer-body');
+  if (explorerBody) {
+    explorerBody.querySelectorAll('.fp-explorer__item').forEach(el => {
+      if (String(el.dataset.hwId) === String(assetData.hardware_id)) {
+        el.classList.add('selected');
+        el.scrollIntoView({ block: 'nearest' });
+      } else {
+        el.classList.remove('selected');
+      }
+    });
+  }
+};
+
 // ════════════════════════════════════════════════════════════════════
 // Bootstrap
 // ════════════════════════════════════════════════════════════════════
