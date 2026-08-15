@@ -101,50 +101,9 @@
     "static_elements": [
       {
         "type": "wall",
-        "points": [
-          0,
-          0,
-          1000,
-          0,
-          1000,
-          700,
-          0,
-          700,
-          0,
-          0
-        ],
+        "points": [0, 0, 1000, 0, 1000, 700, 0, 700, 0, 0],
         "stroke": "#4a5568",
         "strokeWidth": 4
-      },
-      {
-        "type": "wall",
-        "points": [
-          500,
-          0,
-          500,
-          700
-        ],
-        "stroke": "#a0aec0",
-        "strokeWidth": 1,
-        "dash": [
-          6,
-          4
-        ]
-      },
-      {
-        "type": "wall",
-        "points": [
-          0,
-          350,
-          1000,
-          350
-        ],
-        "stroke": "#a0aec0",
-        "strokeWidth": 1,
-        "dash": [
-          6,
-          4
-        ]
       },
       {
         "type": "door",

@@ -21,6 +21,7 @@ let staticLayer, assetsLayer, overlayLayer;
 let isEditMode = false;
 let isDrawingWall = false;
 let currentWallLine = null;
+let selectedWall = null;
 let roomData = null;
 const skinManager = new SkinManager();
 
@@ -196,6 +197,11 @@ function createStage() {
       currentWallLine = null;
       staticLayer.batchDraw();
     }
+    if ((e.key === 'Delete' || e.key === 'Backspace') && isEditMode && selectedWall) {
+      selectedWall.destroy();
+      selectedWall = null;
+      staticLayer.batchDraw();
+    }
   });
 }
 
@@ -252,6 +258,14 @@ function bindWallEvents(line) {
     const x = Math.round(line.x() / GRID_SIZE) * GRID_SIZE;
     const y = Math.round(line.y() / GRID_SIZE) * GRID_SIZE;
     line.position({ x, y });
+    staticLayer.batchDraw();
+  });
+
+  line.on('click', () => {
+    if (!isEditMode) return;
+    if (selectedWall) selectedWall.stroke('#4a5568');
+    selectedWall = line;
+    line.stroke('#d9534f'); // highlight red
     staticLayer.batchDraw();
   });
 }
@@ -429,6 +443,11 @@ function exitEditMode() {
 
   assetsLayer.find('Group').forEach((g) => g.draggable(false));
   originalPositions.clear();
+
+  if (selectedWall) {
+    selectedWall.stroke('#4a5568');
+    selectedWall = null;
+  }
 
   staticLayer.listening(false);
   staticLayer.find('Line').forEach(l => l.draggable(false));
@@ -680,6 +699,7 @@ function highlightAsset(hardwareId) {
   setTimeout(() => {
     anim.stop();
     ring.destroy();
+    targetTween.destroy(); // Fixes the eternal blinking
     target.opacity(1);
     overlayLayer.batchDraw();
   }, 4000);
@@ -689,23 +709,35 @@ function highlightAsset(hardwareId) {
 // Sidebar Updates
 // ════════════════════════════════════════════════════════════════════
 
-// Exposed globally for the inline onclick handlers in breadcrumb
-window.mockNavigate = (type, id) => {
+function mockNavigate(type, id) {
   console.log(`[floorplan] Simulating navigation: ${type} = ${id}`);
   notify(`Navigating to ${type} ${id}...`, 'warning');
   fitStage(); // Reset as a mock action
-};
+}
 
 function updateSidebar() {
   const { building, floor, room, assets } = roomData;
 
-  // Breadcrumb - Interactive
-  $breadcrumb().innerHTML =
-    `<a href="#" onclick="window.mockNavigate('Building', ${building.id}); return false;">${building.name}</a> 
-     <span>›</span> 
-     <a href="#" onclick="window.mockNavigate('Floor', ${floor.id}); return false;">${floor.name}</a> 
-     <span>›</span> 
-     <span>${room.name}</span>`;
+  $breadcrumb().innerHTML = '';
+  
+  const b1 = document.createElement('a');
+  b1.href = '#';
+  b1.textContent = building.name;
+  b1.addEventListener('click', (e) => { e.preventDefault(); mockNavigate('Building', building.id); });
+  
+  const sep1 = document.createElement('span'); sep1.innerHTML = ' › ';
+  
+  const b2 = document.createElement('a');
+  b2.href = '#';
+  b2.textContent = floor.name;
+  b2.addEventListener('click', (e) => { e.preventDefault(); mockNavigate('Floor', floor.id); });
+
+  const sep2 = document.createElement('span'); sep2.innerHTML = ' › ';
+  
+  const b3 = document.createElement('span');
+  b3.textContent = room.name;
+
+  $breadcrumb().append(b1, sep1, b2, sep2, b3);
 
   // Room info
   $roomInfo().innerHTML = `

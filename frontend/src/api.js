@@ -52,6 +52,35 @@ function resolveUrl(endpoint) {
  * @returns {Promise<any>} Parsed JSON response
  */
 export async function api(endpoint, options = {}) {
+  // Dynamic mock search interceptor for DEV
+  if (isDev && endpoint.startsWith('ajax/search_asset.php')) {
+    const urlObj = new URL(endpoint, 'http://localhost');
+    const q = (urlObj.searchParams.get('q') || '').toLowerCase();
+    
+    // Fetch current room to search within it
+    const roomRes = await fetch('/ajax/mock_room_1.json');
+    const roomJson = await roomRes.json();
+    
+    const matches = roomJson.data.assets.filter(a => 
+      a.hardware_name.toLowerCase().includes(q) || 
+      (a.ip && a.ip.toLowerCase().includes(q)) || 
+      (a.mac && a.mac.toLowerCase().includes(q))
+    ).map(a => ({
+      hardware_id: a.hardware_id,
+      hardware_name: a.hardware_name,
+      ip: a.ip,
+      mac: a.mac,
+      room_id: 1,
+      room_name: "Server Room A",
+      floor_name: "Ground Floor",
+      building_name: "Headquarters",
+      pos_x: a.pos_x,
+      pos_y: a.pos_y
+    }));
+    
+    return { status: 'success', data: matches };
+  }
+
   const url = resolveUrl(endpoint);
 
   const defaults = {
