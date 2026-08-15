@@ -6,13 +6,17 @@
     <meta name="description" content="Enterprise floor plan CAD editor for OCS Inventory — design and manage physical IT infrastructure." />
     <title>floorplan — OCS Inventory CAD</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      body { background-color: #e8e8e8; margin: 0; transition: opacity 0.5s ease-out; }
+      body.preload { opacity: 0; pointer-events: none; }
+    </style>
   </head>
   <body class="preload">
 
     <!-- ── Topbar ──────────────────────────────────────────────── -->
     <header class="fp-topbar">
       <div class="fp-topbar__brand" style="flex:1;">
-        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
           <rect x="1" y="1" width="16" height="16" rx="2"/>
           <line x1="1" y1="9" x2="17" y2="9"/>
           <line x1="9" y1="1" x2="9" y2="17"/>

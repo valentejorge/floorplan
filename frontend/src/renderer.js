@@ -1,5 +1,5 @@
 import Konva from 'konva';
-import { zonesLayer, wallsLayer, assetsLayer, requestRender } from './engine.js';
+import { zonesLayer, wallsLayer, assetsLayer, requestRender, animateMapEntrance } from './engine.js';
 import { skinManager, BOUNDING_BOX } from './skins.js';
 
 export function loadMapData(data) {
@@ -90,18 +90,32 @@ export function loadMapData(data) {
         name: 'furniture'
       });
 
-      // NO SHADOWS - Pure flat performance
+      // Flat but beautiful Figma-style furniture
       const rect = new Konva.Rect({
         width: furn.width,
         height: furn.height,
-        fill: '#ffffff',
+        fillLinearGradientStartPoint: { x: 0, y: 0 },
+        fillLinearGradientEndPoint: { x: 0, y: furn.height },
+        fillLinearGradientColorStops: [0, '#ffffff', 1, '#f8fafc'],
         stroke: '#cbd5e0',
         strokeWidth: 2,
+        cornerRadius: 6,
+        perfectDrawEnabled: false
+      });
+
+      // Add a subtle inner line to represent a desk edge
+      const innerRect = new Konva.Rect({
+        x: 2, y: 2,
+        width: furn.width - 4,
+        height: furn.height - 4,
+        stroke: '#e2e8f0',
+        strokeWidth: 1,
         cornerRadius: 4,
         perfectDrawEnabled: false
       });
 
       group.add(rect);
+      group.add(innerRect);
       
       // Cache the group to convert vectors to bitmap memory!
       group.cache();
@@ -143,12 +157,26 @@ export function loadMapData(data) {
         group.add(fallback);
       }
 
+      // Hardware Name Label Background
+      const labelBg = new Konva.Rect({
+        x: -BOUNDING_BOX + 10,
+        y: BOUNDING_BOX / 2 + 1,
+        width: BOUNDING_BOX * 2 - 20,
+        height: 14,
+        fill: 'rgba(255, 255, 255, 0.85)',
+        cornerRadius: 3,
+        perfectDrawEnabled: false
+      });
+      group.add(labelBg);
+
+      // Hardware Name Label Text
       const label = new Konva.Text({
         text: asset.hardware_name,
-        fontSize: 10,
+        fontSize: 9,
+        fontStyle: 'bold',
         fontFamily: 'sans-serif',
         fill: '#4a5568',
-        y: BOUNDING_BOX / 2 + 2,
+        y: BOUNDING_BOX / 2 + 3,
         align: 'center',
         width: BOUNDING_BOX * 2,
         x: -BOUNDING_BOX,
@@ -160,15 +188,22 @@ export function loadMapData(data) {
                       asset.status === 'warning' ? '#d69e2e' : null;
       
       if (dotColor) {
+        // Outer glow/stroke for the dot
+        const dotBg = new Konva.Circle({
+          radius: 5,
+          fill: '#fff',
+          x: BOUNDING_BOX / 2 - 4,
+          y: -BOUNDING_BOX / 2 + 4,
+          perfectDrawEnabled: false
+        });
         const dot = new Konva.Circle({
-          radius: 4,
+          radius: 3.5,
           fill: dotColor,
           x: BOUNDING_BOX / 2 - 4,
           y: -BOUNDING_BOX / 2 + 4,
-          stroke: '#fff',
-          strokeWidth: 1,
           perfectDrawEnabled: false
         });
+        group.add(dotBg);
         group.add(dot);
       }
 
@@ -180,4 +215,7 @@ export function loadMapData(data) {
   }
 
   requestRender();
+  
+  // Slide and fade map gracefully
+  animateMapEntrance();
 }

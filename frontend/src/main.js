@@ -115,6 +115,10 @@ function bindModeToggle() {
       `;
       notify(mode === 'save' ? 'Alterações salvas com sucesso!' : 'Edição cancelada.', 'success');
     }
+    
+    import('./engine.js').then(({ panToSafeArea }) => {
+      panToSafeArea();
+    });
   }
 
   btnEdit.addEventListener('click', () => setMode('edit'));
