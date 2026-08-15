@@ -101,26 +101,28 @@ export function initEngine(containerId) {
 
 function renderGrid() {
   if (gridGroup) gridGroup.destroy();
-  gridGroup = new Konva.Group({ listening: false });
 
-  // Render a 1400×1100 grid (larger than any mock room)
+  // Use a single Konva.Shape with sceneFunc to draw all dots efficiently
+  // instead of creating thousands of individual Konva.Circle nodes.
   const gridW = 1600;
   const gridH = 1200;
 
-  for (let x = 0; x <= gridW; x += GRID_SIZE) {
-    for (let y = 0; y <= gridH; y += GRID_SIZE) {
-      gridGroup.add(new Konva.Circle({
-        x, y,
-        radius: 1,
-        fill: '#bbb',
-        listening: false,
-      }));
-    }
-  }
+  const gridShape = new Konva.Shape({
+    listening: false,
+    sceneFunc: (ctx) => {
+      ctx.fillStyle = '#c8c8c8';
+      for (let x = 0; x <= gridW; x += GRID_SIZE) {
+        for (let y = 0; y <= gridH; y += GRID_SIZE) {
+          ctx.beginPath();
+          ctx.arc(x, y, 1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    },
+  });
 
-  // Add grid BEHIND everything on overlay (so it's behind transformer)
-  overlayLayer.add(gridGroup);
-  gridGroup.moveToBottom();
+  overlayLayer.add(gridShape);
+  gridShape.moveToBottom();
 }
 
 // ════════════════════════════════════════════════════════════════════

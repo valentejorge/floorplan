@@ -57,28 +57,54 @@ export async function api(endpoint, options = {}) {
     const urlObj = new URL(endpoint, 'http://localhost');
     const q = (urlObj.searchParams.get('q') || '').toLowerCase();
     
-    // Fetch current room to search within it
-    const roomRes = await fetch('/ajax/mock_room_1.json');
-    const roomJson = await roomRes.json();
+    const results = [];
+
+    // 1. Search Assets in the current room
+    try {
+      const roomRes = await fetch('/ajax/mock_room_1.json');
+      const roomJson = await roomRes.json();
+      
+      const assetMatches = roomJson.data.assets.filter(a => 
+        a.hardware_name.toLowerCase().includes(q) || 
+        (a.ip && a.ip.toLowerCase().includes(q)) || 
+        (a.mac && a.mac.toLowerCase().includes(q))
+      ).map(a => ({
+        type: 'asset',
+        hardware_id: a.hardware_id,
+        hardware_name: a.hardware_name,
+        ip: a.ip,
+        mac: a.mac,
+        room_id: roomJson.data.room.id,
+        room_name: roomJson.data.room.name,
+        floor_name: roomJson.data.floor.name,
+        building_name: roomJson.data.building.name
+      }));
+      results.push(...assetMatches);
+    } catch(e) {}
+
+    // 2. Search Rooms in the map tree
+    try {
+      const treeRes = await fetch('/ajax/mock_map_tree.json');
+      const treeJson = await treeRes.json();
+
+      treeJson.buildings.forEach(b => {
+        b.floors.forEach(f => {
+          f.rooms.forEach(r => {
+            if (r.name.toLowerCase().includes(q)) {
+              results.push({
+                type: 'room',
+                room_id: r.id,
+                room_name: r.name,
+                floor_name: f.name,
+                building_name: b.name
+              });
+            }
+          });
+        });
+      });
+    } catch(e) {}
     
-    const matches = roomJson.data.assets.filter(a => 
-      a.hardware_name.toLowerCase().includes(q) || 
-      (a.ip && a.ip.toLowerCase().includes(q)) || 
-      (a.mac && a.mac.toLowerCase().includes(q))
-    ).map(a => ({
-      hardware_id: a.hardware_id,
-      hardware_name: a.hardware_name,
-      ip: a.ip,
-      mac: a.mac,
-      room_id: 1,
-      room_name: "Server Room A",
-      floor_name: "Ground Floor",
-      building_name: "Headquarters",
-      pos_x: a.pos_x,
-      pos_y: a.pos_y
-    }));
-    
-    return { status: 'success', data: matches };
+    return { status: 'success', data: results };
   }
 
   const url = resolveUrl(endpoint);

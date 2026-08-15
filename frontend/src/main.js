@@ -1,178 +1,94 @@
 /**
- * main.js — Orchestrator
- *
- * Initializes the CAD engine, loads mock data, wires up the toolbar,
- * populates all Konva layers, and binds DOM events.
+ * main.js — Phase 1.5: UI with Map Navigator & Unified Search
  */
-import Konva from 'konva';
 import { api } from './api.js';
-import {
-  initEngine, fitStage, getStage,
-  getLayerFloor, getLayerArchitecture, getLayerFurniture, getLayerAssets,
-  getTransformer, applySnapOnDragEnd, snapToGrid, getRelativePointerPosition,
-  zoomIn, zoomOut, resetZoom, GRID_SIZE,
-} from './engine.js';
-import { SHADOW_LIGHT, SHADOW_HEAVY, buildFurnitureNode, FURNITURE_TYPES } from './furniture.js';
-import {
-  TOOLS, setActiveTool, getActiveTool, setFloorColor, setWallType,
-  handleStageMouseDown, handleStageMouseMove, handleStageMouseUp,
-  handleStageDblClick, handleKeyDown, ensureSkins, createAssetNode,
-  startFurniturePlacement,
-} from './tools.js';
-import { refreshExplorer, onExplorerSelect, clearSelection } from './explorer.js';
 import './style.css';
 
-// ── State ──────────────────────────────────────────────────────────
-let roomData = null;
+let currentMapTree = null;
 
 // ════════════════════════════════════════════════════════════════════
 // Bootstrap
 // ════════════════════════════════════════════════════════════════════
 
 async function init() {
-  // Load skins
-  await ensureSkins();
-
-  // Load room data
-  const response = await api('ajax/get_room.php?id=1');
-  roomData = response.data;
-
-  // Init Konva engine
-  initEngine('floorplan-container');
-
-  // Render all layers
-  renderFloorZones();
-  renderWalls();
-  renderDoors();
-  renderFurniture();
-  renderAssets();
-
-  // Fit camera
-  fitStage(roomData.room.width, roomData.room.height);
-
-  // Bind events
-  bindStageEvents();
   bindToolbar();
-  bindCameraControls();
   bindSearch();
   bindFurnitureModal();
-  bindAssetsDragDrop();
-  bindBreadcrumb();
+  bindMapNavigator();
+  bindModeToggle();
+  
+  // Initial Mock State
+  updateBreadcrumb('Headquarters', 'Ground Floor', 'Open Office A');
 
-  // Initial explorer refresh
-  refreshExplorer();
-
-  console.info(
-    `[floorplan] CAD Editor loaded — Room: "${roomData.room.name}" ` +
-    `| ${roomData.assets.length} assets | ${roomData.furniture.length} furniture`
-  );
+  console.info(`[floorplan] Phase 1.7: View/Edit Modes + UX Fixes loaded.`);
 }
 
-// ════════════════════════════════════════════════════════════════════
-// Renderers
-// ════════════════════════════════════════════════════════════════════
+function updateBreadcrumb(building, floor, room) {
+  const bc = document.getElementById('breadcrumb');
+  if (!bc) return;
+  bc.innerHTML = `
+    <a href="#" data-nav="root" title="Open Navigator">🗺️ Todos os Mapas</a>
+    <span> › </span>
+    <a href="#" data-nav="building" title="Open Navigator">${building}</a>
+    <span> › </span>
+    <a href="#" data-nav="floor" title="Open Navigator">${floor}</a>
+    <span> › </span>
+    <span>${room}</span>
+  `;
 
-function renderFloorZones() {
-  const layer = getLayerFloor();
-  (roomData.floor_zones || []).forEach(fz => {
-    const rect = new Konva.Rect({
-      x: fz.x, y: fz.y, width: fz.width, height: fz.height,
-      fill: fz.fill,
-      opacity: fz.opacity || 0.4,
-      id: fz.id,
-      draggable: true,
+  bc.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (window.openMapNavigator) window.openMapNavigator();
     });
-    rect.setAttr('entityData', { ...fz, layer: 'floor' });
-    applySnapOnDragEnd(rect);
-    layer.add(rect);
   });
-  layer.batchDraw();
-}
-
-function renderWalls() {
-  const WALL_STYLES = {
-    exterior: { stroke: '#6b7a88', strokeWidth: 12, dash: [] },
-    interior: { stroke: '#8a9aaa', strokeWidth: 6,  dash: [] },
-    glass:    { stroke: '#5b9ecf', strokeWidth: 4,  dash: [8, 6] },
-  };
-
-  const layer = getLayerArchitecture();
-  (roomData.walls || []).forEach(w => {
-    const style = WALL_STYLES[w.wallType] || WALL_STYLES.exterior;
-    const line = new Konva.Line({
-      points: w.points,
-      stroke: style.stroke,
-      strokeWidth: style.strokeWidth,
-      dash: style.dash,
-      lineCap: 'round',
-      lineJoin: 'round',
-      closed: w.points.length > 4 && w.points[0] === w.points[w.points.length-2] && w.points[1] === w.points[w.points.length-1],
-      id: w.id,
-      draggable: true,
-      ...SHADOW_HEAVY,
-    });
-    line.setAttr('entityData', { ...w, layer: 'architecture' });
-    applySnapOnDragEnd(line);
-    layer.add(line);
-  });
-  layer.batchDraw();
-}
-
-function renderDoors() {
-  const layer = getLayerArchitecture();
-  (roomData.doors || []).forEach(d => {
-    const rect = new Konva.Rect({
-      x: d.x, y: d.y, width: d.width, height: d.height,
-      fill: '#c4a882',
-      stroke: '#8b6914',
-      strokeWidth: 1,
-      cornerRadius: 1,
-      id: d.id,
-      draggable: true,
-      ...SHADOW_LIGHT,
-    });
-    rect.setAttr('entityData', { ...d, name: d.name, type: 'door', layer: 'architecture' });
-    applySnapOnDragEnd(rect);
-    layer.add(rect);
-  });
-  layer.batchDraw();
-}
-
-function renderFurniture() {
-  const layer = getLayerFurniture();
-  (roomData.furniture || []).forEach(f => {
-    const node = buildFurnitureNode(f);
-    if (node) {
-      node.draggable(true);
-      applySnapOnDragEnd(node);
-      layer.add(node);
-    }
-  });
-  layer.batchDraw();
-}
-
-function renderAssets() {
-  const layer = getLayerAssets();
-  (roomData.assets || []).forEach(asset => {
-    const node = createAssetNode(asset);
-    layer.add(node);
-  });
-  layer.batchDraw();
 }
 
 // ════════════════════════════════════════════════════════════════════
 // Event Bindings
 // ════════════════════════════════════════════════════════════════════
 
-function bindStageEvents() {
-  const stage = getStage();
+function bindModeToggle() {
+  const layout = document.getElementById('main-layout');
+  const explorerBody = document.getElementById('explorer-body');
+  
+  const btnEdit = document.getElementById('btn-edit-mode');
+  const btnCancel = document.getElementById('btn-cancel-edit');
+  const btnSave = document.getElementById('btn-save-edit');
 
-  stage.on('mousedown touchstart', (e) => handleStageMouseDown(e));
-  stage.on('mousemove touchmove', () => handleStageMouseMove());
-  stage.on('mouseup touchend', () => handleStageMouseUp());
-  stage.on('dblclick dbltap', () => handleStageDblClick());
+  if (!btnEdit || !btnCancel || !btnSave) return;
 
-  document.addEventListener('keydown', handleKeyDown);
+  function setMode(mode) {
+    if (mode === 'edit') {
+      layout.classList.add('is-editing');
+      btnEdit.style.display = 'none';
+      btnCancel.style.display = 'block';
+      btnSave.style.display = 'block';
+      
+      explorerBody.innerHTML = `
+        <div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">
+          <strong>Modo Edição:</strong> Selecione Paredes, Zonas ou Móveis na barra lateral esquerda.
+        </div>
+      `;
+      notify('Modo de Edição ativado.', 'warning');
+    } else {
+      layout.classList.remove('is-editing');
+      btnEdit.style.display = 'flex';
+      btnCancel.style.display = 'none';
+      btnSave.style.display = 'none';
+      
+      explorerBody.innerHTML = `
+        <div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">
+          Listando Equipamentos de TI (Fase 3)...
+        </div>
+      `;
+      notify(mode === 'save' ? 'Alterações salvas com sucesso!' : 'Edição cancelada.', 'success');
+    }
+  }
+
+  btnEdit.addEventListener('click', () => setMode('edit'));
+  btnCancel.addEventListener('click', () => setMode('cancel'));
+  btnSave.addEventListener('click', () => setMode('save'));
 }
 
 function bindToolbar() {
@@ -180,43 +96,30 @@ function bindToolbar() {
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
       const tool = btn.dataset.tool;
-      setActiveTool(tool);
 
-      // Update active state
       buttons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
-      // If furniture tool, open the modal
-      if (tool === TOOLS.FURNITURE) {
+      if (tool === 'furniture') {
         document.getElementById('furniture-modal')?.classList.add('visible');
       }
+      
+      document.getElementById('floor-color-picker')?.classList.toggle('visible', tool === 'floor');
+      document.getElementById('wall-type-picker')?.classList.toggle('visible', tool === 'wall');
     });
   });
-}
 
-function bindCameraControls() {
-  document.getElementById('btn-zoom-in')?.addEventListener('click', zoomIn);
-  document.getElementById('btn-zoom-out')?.addEventListener('click', zoomOut);
-  document.getElementById('btn-zoom-reset')?.addEventListener('click', resetZoom);
-  document.getElementById('btn-zoom-fit')?.addEventListener('click', () => {
-    fitStage(roomData.room.width, roomData.room.height);
-  });
-
-  // Floor color picker
   document.querySelectorAll('.fp-color-swatch').forEach(s => {
     s.addEventListener('click', () => {
       document.querySelectorAll('.fp-color-swatch').forEach(x => x.classList.remove('active'));
       s.classList.add('active');
-      setFloorColor(s.dataset.color);
     });
   });
 
-  // Wall type picker
   document.querySelectorAll('.fp-wall-option').forEach(opt => {
     opt.addEventListener('click', () => {
       document.querySelectorAll('.fp-wall-option').forEach(x => x.classList.remove('active'));
       opt.classList.add('active');
-      setWallType(opt.dataset.type);
     });
   });
 }
@@ -228,30 +131,52 @@ function bindSearch() {
 
   async function doSearch() {
     const q = input.value.trim();
-    if (!q) return;
-
-    const res = await api(`ajax/search_asset.php?q=${encodeURIComponent(q)}`);
-    const items = res.data || [];
-
-    if (items.length === 0) {
-      results.innerHTML = '<div class="fp-search-results__empty">No results.</div>';
-    } else {
-      results.innerHTML = items.map(item => `
-        <div class="fp-search-results__item" data-hw-id="${item.hardware_id}">
-          <span class="fp-search-results__name">${item.hardware_name} — ${item.ip || '—'}</span>
-          <span class="fp-search-results__location">📍 ${item.building_name} › ${item.floor_name} › ${item.room_name}</span>
-        </div>
-      `).join('');
-
-      results.querySelectorAll('.fp-search-results__item').forEach(el => {
-        el.addEventListener('click', () => {
-          const hwId = parseInt(el.dataset.hwId, 10);
-          highlightAsset(hwId);
-          results.classList.remove('visible');
-        });
-      });
+    if (!q) {
+      results.classList.remove('visible');
+      return;
     }
-    results.classList.add('visible');
+
+    try {
+      const res = await api(`ajax/search_asset.php?q=${encodeURIComponent(q)}`);
+      const items = res.data || [];
+
+      if (items.length === 0) {
+        results.innerHTML = '<div class="fp-search-results__empty">No results.</div>';
+      } else {
+        results.innerHTML = items.map(item => {
+          if (item.type === 'room') {
+            return `
+              <div class="fp-search-results__item" data-type="room" data-b="${item.building_name}" data-f="${item.floor_name}" data-r="${item.room_name}">
+                <span class="fp-search-results__name">🗺️ Mapa: ${item.room_name}</span>
+                <span class="fp-search-results__location">📍 ${item.building_name} › ${item.floor_name}</span>
+              </div>
+            `;
+          } else {
+            return `
+              <div class="fp-search-results__item" data-type="asset" data-hw-id="${item.hardware_id}">
+                <span class="fp-search-results__name">💻 ${item.hardware_name} — ${item.ip || '—'}</span>
+                <span class="fp-search-results__location">📍 ${item.building_name} › ${item.floor_name} › ${item.room_name}</span>
+              </div>
+            `;
+          }
+        }).join('');
+
+        results.querySelectorAll('.fp-search-results__item').forEach(el => {
+          el.addEventListener('click', () => {
+            if (el.dataset.type === 'room') {
+              updateBreadcrumb(el.dataset.b, el.dataset.f, el.dataset.r);
+              notify(`Switched to map: ${el.dataset.r}`);
+            } else {
+              notify(`Zooming to asset ID: ${el.dataset.hwId}`);
+            }
+            results.classList.remove('visible');
+          });
+        });
+      }
+      results.classList.add('visible');
+    } catch (e) {
+      console.warn("Search API failed", e);
+    }
   }
 
   btn?.addEventListener('click', doSearch);
@@ -264,90 +189,129 @@ function bindSearch() {
   });
 }
 
-function highlightAsset(hardwareId) {
-  const stage = getStage();
-  const layer = getLayerAssets();
-  const target = layer.find('Group').find(g => {
-    const d = g.getAttr('assetData');
-    return d && d.hardware_id === hardwareId;
-  });
-
-  if (!target) {
-    notify('Asset not on this map.', 'warning');
-    return;
-  }
-
-  // Pan to asset
-  const scale = stage.scaleX();
-  const tween = new Konva.Tween({
-    node: stage,
-    duration: 0.5,
-    x: stage.width() / 2 - (target.x() + BOUNDING_BOX/2) * scale,
-    y: stage.height() / 2 - (target.y() + BOUNDING_BOX/2) * scale,
-    easing: Konva.Easings.EaseInOut,
-  });
-  tween.play();
-
-  // Pulse ring
-  const overlay = getStage().findOne('.layer_overlay') || getStage().getLayers()[4];
-  const ring = new Konva.Circle({
-    x: target.x() + BOUNDING_BOX/2,
-    y: target.y() + BOUNDING_BOX/2,
-    radius: BOUNDING_BOX,
-    stroke: '#961B7E',
-    strokeWidth: 3,
-    dash: [6, 3],
-    opacity: 0,
-  });
-  overlay.add(ring);
-
-  const anim = new Konva.Animation((frame) => {
-    const s = 0.8 + Math.sin(frame.time / 300) * 0.2;
-    ring.scaleX(s); ring.scaleY(s);
-    ring.opacity(0.5 + Math.sin(frame.time / 200) * 0.5);
-  }, overlay);
-  anim.start();
-
-  setTimeout(() => { anim.stop(); ring.destroy(); overlay.batchDraw(); }, 3500);
-
-  selectNodeById(target.id());
-}
-
 function bindFurnitureModal() {
   const modal = document.getElementById('furniture-modal');
   if (!modal) return;
 
-  // Close on backdrop click
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.classList.remove('visible');
   });
 
-  // Card clicks
   modal.querySelectorAll('.fp-furniture-card').forEach(card => {
     card.addEventListener('click', () => {
       const type = card.dataset.type;
       modal.classList.remove('visible');
-      startFurniturePlacement(type);
-      notify(`Click on the canvas to place ${FURNITURE_TYPES[type]?.label || type}.`, 'success');
+      notify(`Furniture "${type}" selected for placement.`);
+      document.querySelectorAll('.fp-tool-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.fp-tool-btn[data-tool="select"]')?.classList.add('active');
     });
   });
 }
 
-function bindAssetsDragDrop() {
-  // IT Assets are listed in the explorer as draggable items
-  // For now, we rely on the assets being placed from mock data
-}
+window.openMapNavigator = async function() {
+  const modal = document.getElementById('map-navigator-modal');
+  const sidebar = document.getElementById('navigator-sidebar');
+  if (!modal) return;
 
-function bindBreadcrumb() {
-  const bc = document.getElementById('breadcrumb');
-  if (!bc || !roomData) return;
-  bc.innerHTML = `
-    <a href="#">${roomData.building.name}</a>
-    <span> › </span>
-    <a href="#">${roomData.floor.name}</a>
-    <span> › </span>
-    <span>${roomData.room.name}</span>
-  `;
+  modal.classList.add('visible');
+  if (!currentMapTree) {
+    try {
+      const res = await fetch('/ajax/mock_map_tree.json');
+      currentMapTree = await res.json();
+      window.renderNavigatorSidebar();
+    } catch (e) {
+      console.error("Failed to load map tree", e);
+      if (sidebar) sidebar.innerHTML = '<div style="padding:16px;color:red;">Error loading tree.</div>';
+    }
+  } else {
+    // If it's already loaded, just render it again to reset search state if needed
+    window.renderNavigatorSidebar();
+  }
+};
+
+function bindMapNavigator() {
+  const modal = document.getElementById('map-navigator-modal');
+  const closeBtn = modal?.querySelector('.fp-navigator__close');
+  const sidebar = document.getElementById('navigator-sidebar');
+  const grid = document.getElementById('navigator-grid');
+  const sidebarSearch = document.getElementById('nav-sidebar-search');
+
+  if (!modal) return;
+
+  closeBtn?.addEventListener('click', () => modal.classList.remove('visible'));
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.classList.remove('visible');
+  });
+
+  window.renderNavigatorSidebar = function(filter = '') {
+    if (!currentMapTree) return;
+    let html = '';
+    
+    currentMapTree.buildings.forEach(b => {
+      // Filter logic: if building matches or any floor matches
+      const bMatch = b.name.toLowerCase().includes(filter);
+      const matchedFloors = b.floors.filter(f => f.name.toLowerCase().includes(filter));
+      
+      if (filter && !bMatch && matchedFloors.length === 0) return; // Skip if no match
+      
+      const floorsToRender = filter && !bMatch ? matchedFloors : b.floors;
+
+      html += `<div class="fp-nav-building">${b.name}</div>`;
+      floorsToRender.forEach(f => {
+        html += `<div class="fp-nav-floor" data-bid="${b.id}" data-fid="${f.id}">${f.name}</div>`;
+      });
+    });
+    
+    sidebar.innerHTML = html || '<div style="padding:10px;color:var(--fp-text-muted);font-size:11px;">No matches</div>';
+
+    sidebar.querySelectorAll('.fp-nav-floor').forEach(el => {
+      el.addEventListener('click', () => {
+        sidebar.querySelectorAll('.fp-nav-floor').forEach(x => x.classList.remove('active'));
+        el.classList.add('active');
+        
+        const b = currentMapTree.buildings.find(x => x.id == el.dataset.bid);
+        const f = b.floors.find(x => x.id == el.dataset.fid);
+        renderNavigatorGrid(b, f);
+      });
+    });
+    
+    // Auto-select first floor when rendering
+    const firstFloor = sidebar.querySelector('.fp-nav-floor');
+    if (firstFloor) firstFloor.click();
+    else grid.innerHTML = '<div style="padding:40px;grid-column:1/-1;text-align:center;">Select a floor</div>';
+  }
+
+  sidebarSearch?.addEventListener('input', (e) => {
+    renderNavigatorSidebar(e.target.value.toLowerCase().trim());
+  });
+
+  function renderNavigatorGrid(building, floor) {
+    if (!floor.rooms || floor.rooms.length === 0) {
+      grid.innerHTML = '<div style="padding:40px;grid-column:1/-1;text-align:center;">No maps on this floor.</div>';
+      return;
+    }
+
+    grid.innerHTML = floor.rooms.map(r => `
+      <div class="fp-room-card" data-bname="${building.name}" data-fname="${floor.name}" data-rname="${r.name}">
+        <div class="fp-room-thumb" style="background:${r.color};">${r.icon}</div>
+        <div class="fp-room-info">
+          <div class="fp-room-name" title="${r.name}">${r.name}</div>
+          <div class="fp-room-meta">
+            <svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor"><rect x="3" y="2" width="14" height="16" rx="2"/></svg>
+            ${r.assetCount} assets
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    grid.querySelectorAll('.fp-room-card').forEach(card => {
+      card.addEventListener('click', () => {
+        updateBreadcrumb(card.dataset.bname, card.dataset.fname, card.dataset.rname);
+        modal.classList.remove('visible');
+        notify(`Switched to map: ${card.dataset.rname}`);
+      });
+    });
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════

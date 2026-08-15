@@ -1,0 +1,43 @@
+{
+  "buildings": [
+    {
+      "id": 1,
+      "name": "Headquarters",
+      "floors": [
+        {
+          "id": 10,
+          "name": "Ground Floor",
+          "rooms": [
+            { "id": 100, "name": "Open Office A", "assetCount": 42, "color": "#8fa8c8", "icon": "🏢" },
+            { "id": 101, "name": "Server Room", "assetCount": 15, "color": "#7a9a8a", "icon": "🖧" },
+            { "id": 102, "name": "Reception", "assetCount": 3, "color": "#c4b896", "icon": "🛋️" }
+          ]
+        },
+        {
+          "id": 11,
+          "name": "1º Andar",
+          "rooms": [
+            { "id": 110, "name": "Departamento de RH", "assetCount": 20, "color": "#dbb8a0", "icon": "👥" },
+            { "id": 111, "name": "TI 1º Andar", "assetCount": 85, "color": "#8fa8c8", "icon": "💻" },
+            { "id": 112, "name": "Sala de Reunião Alpha", "assetCount": 2, "color": "#c4b896", "icon": "🗣️" },
+            { "id": 113, "name": "Sala de Reunião Beta", "assetCount": 2, "color": "#c4b896", "icon": "🗣️" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Filial Sul",
+      "floors": [
+        {
+          "id": 20,
+          "name": "Galpão Principal",
+          "rooms": [
+            { "id": 200, "name": "Estoque", "assetCount": 10, "color": "#bbb", "icon": "📦" },
+            { "id": 201, "name": "Logística", "assetCount": 25, "color": "#e8e0d0", "icon": "🚚" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "status": "success",
+  "data": {
+    "building": { "id": 1, "name": "Headquarters" },
+    "floor": { "id": 1, "name": "Ground Floor" },
+    "room": {
+      "id": 1,
+      "name": "Open Office A",
+      "width": 1200,
+      "height": 900,
+      "grid_size": 20
+    },
+    "floor_zones": [
+      {
+        "id": "fz-1",
+        "name": "Main Office Carpet",
+        "x": 0, "y": 0, "width": 1200, "height": 900,
+        "fill": "#9ab8a0",
+        "opacity": 0.4
+      },
+      {
+        "id": "fz-2",
+        "name": "Meeting Room Floor",
+        "x": 0, "y": 540, "width": 500, "height": 360,
+        "fill": "#9ab8a0",
+        "opacity": 0.55
+      },
+      {
+        "id": "fz-3",
+        "name": "Server Closet Tile",
+        "x": 800, "y": 0, "width": 400, "height": 300,
+        "fill": "#d4cfc4",
+        "opacity": 0.5
+      }
+    ],
+    "walls": [
+      { "id": "w-outer", "name": "Outer Wall", "wallType": "exterior", "points": [0,0, 1200,0, 1200,900, 0,900, 0,0] },
+      { "id": "w-meeting", "name": "Meeting Room N", "wallType": "exterior", "points": [0,540, 500,540] },
+      { "id": "w-meeting-e", "name": "Meeting Room E", "wallType": "exterior", "points": [500,540, 500,900] },
+      { "id": "w-server-s", "name": "Server Room S", "wallType": "exterior", "points": [800,300, 1200,300] },
+      { "id": "w-server-w", "name": "Server Room W", "wallType": "interior", "points": [800,0, 800,300] },
+      { "id": "w-glass-1", "name": "Glass Partition", "wallType": "glass", "points": [500,200, 800,200] }
+    ],
+    "doors": [
+      { "id": "d-1", "name": "Main Entrance", "x": 0, "y": 220, "width": 8, "height": 60 },
+      { "id": "d-2", "name": "Meeting Door", "x": 200, "y": 536, "width": 60, "height": 8 },
+      { "id": "d-3", "name": "Server Door", "x": 796, "y": 100, "width": 8, "height": 60 }
+    ],
+    "furniture": [
+      { "id": "f-1", "name": "Desk Cluster 1", "type": "desk_straight", "x": 120, "y": 80, "width": 120, "height": 60, "rotation": 0 },
+      { "id": "f-2", "name": "Desk Cluster 2", "type": "desk_straight", "x": 120, "y": 160, "width": 120, "height": 60, "rotation": 0 },
+      { "id": "f-3", "name": "L-Desk Manager", "type": "desk_l", "x": 340, "y": 80, "width": 140, "height": 100, "rotation": 0 },
+      { "id": "f-4", "name": "Round Meeting Table", "type": "desk_round", "x": 250, "y": 680, "width": 160, "height": 160, "rotation": 0 },
+      { "id": "f-5", "name": "Plant NW", "type": "plant", "x": 30, "y": 30, "width": 30, "height": 30, "rotation": 0 },
+      { "id": "f-6", "name": "Plant SE", "type": "plant", "x": 740, "y": 860, "width": 30, "height": 30, "rotation": 0 },
+      { "id": "f-7", "name": "Partition A", "type": "partition", "x": 260, "y": 80, "width": 6, "height": 200, "rotation": 0 },
+      { "id": "f-8", "name": "Chair 1", "type": "chair", "x": 150, "y": 50, "width": 30, "height": 30, "rotation": 0 },
+      { "id": "f-9", "name": "Chair 2", "type": "chair", "x": 150, "y": 130, "width": 30, "height": 30, "rotation": 180 },
+      { "id": "f-10", "name": "Chair MR-1", "type": "chair", "x": 200, "y": 660, "width": 30, "height": 30, "rotation": 90 },
+      { "id": "f-11", "name": "Chair MR-2", "type": "chair", "x": 300, "y": 660, "width": 30, "height": 30, "rotation": 270 },
+      { "id": "f-12", "name": "Chair MR-3", "type": "chair", "x": 250, "y": 610, "width": 30, "height": 30, "rotation": 0 },
+      { "id": "f-13", "name": "Chair MR-4", "type": "chair", "x": 250, "y": 760, "width": 30, "height": 30, "rotation": 180 },
+      { "id": "f-14", "name": "Desk Server Rack", "type": "desk_straight", "x": 860, "y": 40, "width": 100, "height": 50, "rotation": 0 },
+      { "id": "f-15", "name": "Desk Server Rack 2", "type": "desk_straight", "x": 860, "y": 120, "width": 100, "height": 50, "rotation": 0 }
+    ],
+    "assets": [
+      { "id": 1, "hardware_id": 1, "hardware_name": "SRV-DC-01", "type": "server", "pos_x": 870, "pos_y": 50, "ip": "192.168.10.5", "mac": "AA:BB:CC:DD:EE:01" },
+      { "id": 2, "hardware_id": 2, "hardware_name": "SRV-DC-02", "type": "server", "pos_x": 870, "pos_y": 130, "ip": "192.168.10.6", "mac": "AA:BB:CC:DD:EE:02" },
+      { "id": 3, "hardware_id": 3, "hardware_name": "PC-RH-003", "type": "desktop", "pos_x": 140, "pos_y": 90, "ip": "192.168.10.20", "mac": "AA:BB:CC:DD:EE:03" },
+      { "id": 4, "hardware_id": 4, "hardware_name": "PC-RH-004", "type": "desktop", "pos_x": 140, "pos_y": 170, "ip": "192.168.10.21", "mac": "AA:BB:CC:DD:EE:04" },
+      { "id": 5, "hardware_id": 5, "hardware_name": "PC-FIN-001", "type": "desktop", "pos_x": 360, "pos_y": 100, "ip": "192.168.10.45", "mac": "AA:BB:CC:DD:EE:05" },
+      { "id": 6, "hardware_id": 6, "hardware_name": "IMP-FINANCEIRO", "type": "printer", "pos_x": 620, "pos_y": 400, "ip": "192.168.10.80", "mac": "AA:BB:CC:DD:EE:06" },
+      { "id": 7, "hardware_id": 7, "hardware_name": "SW-CORE-01", "type": "switch", "pos_x": 1000, "pos_y": 60, "ip": "192.168.10.1", "mac": "AA:BB:CC:DD:EE:07" },
+      { "id": 8, "hardware_id": 8, "hardware_name": "AP-WIFI-SALA", "type": "desktop", "pos_x": 600, "pos_y": 120, "ip": "192.168.10.2", "mac": "AA:BB:CC:DD:EE:08" }
+    ]
+  }
+}
