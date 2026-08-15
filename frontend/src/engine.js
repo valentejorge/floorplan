@@ -5,13 +5,47 @@ export let backgroundLayer;
 export let gridLayer;
 export let zonesLayer;
 export let wallsLayer;
+export let furnitureLayer;
 export let assetsLayer;
+export let overlayLayer;
+export let globalTransformer;
 
 // Constants
 const SCALE_BY = 1.15;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 20;
-const GRID_SIZE = 20;
+export const GRID_SIZE = 20;
+
+export function getStage() { return stage; }
+export function getLayerFloor() { return zonesLayer; }
+export function getLayerArchitecture() { return wallsLayer; }
+export function getLayerFurniture() { return furnitureLayer; }
+export function getLayerAssets() { return assetsLayer; }
+export function getOverlayLayer() { return overlayLayer; }
+export function getTransformer() { return globalTransformer; }
+
+export function getRelativePointerPosition() {
+  const pointerPosition = stage.getPointerPosition();
+  if (!pointerPosition) return { x: 0, y: 0 };
+  const transform = stage.getAbsoluteTransform().copy();
+  transform.invert();
+  return transform.point(pointerPosition);
+}
+
+export function snapToGrid(val) {
+  return Math.round(val / GRID_SIZE) * GRID_SIZE;
+}
+
+export function applySnapOnDragEnd(node) {
+  node.on('dragend', () => {
+    node.position({
+      x: snapToGrid(node.x()),
+      y: snapToGrid(node.y()),
+    });
+    node.getLayer().batchDraw();
+  });
+}
+
 
 export function initEngine(containerId) {
   const container = document.getElementById(containerId);
@@ -31,9 +65,34 @@ export function initEngine(containerId) {
   // Create Layers
   backgroundLayer = new Konva.Layer({ listening: false });
   gridLayer = new Konva.Layer({ listening: false, opacity: 0 }); // Hidden by default
-  zonesLayer = new Konva.Layer({ listening: false }); 
-  wallsLayer = new Konva.Layer({ listening: false });
-  assetsLayer = new Konva.Layer(); 
+  
+  // Combine elements into logical layers to stay within Konva's 3-5 layer recommendation
+  const architectureLayer = new Konva.Layer();
+  const contentLayer = new Konva.Layer();
+  
+  zonesLayer = new Konva.Group({ listening: false, name: 'zonesLayer' }); 
+  wallsLayer = new Konva.Group({ listening: false, name: 'wallsLayer' });
+  furnitureLayer = new Konva.Group({ listening: false, name: 'furnitureLayer' });
+  assetsLayer = new Konva.Group({ listening: false, name: 'assetsLayer' }); 
+  
+  architectureLayer.add(zonesLayer);
+  architectureLayer.add(wallsLayer);
+  
+  contentLayer.add(furnitureLayer);
+  contentLayer.add(assetsLayer);
+  
+  overlayLayer = new Konva.Layer();
+  
+  globalTransformer = new Konva.Transformer({
+    nodes: [],
+    padding: 5,
+    borderStroke: '#63b3ed',
+    anchorStroke: '#63b3ed',
+    anchorFill: '#fff',
+    anchorSize: 8,
+    borderDash: [5, 5],
+  });
+  overlayLayer.add(globalTransformer);
 
   // Fast GPU Pattern Grid
   const patternCanvas = document.createElement('canvas');
@@ -72,9 +131,9 @@ export function initEngine(containerId) {
 
   stage.add(backgroundLayer);
   stage.add(gridLayer);
-  stage.add(zonesLayer);
-  stage.add(wallsLayer);
-  stage.add(assetsLayer);
+  stage.add(architectureLayer);
+  stage.add(contentLayer);
+  stage.add(overlayLayer);
 
   // Resize event
   window.addEventListener('resize', () => {
@@ -259,27 +318,65 @@ function zoomBy(factor) {
 }
 
 export function panToSafeArea() {
-  const safe = getSafeArea();
-  const bbox = getMapBoundingBox();
-  const currentScale = stage.scaleX();
-  
-  const newX = safe.x + (safe.width - bbox.width * currentScale) / 2 - bbox.x * currentScale;
-  const newY = safe.y + (safe.height - bbox.height * currentScale) / 2 - bbox.y * currentScale;
-  
-  animateStage(currentScale, newX, newY, 0.6);
+  return new Promise((resolve) => {
+    const safe = getSafeArea();
+    const bbox = getMapBoundingBox();
+    
+    let newScale = stage.scaleX(); // Maintain current zoom
+    
+    const newX = safe.x + (safe.width - bbox.width * newScale) / 2 - bbox.x * newScale;
+    const newY = safe.y + (safe.height - bbox.height * newScale) / 2 - bbox.y * newScale;
+    
+    animateStage(newScale, newX, newY, resolve);
+  });
 }
 
-function animateStage(scale, x, y, duration = 0.6) {
-  new Konva.Tween({
-    node: stage,
-    duration: duration,
-    scaleX: scale,
-    scaleY: scale,
-    x: x,
-    y: y,
-    easing: Konva.Easings.StrongEaseOut,
-    onUpdate: () => stage.batchDraw()
-  }).play();
+function animateStage(newScale, newX, newY, onFinish) {
+  const container = document.getElementById('floorplan-container');
+  if (!container) {
+    stage.scale({ x: newScale, y: newScale });
+    stage.position({ x: newX, y: newY });
+    stage.batchDraw();
+    if (onFinish) onFinish();
+    return;
+  }
+
+  const oldX = stage.x();
+  const oldY = stage.y();
+  const oldScale = stage.scaleX();
+
+  // M_css = M_old * M_new_inverse
+  const s = oldScale / newScale;
+  const tx = oldX - newX * s;
+  const ty = oldY - newY * s;
+
+  // Snap Konva instantly (no CPU rendering during animation)
+  stage.scale({ x: newScale, y: newScale });
+  stage.position({ x: newX, y: newY });
+  stage.batchDraw();
+
+  // If no change, return immediately
+  if (Math.abs(tx) < 0.5 && Math.abs(ty) < 0.5 && Math.abs(s - 1) < 0.001) {
+    if (onFinish) onFinish();
+    return;
+  }
+
+  // Set up fake CSS transform to look like old state
+  container.style.transition = 'none';
+  container.style.transformOrigin = '0 0';
+  container.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+
+  // Force reflow
+  void container.offsetHeight;
+
+  // Animate CSS transform to 0,0 scale 1 (new state) over 0.4s
+  container.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+  container.style.transform = 'translate(0px, 0px) scale(1)';
+
+  setTimeout(() => {
+    container.style.transition = 'none';
+    if (onFinish) onFinish();
+  }, 400);
 }
 
 export function animateMapEntrance() {
@@ -331,4 +428,40 @@ export function setEngineEditMode(isEditing) {
     easing: Konva.Easings.StrongEaseOut,
     onUpdate: () => gridLayer.batchDraw()
   }).play();
+  
+  // Enable interaction with architectural nodes
+  [zonesLayer, wallsLayer, getLayerFurniture(), getLayerAssets()].forEach(layer => {
+    layer.listening(isEditing);
+    layer.getChildren().forEach(node => {
+      node.listening(isEditing);
+      node.draggable(isEditing);
+      
+      // Manage snap listener
+      node.off('dragend.snap');
+      if (isEditing) {
+        node.on('dragend.snap', () => {
+          const GRID_SIZE = 20; // Hardcoded fallback or use imported
+          node.position({
+            x: Math.round(node.x() / GRID_SIZE) * GRID_SIZE,
+            y: Math.round(node.y() / GRID_SIZE) * GRID_SIZE,
+          });
+          node.getLayer().batchDraw();
+          
+          // Refresh properties panel if this node is selected
+          import('./explorer.js').then(({ getSelectedNodeId, selectNodeById }) => {
+            if (getSelectedNodeId() === node.id()) {
+              selectNodeById(node.id());
+            }
+          });
+          
+          import('./history.js').then(({ commitHistory }) => commitHistory());
+        });
+      }
+    });
+  });
+  
+  if (!isEditing) {
+    globalTransformer.nodes([]);
+    overlayLayer.batchDraw();
+  }
 }

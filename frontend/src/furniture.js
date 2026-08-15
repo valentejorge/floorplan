@@ -223,6 +223,8 @@ export function buildFurnitureNode(data) {
   const node = reg.factory(data.width || reg.defaultW, data.height || reg.defaultH);
   node.position({ x: data.x, y: data.y });
   node.rotation(data.rotation || 0);
+  if (data.scaleX !== undefined) node.scaleX(data.scaleX);
+  if (data.scaleY !== undefined) node.scaleY(data.scaleY);
   node.id(data.id);
   node.setAttr('entityData', { ...data, layer: 'furniture' });
   node.setAttr('entityType', data.type);

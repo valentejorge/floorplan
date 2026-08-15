@@ -1,14 +1,27 @@
 import Konva from 'konva';
-import { zonesLayer, wallsLayer, assetsLayer, requestRender, animateMapEntrance } from './engine.js';
+import { zonesLayer, wallsLayer, assetsLayer, furnitureLayer, requestRender, animateMapEntrance } from './engine.js';
 import { skinManager } from './skins.js';
+import { buildFurnitureNode } from './furniture.js';
 
-export function loadMapData(data) {
+export let currentAssets = [];
+
+export function repopulateAssetsExplorer() {
+  populateObjectExplorer(currentAssets);
+}
+
+export function loadMapData(data, isInitial = true) {
   if (!data) return;
+  currentAssets = data.assets || [];
 
   // Clear existing objects
+  import('./engine.js').then(({ globalTransformer }) => {
+    if (globalTransformer) globalTransformer.nodes([]);
+  });
+  
   zonesLayer.destroyChildren();
   wallsLayer.destroyChildren();
   assetsLayer.destroyChildren();
+  furnitureLayer.destroyChildren();
 
   // 1. Render Floor Zones
   if (data.floor_zones) {
@@ -23,8 +36,11 @@ export function loadMapData(data) {
         id: zone.id,
         name: 'zone',
         perfectDrawEnabled: false, // Performance boost
-        listening: false // No hit graph
+        listening: false, // No hit graph
+        scaleX: zone.scaleX || 1,
+        scaleY: zone.scaleY || 1
       });
+      rect.setAttr('entityData', { id: zone.id, name: zone.name || 'Zone', fill: zone.fill, opacity: zone.opacity || 0.4, layer: 'floor' });
       zonesLayer.add(rect);
     });
   }
@@ -55,8 +71,11 @@ export function loadMapData(data) {
         id: wall.id,
         name: 'wall',
         perfectDrawEnabled: false,
-        listening: false
+        listening: false,
+        scaleX: wall.scaleX || 1,
+        scaleY: wall.scaleY || 1
       });
+      line.setAttr('entityData', { id: wall.id, name: wall.name || 'Wall', wallType: wall.wallType, layer: 'architecture' });
       wallsLayer.add(line);
     });
   }
@@ -79,17 +98,50 @@ export function loadMapData(data) {
     });
   }
 
+  // 3. Render Furniture (from history state or separate array)
+  if (data.furniture) {
+    data.furniture.forEach(item => {
+      const fnNode = buildFurnitureNode({
+        id: item.id,
+        type: item.type || item.layout?.table || 'desk_straight',
+        x: item.x !== undefined ? item.x : (item.pos_x || 0),
+        y: item.y !== undefined ? item.y : (item.pos_y || 0),
+        rotation: item.rotation !== undefined ? item.rotation : (item.layout?.rotation || 0),
+        name: item.name || 'Furniture'
+      });
+      if (fnNode) furnitureLayer.add(fnNode);
+    });
+  }
+
   // 4. Render Parametric Assets (Tables, Chairs, IT Devices)
   if (data.assets) {
     data.assets.forEach(asset => {
+      // Support legacy structure where furniture is inside assets
+      if (asset.type === 'furniture') {
+        const type = asset.layout?.table || 'desk_straight';
+        const fnNode = buildFurnitureNode({
+          id: asset.id,
+          type: type,
+          x: asset.pos_x || asset.x,
+          y: asset.pos_y || asset.y,
+          rotation: asset.layout ? (asset.layout.rotation || 0) : 0,
+          name: asset.name || 'Furniture'
+        });
+        if (fnNode) furnitureLayer.add(fnNode);
+        return;
+      }
+
       const group = new Konva.Group({
         x: asset.pos_x || asset.x,
         y: asset.pos_y || asset.y,
-        rotation: asset.layout ? (asset.layout.rotation || 0) : 0,
+        rotation: asset.layout ? (asset.layout.rotation || 0) : (asset.rotation || 0),
         id: asset.id,
         hardware_id: asset.hardware_id,
-        name: 'it-asset'
+        name: 'it-asset',
+        scaleX: asset.scaleX || 1,
+        scaleY: asset.scaleY || 1
       });
+      group.setAttr('assetData', asset);
 
       let tw = 40, th = 40; // Default bounding box for labels
 
@@ -102,9 +154,12 @@ export function loadMapData(data) {
             th = Math.max(th, imgObj.height);
             const tableNode = new Konva.Image({
               image: imgObj,
+              width: imgObj.width,
+              height: imgObj.height,
               x: -imgObj.width / 2,
               y: -imgObj.height / 2,
-              perfectDrawEnabled: false
+              perfectDrawEnabled: false,
+              shadowColor: 'rgba(0,0,0,0.15)', shadowBlur: 10, shadowOffsetX: 0, shadowOffsetY: 4
             });
             group.add(tableNode);
           }
@@ -253,11 +308,17 @@ export function loadMapData(data) {
         group.on('click tap', () => {
           if (window.selectAsset) window.selectAsset(asset);
           
-          import('./engine.js').then(({ getTransformer }) => {
-            const tr = getTransformer();
-            tr.nodes([group]);
-            tr.getLayer().batchDraw();
-          });
+          const layout = document.getElementById('main-layout');
+          if (layout && layout.classList.contains('is-editing')) {
+            import('./engine.js').then(({ getTransformer }) => {
+              const tr = getTransformer();
+              tr.nodes([group]);
+              tr.getLayer().batchDraw();
+            });
+            import('./explorer.js').then(({ selectNodeById }) => {
+               selectNodeById(group.id());
+            });
+          }
         });
       }
 
@@ -267,8 +328,9 @@ export function loadMapData(data) {
 
   requestRender();
   
-// Slide and fade map gracefully
-  animateMapEntrance();
+  if (isInitial) {
+    animateMapEntrance();
+  }
   
   populateObjectExplorer(data.assets);
 }

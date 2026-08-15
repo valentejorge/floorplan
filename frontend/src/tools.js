@@ -12,6 +12,7 @@ import {
 } from './engine.js';
 import { SHADOW_LIGHT, SHADOW_HEAVY, buildFurnitureNode, FURNITURE_TYPES } from './furniture.js';
 import { skinManager } from './skins.js';
+import { commitHistory } from './history.js';
 import { refreshExplorer, selectNodeById, clearSelection } from './explorer.js';
 
 // ── Tool enum ──────────────────────────────────────────────────────
@@ -68,6 +69,60 @@ export function setWallType(type) { wallType = type; }
 // Stage Event Handlers (called from main.js)
 // ════════════════════════════════════════════════════════════════════
 
+export function bindToolsToStage() {
+  const stage = getStage();
+  if (!stage) return;
+  
+  stage.on('mousedown touchstart', (e) => {
+    // Ignore if not in edit mode
+    const layout = document.getElementById('main-layout');
+    if (!layout || !layout.classList.contains('is-editing')) return;
+    
+    handleStageMouseDown(e);
+  });
+  
+  stage.on('mousemove touchmove', () => {
+    const layout = document.getElementById('main-layout');
+    if (!layout || !layout.classList.contains('is-editing')) return;
+    handleStageMouseMove();
+  });
+  
+  stage.on('mouseup touchend', () => {
+    const layout = document.getElementById('main-layout');
+    if (!layout || !layout.classList.contains('is-editing')) return;
+    handleStageMouseUp();
+  });
+  
+  stage.on('dblclick dbltap', () => {
+    const layout = document.getElementById('main-layout');
+    if (!layout || !layout.classList.contains('is-editing')) return;
+    handleStageDblClick();
+  });
+
+  // Global key listener for deletion
+  document.addEventListener('keydown', (e) => {
+    const layout = document.getElementById('main-layout');
+    if (!layout || !layout.classList.contains('is-editing')) return;
+
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      // Don't delete if user is typing in an input
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+      const tr = getTransformer();
+      const nodes = tr.nodes();
+      if (nodes.length > 0) {
+        const mainLayer = nodes[0].getLayer();
+        nodes.forEach(n => n.destroy());
+        tr.nodes([]);
+        tr.getLayer().batchDraw();
+        if (mainLayer) mainLayer.batchDraw();
+        refreshExplorer();
+        commitHistory();
+      }
+    }
+  });
+}
+
 export function handleStageMouseDown(e) {
   // Ignore if clicking on a transformer anchor
   if (e.target.getParent()?.className === 'Transformer') return;
@@ -76,7 +131,7 @@ export function handleStageMouseDown(e) {
     case TOOLS.SELECT:  handleSelectDown(e); break;
     case TOOLS.FLOOR:   handleFloorDown(e);  break;
     case TOOLS.WALL:    handleWallDown(e);   break;
-    case TOOLS.FURNITURE: break; // handled via modal
+    case TOOLS.FURNITURE: handleFurnitureDown(e); break;
     case TOOLS.ASSETS:  handleSelectDown(e); break;
   }
 }
@@ -96,6 +151,38 @@ export function handleStageMouseUp() {
 
 export function handleStageDblClick() {
   if (activeTool === TOOLS.WALL) handleWallDblClick();
+}
+
+let activeFurnitureType = null;
+export function setActiveFurnitureType(type) { activeFurnitureType = type; }
+
+function handleFurnitureDown(e) {
+  // Allow clicking on empty space or grid
+  if (e.target !== getStage() && !e.target.getAttr('gridDot')) return;
+  if (!activeFurnitureType) return;
+
+  const pos = getRelativePointerPosition();
+  const sx = snapToGrid(pos.x);
+  const sy = snapToGrid(pos.y);
+
+  const id = 'f-' + Date.now();
+  const node = buildFurnitureNode({
+    id: id,
+    type: activeFurnitureType,
+    x: sx,
+    y: sy,
+    rotation: 0,
+    name: 'New ' + activeFurnitureType
+  });
+
+  if (node) {
+    node.draggable(true);
+    getLayerFurniture().add(node);
+    getLayerFurniture().getLayer().batchDraw();
+    refreshExplorer();
+    selectNodeById(id);
+    commitHistory();
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -161,7 +248,7 @@ function handleFloorMove() {
   drawState.node.height(Math.abs(h));
   drawState.node.x(w < 0 ? sx : drawState.startX);
   drawState.node.y(h < 0 ? sy : drawState.startY);
-  getLayerFloor().batchDraw();
+  getLayerFloor().getLayer().batchDraw();
 }
 
 function handleFloorUp() {
@@ -176,8 +263,9 @@ function handleFloorUp() {
   }
 
   drawState = null;
-  getLayerFloor().batchDraw();
+  getLayerFloor().getLayer().batchDraw();
   refreshExplorer();
+  commitHistory();
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -216,7 +304,7 @@ function handleWallDown(e) {
     const pts = drawState.node.points();
     pts.push(sx, sy);
     drawState.node.points(pts);
-    getLayerArchitecture().batchDraw();
+    getLayerArchitecture().getLayer().batchDraw();
   }
 }
 
@@ -230,7 +318,7 @@ function handleWallMove() {
   pts[pts.length - 2] = sx;
   pts[pts.length - 1] = sy;
   drawState.node.points(pts);
-  getLayerArchitecture().batchDraw();
+  getLayerArchitecture().getLayer().batchDraw();
 }
 
 function handleWallDblClick() {
@@ -244,8 +332,9 @@ function handleWallDblClick() {
   applySnapOnDragEnd(drawState.node);
 
   drawState = null;
-  getLayerArchitecture().batchDraw();
+  getLayerArchitecture().getLayer().batchDraw();
   refreshExplorer();
+  commitHistory();
 }
 
 function cancelDraw() {
@@ -260,13 +349,14 @@ function cancelDraw() {
         drawState.node.draggable(true);
         applySnapOnDragEnd(drawState.node);
       }
-      getLayerArchitecture().batchDraw();
+      getLayerArchitecture().getLayer().batchDraw();
     } else if (activeTool === TOOLS.FLOOR) {
       if (drawState.node.width() < GRID_SIZE) drawState.node.destroy();
-      getLayerFloor().batchDraw();
+      getLayerFloor().getLayer().batchDraw();
     }
     drawState = null;
     refreshExplorer();
+    commitHistory();
   }
 }
 
@@ -300,7 +390,7 @@ export function startFurniturePlacement(type) {
       node.draggable(true);
       applySnapOnDragEnd(node);
       getLayerFurniture().add(node);
-      getLayerFurniture().batchDraw();
+      getLayerFurniture().getLayer().batchDraw();
       refreshExplorer();
     }
 
@@ -316,15 +406,6 @@ export function startFurniturePlacement(type) {
 // IT ASSET placement (drag from panel)
 // ════════════════════════════════════════════════════════════════════
 
-const skinManager = new SkinManager();
-let skinLoaded = false;
-
-export async function ensureSkins() {
-  if (!skinLoaded) {
-    await skinManager.load('theme_visio');
-    skinLoaded = true;
-  }
-}
 
 export function createAssetNode(asset) {
   const img = skinManager.getImage(asset.type);

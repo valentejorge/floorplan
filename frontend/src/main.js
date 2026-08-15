@@ -4,6 +4,8 @@
 import { api } from './api.js';
 import { initEngine, zoomIn, zoomOut, zoomFit } from './engine.js';
 import { loadMapData } from './renderer.js';
+import { bindToolsToStage, setActiveTool, setFloorColor, setWallType, setActiveFurnitureType } from './tools.js';
+import { refreshExplorer } from './explorer.js';
 import './style.css';
 
 let currentMapTree = null;
@@ -102,6 +104,7 @@ async function init() {
   setTimeout(() => document.body.classList.remove('preload'), 50);
 
   initEngine('floorplan-container');
+  bindToolsToStage();
   bindCameraControls();
   
   bindToolbar();
@@ -121,6 +124,7 @@ async function init() {
       
       if (json.status === 'success') {
         loadMapData(json.data);
+        import('./history.js').then(({ initHistory }) => initHistory());
       }
     } catch (e) {
       console.warn("Error loading mock data", e);
@@ -179,18 +183,14 @@ function bindModeToggle() {
 
   if (!btnEdit || !btnCancel || !btnSave) return;
 
-  function setMode(mode) {
+  async function setMode(mode) {
     if (mode === 'edit') {
       layout.classList.add('is-editing');
       btnEdit.style.display = 'none';
       btnCancel.style.display = 'block';
       btnSave.style.display = 'block';
       
-      explorerBody.innerHTML = `
-        <div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">
-          <strong>Modo Edição:</strong> Selecione Paredes, Zonas ou Móveis na barra lateral esquerda.
-        </div>
-      `;
+      refreshExplorer();
       notify('Modo de Edição ativado.', 'warning');
     } else {
       layout.classList.remove('is-editing');
@@ -198,18 +198,18 @@ function bindModeToggle() {
       btnCancel.style.display = 'none';
       btnSave.style.display = 'none';
       
-      explorerBody.innerHTML = `
-        <div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">
-          Listando Equipamentos de TI (Fase 3)...
-        </div>
-      `;
+      import('./renderer.js').then(({ repopulateAssetsExplorer }) => {
+        repopulateAssetsExplorer();
+      });
       notify(mode === 'save' ? 'Alterações salvas com sucesso!' : 'Edição cancelada.', 'success');
     }
     
-    import('./engine.js').then(({ panToSafeArea, setEngineEditMode }) => {
-      panToSafeArea();
-      setEngineEditMode(mode === 'edit');
-    });
+    // Animate stage to safe area first
+    const { panToSafeArea, setEngineEditMode } = await import('./engine.js');
+    await panToSafeArea();
+    
+    // Now that animation is done, we can do the heavy DOM/Cache blocking operations
+    setEngineEditMode(mode === 'edit');
     
     import('./renderer.js').then(({ toggleAssetEditMode }) => {
       toggleAssetEditMode(mode === 'edit');
@@ -236,6 +236,8 @@ function bindToolbar() {
       
       document.getElementById('floor-color-picker')?.classList.toggle('visible', tool === 'floor');
       document.getElementById('wall-type-picker')?.classList.toggle('visible', tool === 'wall');
+      
+      setActiveTool(tool);
     });
   });
 
@@ -243,6 +245,7 @@ function bindToolbar() {
     s.addEventListener('click', () => {
       document.querySelectorAll('.fp-color-swatch').forEach(x => x.classList.remove('active'));
       s.classList.add('active');
+      setFloorColor(s.dataset.color);
     });
   });
 
@@ -250,6 +253,7 @@ function bindToolbar() {
     opt.addEventListener('click', () => {
       document.querySelectorAll('.fp-wall-option').forEach(x => x.classList.remove('active'));
       opt.classList.add('active');
+      setWallType(opt.dataset.type);
     });
   });
 }
@@ -436,13 +440,29 @@ function bindSearch() {
 
   // Vim-like search shortcut ('/' or 'i')
   document.addEventListener('keydown', (e) => {
+    // Ignore if user is already typing in an input or textarea
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+      return;
+    }
+    
     if (e.key === '/' || e.key === 'i') {
-      // Ignore if user is already typing in an input or textarea
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
-        return;
-      }
       e.preventDefault();
       input.focus();
+      return;
+    }
+
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const isCmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
+    
+    // Undo: Ctrl+Z
+    if (isCmdOrCtrl && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      import('./history.js').then(({ undo }) => undo());
+    }
+    // Redo: Ctrl+Y or Ctrl+Shift+Z
+    else if (isCmdOrCtrl && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+      e.preventDefault();
+      import('./history.js').then(({ redo }) => redo());
     }
   });
 
@@ -475,9 +495,14 @@ function bindFurnitureModal() {
     card.addEventListener('click', () => {
       const type = card.dataset.type;
       window.closeModal(modal);
-      notify(`Furniture "${type}" selected for placement.`);
+      
+      setActiveFurnitureType(type);
+      setActiveTool('furniture');
+      
+      notify(`Furniture "${type}" selected. Click on canvas to place it.`, 'info');
+      
       document.querySelectorAll('.fp-tool-btn').forEach(b => b.classList.remove('active'));
-      document.querySelector('.fp-tool-btn[data-tool="select"]')?.classList.add('active');
+      document.querySelector('.fp-tool-btn[data-tool="furniture"]')?.classList.add('active');
     });
   });
 }

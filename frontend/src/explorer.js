@@ -8,6 +8,7 @@ import {
   getLayerFloor, getLayerArchitecture, getLayerFurniture,
   getLayerAssets, getTransformer,
 } from './engine.js';
+import { commitHistory } from './history.js';
 
 let selectedNodeId = null;
 let onSelectCallback = null;
@@ -114,6 +115,7 @@ export function refreshExplorer() {
         node.getLayer()?.batchDraw();
         refreshExplorer();
         updateProperties(null);
+        commitHistory();
       });
       actions.appendChild(delBtn);
 
