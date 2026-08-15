@@ -790,12 +790,17 @@ body {
   padding: 10px 12px;
   cursor: pointer;
   border-bottom: 1px solid var(--fp-border);
+  border-left: 3px solid transparent;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  transition: background 0.1s;
 }
 .fp-search-results__item:hover,
-.fp-search-results__item.selected { background: #f8f9fa; }
+.fp-search-results__item.selected {
+  background: var(--fp-primary-soft);
+  border-left: 3px solid var(--fp-primary);
+}
 .fp-search-results__name { font-weight: 600; color: var(--fp-text); }
 .fp-search-results__location { font-size: 11px; color: var(--fp-text-muted); }
 .fp-search-results__empty { padding: 16px; text-align: center; color: var(--fp-text-muted); }

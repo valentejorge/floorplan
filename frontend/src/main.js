@@ -9,6 +9,21 @@ import './style.css';
 let currentMapTree = null;
 
 // ════════════════════════════════════════════════════════════════════
+// Global Helpers
+// ════════════════════════════════════════════════════════════════════
+window.checkEditMode = function() {
+  const layout = document.getElementById('main-layout');
+  if (layout && layout.classList.contains('is-editing')) {
+    if (window.confirm("Atenção! Você está no modo de edição. Deseja descartar suas alterações e continuar?")) {
+      document.getElementById('btn-cancel-edit')?.click();
+      return true;
+    }
+    return false; // Stay in edit mode
+  }
+  return true;
+};
+
+// ════════════════════════════════════════════════════════════════════
 // Bootstrap
 // ════════════════════════════════════════════════════════════════════
 
@@ -63,6 +78,8 @@ function updateBreadcrumb(building, floor, room) {
   bc.querySelectorAll('a').forEach(a => {
     a.addEventListener('click', (e) => {
       e.preventDefault();
+      if (!window.checkEditMode()) return;
+      
       if (window.openMapNavigator) {
         const text = a.dataset.nav === 'root' ? '' : a.innerText.trim();
         window.openMapNavigator(text);
@@ -209,6 +226,8 @@ function bindSearch() {
 
         results.querySelectorAll('.fp-search-results__item').forEach(el => {
           el.addEventListener('click', () => {
+            if (!window.checkEditMode()) return;
+            
             const roomId = el.dataset.roomId || el.dataset.rId; // rId for rooms if I set it
             const roomName = el.dataset.r;
             
@@ -216,13 +235,22 @@ function bindSearch() {
               updateBreadcrumb(el.dataset.b, el.dataset.f, roomName);
               notify(`Switched to map: ${roomName}`);
               
-              const fetchId = el.dataset.roomId; // wait, let's check what data attribute it has
+              const fetchId = el.dataset.roomId; 
               fetch(`/ajax/mock_room_${fetchId}.json`)
-                .then(r => r.json())
+                .then(r => {
+                  if (!r.ok) throw new Error('Not found');
+                  return r.json();
+                })
                 .then(json => {
                   if (json.status === 'success') {
                     import('./renderer.js').then(({ loadMapData }) => loadMapData(json.data));
                   }
+                })
+                .catch(() => {
+                  notify(`Nenhum dado mockado para "${roomName}". Carregando mapa vazio.`, 'warning');
+                  import('./renderer.js').then(({ loadMapData }) => {
+                    loadMapData({ floor_zones: [], walls: [], doors: [], furniture: [], assets: [] });
+                  });
                 });
             } else {
               // It's an asset. We must switch to the room AND focus the asset!
@@ -234,7 +262,10 @@ function bindSearch() {
               notify(`Carregando mapa e focando: ${el.dataset.hwId}`);
               
               fetch(`/ajax/mock_room_${roomId}.json`)
-                .then(r => r.json())
+                .then(r => {
+                  if (!r.ok) throw new Error('Not found');
+                  return r.json();
+                })
                 .then(json => {
                   if (json.status === 'success') {
                     import('./renderer.js').then(({ loadMapData }) => {
@@ -269,6 +300,12 @@ function bindSearch() {
                       }, 200);
                     });
                   }
+                })
+                .catch(() => {
+                  notify(`Nenhum mapa encontrado para o equipamento "${el.dataset.hwId}".`, 'warning');
+                  import('./renderer.js').then(({ loadMapData }) => {
+                    loadMapData({ floor_zones: [], walls: [], doors: [], furniture: [], assets: [] });
+                  });
                 });
             }
             results.classList.remove('visible');
@@ -327,6 +364,18 @@ function bindSearch() {
     doSearch();
   });
 
+  // Vim-like search shortcut ('/' or 'i')
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '/' || e.key === 'i') {
+      // Ignore if user is already typing in an input or textarea
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+        return;
+      }
+      e.preventDefault();
+      input.focus();
+    }
+  });
+
   document.addEventListener('click', (e) => {
     if (results?.classList.contains('visible') && !results.contains(e.target) && e.target !== input && e.target !== btn) {
       results.classList.remove('visible');
@@ -364,6 +413,8 @@ function bindFurnitureModal() {
 }
 
 window.openMapNavigator = async function(preselect = '') {
+  if (!window.checkEditMode()) return;
+  
   const modal = document.getElementById('map-navigator-modal');
   const sidebar = document.getElementById('navigator-sidebar');
   const sidebarSearch = document.getElementById('nav-sidebar-search');
