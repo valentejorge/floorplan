@@ -44,6 +44,8 @@ const $breadcrumb    = () => document.getElementById('breadcrumb');
 const $roomInfo      = () => document.getElementById('room-info');
 const $unassignedList   = () => document.getElementById('unassigned-list');
 const $unassignedSearch = () => document.getElementById('unassigned-search');
+const $wallToolbar      = () => document.getElementById('wall-toolbar');
+const $wallTypeSelect   = () => document.getElementById('wall-type-select');
 
 // Camera controls
 const $btnZoomIn     = () => document.getElementById('btn-zoom-in');
@@ -145,15 +147,20 @@ function createStage() {
     const snappedY = Math.round(pos.y / GRID_SIZE) * GRID_SIZE;
 
     if (!currentWallLine) {
+      const type = $wallTypeSelect().value;
+      const style = WALL_STYLES[type] || WALL_STYLES.exterior;
+
       currentWallLine = new Konva.Line({
         points: [snappedX, snappedY, snappedX, snappedY],
-        stroke: '#4a5568',
-        strokeWidth: 4,
+        stroke: style.stroke,
+        strokeWidth: style.strokeWidth,
+        dash: style.dash,
         lineCap: 'round',
         lineJoin: 'round',
         listening: true,
         draggable: true,
       });
+      currentWallLine.setAttr('wallData', { type: 'wall', wallType: type, points: [] });
       bindWallEvents(currentWallLine);
       staticLayer.add(currentWallLine);
     } else {
@@ -200,6 +207,7 @@ function createStage() {
     if ((e.key === 'Delete' || e.key === 'Backspace') && isEditMode && selectedWall) {
       selectedWall.destroy();
       selectedWall = null;
+      clearAnchors();
       staticLayer.batchDraw();
     }
   });
@@ -252,6 +260,61 @@ function fitStage() {
 // Renderers
 // ════════════════════════════════════════════════════════════════════
 
+const WALL_STYLES = {
+  exterior: { stroke: '#4a5568', strokeWidth: 4, dash: [] },
+  interior: { stroke: '#a0aec0', strokeWidth: 2, dash: [] },
+  glass:    { stroke: '#3182ce', strokeWidth: 2, dash: [4, 4] },
+  virtual:  { stroke: '#e53e3e', strokeWidth: 1, dash: [2, 4] },
+};
+
+let currentAnchors = [];
+
+function clearAnchors() {
+  currentAnchors.forEach(a => a.destroy());
+  currentAnchors = [];
+  overlayLayer.batchDraw();
+}
+
+function buildAnchors(line) {
+  clearAnchors();
+  const points = line.points();
+  
+  // Create an anchor for every X,Y pair
+  for (let i = 0; i < points.length; i += 2) {
+    const anchor = new Konva.Circle({
+      x: points[i],
+      y: points[i + 1],
+      radius: 5,
+      fill: '#ffffff',
+      stroke: '#3182ce',
+      strokeWidth: 2,
+      draggable: true,
+      hitStrokeWidth: 10,
+    });
+
+    anchor.on('dragmove', () => {
+      // Snap to grid
+      const snappedX = Math.round(anchor.x() / GRID_SIZE) * GRID_SIZE;
+      const snappedY = Math.round(anchor.y() / GRID_SIZE) * GRID_SIZE;
+      anchor.position({ x: snappedX, y: snappedY });
+
+      // Update line points
+      const pts = line.points();
+      pts[i] = snappedX;
+      pts[i + 1] = snappedY;
+      line.points(pts);
+      staticLayer.batchDraw();
+    });
+
+    anchor.on('mouseenter', () => stage.container().style.cursor = 'crosshair');
+    anchor.on('mouseleave', () => stage.container().style.cursor = 'default');
+
+    overlayLayer.add(anchor);
+    currentAnchors.push(anchor);
+  }
+  overlayLayer.batchDraw();
+}
+
 function bindWallEvents(line) {
   line.on('dragend', () => {
     // Snap whole line to grid
@@ -263,10 +326,14 @@ function bindWallEvents(line) {
 
   line.on('click', () => {
     if (!isEditMode) return;
-    if (selectedWall) selectedWall.stroke('#4a5568');
+    if (selectedWall) {
+      const oldStyle = WALL_STYLES[selectedWall.getAttr('wallData')?.wallType || 'exterior'];
+      selectedWall.stroke(oldStyle.stroke);
+    }
     selectedWall = line;
     line.stroke('#d9534f'); // highlight red
     staticLayer.batchDraw();
+    buildAnchors(line);
   });
 }
 
@@ -276,16 +343,18 @@ function renderStaticElements() {
 
   elements.forEach((el) => {
     if (el.type === 'wall') {
+      const style = WALL_STYLES[el.wallType] || WALL_STYLES.exterior;
       const line = new Konva.Line({
         points: el.points,
-        stroke: el.stroke || '#4a5568',
-        strokeWidth: el.strokeWidth || 4,
-        dash: el.dash || [],
-        closed: el.points.length > 4,
+        stroke: style.stroke,
+        strokeWidth: style.strokeWidth,
+        dash: style.dash,
+        closed: el.points.length > 4 && el.points[0] === el.points[el.points.length-2] && el.points[1] === el.points[el.points.length-1],
         lineCap: 'round',
         lineJoin: 'round',
         draggable: false, // Updated in edit mode
       });
+      line.setAttr('wallData', el);
       bindWallEvents(line);
       staticLayer.add(line);
     } else if (el.type === 'door') {
@@ -427,10 +496,12 @@ function toggleDrawWall() {
 
   if (isDrawingWall) {
     $btnDrawWall().classList.add('fp-btn--primary');
+    $wallToolbar().style.display = 'flex';
     stage.container().style.cursor = 'crosshair';
     stage.draggable(false); // disable panning while drawing
   } else {
     $btnDrawWall().classList.remove('fp-btn--primary');
+    $wallToolbar().style.display = 'none';
     stage.container().style.cursor = 'default';
     stage.draggable(true);
   }
@@ -440,12 +511,14 @@ function exitEditMode() {
   isEditMode = false;
   isDrawingWall = false;
   currentWallLine = null;
+  clearAnchors();
 
   assetsLayer.find('Group').forEach((g) => g.draggable(false));
   originalPositions.clear();
 
   if (selectedWall) {
-    selectedWall.stroke('#4a5568');
+    const style = WALL_STYLES[selectedWall.getAttr('wallData')?.wallType || 'exterior'];
+    selectedWall.stroke(style.stroke);
     selectedWall = null;
   }
 
@@ -463,6 +536,7 @@ function exitEditMode() {
   $btnCancel().style.display = 'none';
   $btnDrawWall().style.display = 'none';
   $btnDrawWall().classList.remove('fp-btn--primary');
+  $wallToolbar().style.display = 'none';
   $editBadge().classList.remove('active');
   stage.container().style.cursor = 'default';
   stage.draggable(true);

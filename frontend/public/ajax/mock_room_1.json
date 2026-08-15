@@ -101,9 +101,13 @@
     "static_elements": [
       {
         "type": "wall",
-        "points": [0, 0, 1000, 0, 1000, 700, 0, 700, 0, 0],
-        "stroke": "#4a5568",
-        "strokeWidth": 4
+        "wallType": "exterior",
+        "points": [0, 0, 1000, 0, 1000, 700, 0, 700, 0, 0]
+      },
+      {
+        "type": "wall",
+        "wallType": "glass",
+        "points": [550, 0, 550, 700]
       },
       {
         "type": "door",
