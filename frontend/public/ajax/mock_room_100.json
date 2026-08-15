@@ -59,23 +59,38 @@
       },
       { 
         "id": "pc1", "hardware_id": 3, "hardware_name": "PC-RH-003", "type": "desktop", 
-        "pos_x": 140, "pos_y": 90, "ip": "192.168.10.20", "mac": "AA:BB:CC:DD:EE:03",
-        "layout": { "table": "desk_straight", "chair": "office_chair", "device": "desktop_single", "rotation": 90 }
+        "pos_x": 100, "pos_y": 150, "ip": "192.168.10.20", "mac": "AA:BB:CC:DD:EE:03",
+        "layout": { "table": "desk_straight", "chair": "office_chair", "chair_y": 45, "chair_r": 0, "device": "desktop_single", "device_y": -15, "rotation": 90 }
       },
       { 
         "id": "pc2", "hardware_id": 4, "hardware_name": "PC-RH-004", "type": "desktop", 
-        "pos_x": 140, "pos_y": 170, "ip": "192.168.10.21", "mac": "AA:BB:CC:DD:EE:04",
-        "layout": { "table": "desk_straight", "chair": "office_chair", "device": "desktop_single", "rotation": 90 }
+        "pos_x": 100, "pos_y": 350, "ip": "192.168.10.21", "mac": "AA:BB:CC:DD:EE:04",
+        "layout": { "table": "desk_straight", "chair": "office_chair", "chair_y": 45, "chair_r": 0, "device": "desktop_single", "device_y": -15, "rotation": 90 }
       },
       { 
         "id": "pc3", "hardware_id": 5, "hardware_name": "PC-FIN-001", "type": "desktop", 
-        "pos_x": 360, "pos_y": 100, "ip": "192.168.10.45", "mac": "AA:BB:CC:DD:EE:05",
-        "layout": { "table": "desk_l", "chair": "executive_chair", "device": "desktop_dual", "rotation": 0 }
+        "pos_x": 400, "pos_y": 150, "ip": "192.168.10.45", "mac": "AA:BB:CC:DD:EE:05",
+        "layout": { "table": "desk_l", "chair": "executive_chair", "chair_x": 25, "chair_y": 25, "chair_r": -45, "device": "desktop_dual", "device_x": -20, "device_y": -20, "device_r": -45, "rotation": 0 }
+      },
+      { 
+        "id": "pc4", "hardware_id": 10, "hardware_name": "PC-FIN-002", "type": "desktop", 
+        "pos_x": 560, "pos_y": 150, "ip": "192.168.10.46", "mac": "AA:BB:CC:DD:EE:0A",
+        "layout": { "table": "desk_l", "chair": "executive_chair", "chair_x": 25, "chair_y": 25, "chair_r": -45, "device": "desktop_dual", "device_x": -20, "device_y": -20, "device_r": -45, "rotation": 90 }
+      },
+      { 
+        "id": "pc5", "hardware_id": 11, "hardware_name": "PC-FIN-003", "type": "desktop", 
+        "pos_x": 400, "pos_y": 310, "ip": "192.168.10.47", "mac": "AA:BB:CC:DD:EE:0B",
+        "layout": { "table": "desk_l", "chair": "executive_chair", "chair_x": 25, "chair_y": 25, "chair_r": -45, "device": "desktop_dual", "device_x": -20, "device_y": -20, "device_r": -45, "rotation": -90 }
+      },
+      { 
+        "id": "pc6", "hardware_id": 12, "hardware_name": "PC-FIN-004", "type": "desktop", 
+        "pos_x": 560, "pos_y": 310, "ip": "192.168.10.48", "mac": "AA:BB:CC:DD:EE:0C",
+        "layout": { "table": "desk_l", "chair": "executive_chair", "chair_x": 25, "chair_y": 25, "chair_r": -45, "device": "desktop_dual", "device_x": -20, "device_y": -20, "device_r": -45, "rotation": 180 }
       },
       { 
         "id": "prn1", "hardware_id": 6, "hardware_name": "IMP-FINANCEIRO", "type": "printer", 
-        "pos_x": 620, "pos_y": 400, "ip": "192.168.10.80", "mac": "AA:BB:CC:DD:EE:06",
-        "layout": { "table": "desk_small", "chair": "none", "device": "printer_unit", "rotation": 270 }
+        "pos_x": 730, "pos_y": 420, "ip": "192.168.10.80", "mac": "AA:BB:CC:DD:EE:06",
+        "layout": { "table": "desk_small", "chair": "none", "device": "printer_unit", "rotation": -90 }
       },
       { 
         "id": "sw1", "hardware_id": 7, "hardware_name": "SW-CORE-01", "type": "switch", 
@@ -92,12 +107,16 @@
         "layout": { "table": "desk_round", "chair": "meeting_chairs_4", "device": "none", "rotation": 0 }
       },
       {
-        "id": "p1", "type": "furniture", "pos_x": 30, "pos_y": 30,
+        "id": "p1", "type": "furniture", "pos_x": 40, "pos_y": 40,
         "layout": { "table": "plant", "chair": "none", "device": "none", "rotation": 0 }
       },
       {
         "id": "p2", "type": "furniture", "pos_x": 740, "pos_y": 860,
         "layout": { "table": "plant", "chair": "none", "device": "none", "rotation": 0 }
+      },
+      {
+        "id": "sofa1", "type": "furniture", "pos_x": 150, "pos_y": 480,
+        "layout": { "table": "sofa", "chair": "none", "device": "none", "rotation": 0 }
       }
     ]
   }

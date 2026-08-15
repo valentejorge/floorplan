@@ -113,17 +113,27 @@ export function loadMapData(data) {
         if (asset.layout.chair && asset.layout.chair !== 'none') {
           const imgObj = skinManager.getImage(asset.layout.chair);
           if (imgObj) {
-            let cy = th > 40 ? th / 2 + 5 : 0;
+            let cx = asset.layout.chair_x !== undefined ? asset.layout.chair_x : 0;
+            let cy = asset.layout.chair_y !== undefined ? asset.layout.chair_y : (th > 40 ? th / 2 + 5 : 0);
             if (asset.layout.table === 'desk_round' || asset.layout.table === 'none') {
-              cy = 0; // Don't offset for round tables, the SVG handles it.
+              if (asset.layout.chair_y === undefined) cy = 0; // Don't offset for round tables by default
             }
+            let cr = asset.layout.chair_r !== undefined ? asset.layout.chair_r : 0;
+
             const chairNode = new Konva.Image({
               image: imgObj,
-              x: -imgObj.width / 2,
-              y: cy - imgObj.height / 2,
+              width: imgObj.width,
+              height: imgObj.height,
               perfectDrawEnabled: false
             });
-            group.add(chairNode);
+
+            // Group to handle rotation around center
+            const chairGroup = new Konva.Group({
+              x: cx, y: cy, rotation: cr
+            });
+            chairNode.position({ x: -imgObj.width / 2, y: -imgObj.height / 2 });
+            chairGroup.add(chairNode);
+            group.add(chairGroup);
           }
         }
 
@@ -131,14 +141,23 @@ export function loadMapData(data) {
         if (asset.layout.device && asset.layout.device !== 'none') {
           const imgObj = skinManager.getImage(asset.layout.device);
           if (imgObj) {
-            let cy = th > 40 && asset.layout.table !== 'none' ? -15 : 0;
+            let dx = asset.layout.device_x !== undefined ? asset.layout.device_x : 0;
+            let dy = asset.layout.device_y !== undefined ? asset.layout.device_y : (th > 40 && asset.layout.table !== 'none' ? -15 : 0);
+            let dr = asset.layout.device_r !== undefined ? asset.layout.device_r : 0;
+
             const deviceNode = new Konva.Image({
               image: imgObj,
-              x: -imgObj.width / 2,
-              y: cy - imgObj.height / 2,
+              width: imgObj.width,
+              height: imgObj.height,
               perfectDrawEnabled: false
             });
-            group.add(deviceNode);
+
+            const deviceGroup = new Konva.Group({
+              x: dx, y: dy, rotation: dr
+            });
+            deviceNode.position({ x: -imgObj.width / 2, y: -imgObj.height / 2 });
+            deviceGroup.add(deviceNode);
+            group.add(deviceGroup);
           }
         }
       }
