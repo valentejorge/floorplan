@@ -59,27 +59,55 @@ export async function api(endpoint, options = {}) {
     
     const results = [];
 
-    // 1. Search Assets in the current room
+    // 1. Search Assets in all simulated rooms
     try {
-      const roomRes = await fetch('/ajax/mock_room_1.json');
-      const roomJson = await roomRes.json();
+      const files = [
+        { file: 'mock_room_100.json', b: 'Headquarters', f: 'Ground Floor', r: 'Open Office A' },
+        { file: 'mock_room_101.json', b: 'Headquarters', f: 'Ground Floor', r: 'Server Room' },
+        { file: 'mock_room_102.json', b: 'Headquarters', f: 'Ground Floor', r: 'Reception' },
+        { file: 'mock_room_112.json', b: 'Headquarters', f: '1º Andar', r: 'Sala de Reunião Alpha' }
+      ];
       
-      const assetMatches = roomJson.data.assets.filter(a => 
-        a.hardware_name.toLowerCase().includes(q) || 
-        (a.ip && a.ip.toLowerCase().includes(q)) || 
-        (a.mac && a.mac.toLowerCase().includes(q))
-      ).map(a => ({
-        type: 'asset',
-        hardware_id: a.hardware_id,
-        hardware_name: a.hardware_name,
-        ip: a.ip,
-        mac: a.mac,
-        room_id: roomJson.data.room.id,
-        room_name: roomJson.data.room.name,
-        floor_name: roomJson.data.floor.name,
-        building_name: roomJson.data.building.name
-      }));
-      results.push(...assetMatches);
+      for (const meta of files) {
+        try {
+          const roomRes = await fetch(`/ajax/${meta.file}`);
+          const roomJson = await roomRes.json();
+          const roomId = meta.file.match(/\d+/)[0];
+          
+          if (!roomJson.data || !roomJson.data.assets) continue;
+          
+          const assetMatches = roomJson.data.assets.filter(a => {
+            const mac = a.mac || `00:1A:2B:3C:4D:${a.hardware_id.toString().substring(0,2)}`;
+            const user = a.user || (a.type === 'desktop' ? 'jorge.silva' : 'system');
+            const desc = a.description || `Equipamento ${a.type} padrão`;
+            
+            return a.hardware_name.toLowerCase().includes(q) || 
+                   (a.ip && a.ip.toLowerCase().includes(q)) || 
+                   mac.toLowerCase().includes(q) ||
+                   user.toLowerCase().includes(q) ||
+                   desc.toLowerCase().includes(q);
+          }).map(a => {
+            const mac = a.mac || `00:1A:2B:3C:4D:${a.hardware_id.toString().substring(0,2)}`;
+            const user = a.user || (a.type === 'desktop' ? 'jorge.silva' : 'system');
+            const desc = a.description || `Equipamento ${a.type} padrão`;
+            
+            return {
+              type: 'asset',
+              hardware_id: a.hardware_id,
+              hardware_name: a.hardware_name,
+              ip: a.ip,
+              mac: mac,
+              user: user,
+              description: desc,
+              room_id: roomId,
+              room_name: meta.r,
+              floor_name: meta.f,
+              building_name: meta.b
+            };
+          });
+          results.push(...assetMatches);
+        } catch(e) {}
+      }
     } catch(e) {}
 
     // 2. Search Rooms in the map tree

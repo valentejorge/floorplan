@@ -24,13 +24,15 @@
         floorplan
       </div>
 
-      <div class="fp-topbar__search" style="flex:2;justify-content:center;position:relative;">
-        <input id="search-input" class="fp-topbar__input" style="width:360px;" type="text" placeholder="Search hostname, IP, MAC, maps…" autocomplete="off" />
-        <button id="search-btn" style="background:var(--fp-primary);color:#fff;border:none;padding:5px 12px;border-radius:4px;font-size:12px;cursor:pointer;">
-          Search
-        </button>
-        <!-- Search Results (now relative to this container) -->
-        <div id="search-results" class="fp-search-results"></div>
+      <div class="fp-topbar__search" style="flex:2; display:flex; justify-content:center;">
+        <div style="position:relative; display:flex; gap:4px;">
+          <input id="search-input" class="fp-topbar__input" style="width:360px; padding:6px 12px; border:1px solid var(--fp-border); border-radius:4px;" type="text" placeholder="Search hostname, IP, MAC, maps…" autocomplete="off" />
+          <button id="search-btn" style="background:var(--fp-primary);color:#fff;border:none;padding:5px 12px;border-radius:4px;font-size:12px;cursor:pointer;">
+            Search
+          </button>
+          <!-- Search Results (now relative to this exact container) -->
+          <div id="search-results" class="fp-search-results"></div>
+        </div>
       </div>
 
       <div style="flex:1;display:flex;justify-content:flex-end;align-items:center;gap:8px;">
@@ -220,6 +222,9 @@
         </div>
       </div>
     </div>
+
+    <!-- ── Tooltip ─────────────────────────────────────────────── -->
+    <div id="asset-tooltip" class="fp-tooltip"></div>
 
     <!-- ── Notification ────────────────────────────────────────── -->
     <div id="notification" class="fp-notification"></div>

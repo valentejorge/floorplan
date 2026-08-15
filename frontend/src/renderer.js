@@ -185,30 +185,73 @@ export function loadMapData(data) {
       group.add(label);
 
       const dotColor = asset.status === 'offline' ? '#e53e3e' : 
-                      asset.status === 'warning' ? '#d69e2e' : null;
+                      asset.status === 'warning' ? '#d69e2e' : '#5cb85c';
       
-      if (dotColor) {
-        // Outer glow/stroke for the dot
-        const dotBg = new Konva.Circle({
-          radius: 5,
-          fill: '#fff',
-          x: BOUNDING_BOX / 2 - 4,
-          y: -BOUNDING_BOX / 2 + 4,
-          perfectDrawEnabled: false
-        });
-        const dot = new Konva.Circle({
-          radius: 3.5,
-          fill: dotColor,
-          x: BOUNDING_BOX / 2 - 4,
-          y: -BOUNDING_BOX / 2 + 4,
-          perfectDrawEnabled: false
-        });
-        group.add(dotBg);
-        group.add(dot);
-      }
+      // Outer glow/stroke for the dot
+      const dotBg = new Konva.Circle({
+        radius: 5,
+        fill: '#fff',
+        x: BOUNDING_BOX / 2 - 4,
+        y: -BOUNDING_BOX / 2 + 4,
+        perfectDrawEnabled: false
+      });
+      const dot = new Konva.Circle({
+        radius: 3.5,
+        fill: dotColor,
+        x: BOUNDING_BOX / 2 - 4,
+        y: -BOUNDING_BOX / 2 + 4,
+        perfectDrawEnabled: false
+      });
+      group.add(dotBg);
+      group.add(dot);
 
-      // Convert complex text + svg + shapes into a SINGLE pre-rendered bitmap!
+      // Cache for performance
       group.cache();
+      
+      // Hover Insights (Tooltip)
+      // Note: we must set listening to true for tooltips!
+      group.listening(true);
+      
+      group.on('mouseenter', (e) => {
+        document.body.style.cursor = 'pointer';
+        const tooltip = document.getElementById('asset-tooltip');
+        if (!tooltip) return;
+        
+        const mac = asset.mac || `00:1A:2B:3C:4D:${asset.hardware_id.toString().substring(0,2)}`;
+        const user = asset.user || (asset.type === 'desktop' ? 'jorge.silva' : 'system');
+        const desc = asset.description || `Equipamento ${asset.type} padrão`;
+        
+        tooltip.innerHTML = `
+          <div class="fp-tooltip__header">
+            <div class="fp-tooltip__title">
+              <div style="width:8px;height:8px;border-radius:50%;background:${dotColor};box-shadow:0 0 8px ${dotColor}80;"></div>
+              ${asset.hardware_name}
+            </div>
+            <div class="fp-tooltip__subtitle">ID: ${asset.hardware_id} • ${asset.type.toUpperCase()}</div>
+          </div>
+          <div class="fp-tooltip__body">
+            <div class="fp-tooltip__row"><span class="fp-tooltip__label">IP Addr</span><span class="fp-tooltip__value">${asset.ip || '—'}</span></div>
+            <div class="fp-tooltip__row"><span class="fp-tooltip__label">MAC Addr</span><span class="fp-tooltip__value">${mac}</span></div>
+            <div class="fp-tooltip__row"><span class="fp-tooltip__label">Assignee</span><span class="fp-tooltip__value">${user}</span></div>
+            <div class="fp-tooltip__row"><span class="fp-tooltip__label">Details</span><span class="fp-tooltip__value" style="font-weight:400;color:#cbd5e1;">${desc}</span></div>
+          </div>
+        `;
+        tooltip.classList.add('visible');
+      });
+      
+      group.on('mousemove', (e) => {
+        const tooltip = document.getElementById('asset-tooltip');
+        if (tooltip && tooltip.classList.contains('visible')) {
+          tooltip.style.left = e.evt.clientX + 'px';
+          tooltip.style.top = e.evt.clientY + 'px';
+        }
+      });
+      
+      group.on('mouseleave', () => {
+        document.body.style.cursor = 'default';
+        const tooltip = document.getElementById('asset-tooltip');
+        if (tooltip) tooltip.classList.remove('visible');
+      });
 
       assetsLayer.add(group);
     });

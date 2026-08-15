@@ -193,7 +193,7 @@ function bindSearch() {
             `;
           } else {
             return `
-              <div class="fp-search-results__item" data-type="asset" data-hw-id="${item.hardware_id}">
+              <div class="fp-search-results__item" data-type="asset" data-hw-id="${item.hardware_id}" data-room-id="${item.room_id}" data-r="${item.room_name}" data-b="${item.building_name}" data-f="${item.floor_name}">
                 <span class="fp-search-results__name">💻 ${item.hardware_name} — ${item.ip || '—'}</span>
                 <span class="fp-search-results__location">📍 ${item.building_name} › ${item.floor_name} › ${item.room_name}</span>
               </div>
@@ -206,10 +206,57 @@ function bindSearch() {
             if (el.dataset.type === 'room') {
               updateBreadcrumb(el.dataset.b, el.dataset.f, el.dataset.r);
               notify(`Switched to map: ${el.dataset.r}`);
+              // Room navigation logic can be bound here later
             } else {
-              notify(`Zooming to asset ID: ${el.dataset.hwId}`);
+              // It's an asset. We must switch to the room AND focus the asset!
+              const roomId = el.dataset.roomId;
+              const roomName = el.dataset.r;
+              const hwId = parseInt(el.dataset.hwId);
+              
+              updateBreadcrumb(el.dataset.b, el.dataset.f, roomName);
+              notify(`Carregando mapa e focando: ${el.dataset.hwId}`);
+              
+              fetch(`/ajax/mock_room_${roomId}.json`)
+                .then(r => r.json())
+                .then(json => {
+                  if (json.status === 'success') {
+                    import('./renderer.js').then(({ loadMapData }) => {
+                      loadMapData(json.data);
+                      
+                      // After load, we must focus the asset! Wait a tick for rendering.
+                      setTimeout(() => {
+                        import('./engine.js').then(({ stage, assetsLayer }) => {
+                          const group = assetsLayer.getChildren().find(node => node.id() === hwId);
+                          if (group) {
+                            const scale = stage.scaleX();
+                            new Konva.Tween({
+                              node: stage,
+                              duration: 0.8,
+                              x: stage.width() / 2 - group.x() * scale,
+                              y: stage.height() / 2 - group.y() * scale,
+                              easing: Konva.Easings.StrongEaseOut,
+                              onUpdate: () => stage.batchDraw()
+                            }).play();
+                            
+                            // Pulse effect on the found asset
+                            const pulse = new Konva.Circle({
+                              x: group.x(), y: group.y(),
+                              radius: 30, stroke: '#961B7E', strokeWidth: 2, opacity: 1
+                            });
+                            assetsLayer.add(pulse);
+                            new Konva.Tween({
+                              node: pulse, duration: 1, radius: 100, opacity: 0,
+                              onFinish: () => pulse.destroy()
+                            }).play();
+                          }
+                        });
+                      }, 100);
+                    });
+                  }
+                });
             }
             results.classList.remove('visible');
+            input.value = ''; // clear search
           });
         });
       }
