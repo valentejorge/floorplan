@@ -36,43 +36,49 @@
     "doors": [
       { "id": "d1", "x": 0, "y": 150, "width": 8, "height": 80 }
     ],
-    "furniture": [
-      { "id": "rack1", "type": "server_rack", "x": 100, "y": 80, "width": 80, "height": 120, "rotation": 0 },
-      { "id": "rack2", "type": "server_rack", "x": 200, "y": 80, "width": 80, "height": 120, "rotation": 0 },
-      { "id": "rack3", "type": "server_rack", "x": 300, "y": 80, "width": 80, "height": 120, "rotation": 0 },
-      { "id": "rack4", "type": "server_rack", "x": 400, "y": 80, "width": 80, "height": 120, "rotation": 0 },
-      
-      { "id": "rack5", "type": "server_rack", "x": 100, "y": 250, "width": 80, "height": 120, "rotation": 0 },
-      { "id": "rack6", "type": "server_rack", "x": 200, "y": 250, "width": 80, "height": 120, "rotation": 0 },
-      { "id": "rack7", "type": "server_rack", "x": 300, "y": 250, "width": 80, "height": 120, "rotation": 0 },
-      
-      { "id": "ac1", "type": "ac_unit", "x": 550, "y": 50, "width": 40, "height": 100, "rotation": 0 },
-      { "id": "ac2", "type": "ac_unit", "x": 550, "y": 250, "width": 40, "height": 100, "rotation": 0 }
-    ],
     "assets": [
-      {
-        "id": "srv1", "type": "server", "pos_x": 140, "pos_y": 140,
-        "hardware_id": 901, "hardware_name": "DB-MASTER", "status": "online", "ip": "10.0.0.10"
+      { 
+        "id": "srv1", "hardware_id": 901, "hardware_name": "DB-MASTER", "type": "server", "status": "online", "ip": "10.0.0.10", "mac": "AA:BB:CC:DD:EE:10",
+        "pos_x": 140, "pos_y": 140,
+        "layout": { "table": "rack_cabinet", "chair": "none", "device": "server_unit", "rotation": 0 }
       },
-      {
-        "id": "srv2", "type": "server", "pos_x": 240, "pos_y": 140,
-        "hardware_id": 902, "hardware_name": "DB-SLAVE", "status": "online", "ip": "10.0.0.11"
+      { 
+        "id": "srv2", "hardware_id": 902, "hardware_name": "DB-SLAVE", "type": "server", "status": "online", "ip": "10.0.0.11", "mac": "AA:BB:CC:DD:EE:11",
+        "pos_x": 240, "pos_y": 140,
+        "layout": { "table": "rack_cabinet", "chair": "none", "device": "server_unit", "rotation": 0 }
       },
-      {
-        "id": "srv3", "type": "server", "pos_x": 340, "pos_y": 140,
-        "hardware_id": 903, "hardware_name": "APP-01", "status": "warning", "ip": "10.0.0.20"
+      { 
+        "id": "srv3", "hardware_id": 903, "hardware_name": "APP-NODE-1", "type": "server", "status": "online", "ip": "10.0.0.20", "mac": "AA:BB:CC:DD:EE:12",
+        "pos_x": 340, "pos_y": 140,
+        "layout": { "table": "rack_cabinet", "chair": "none", "device": "server_unit", "rotation": 0 }
       },
-      {
-        "id": "srv4", "type": "server", "pos_x": 440, "pos_y": 140,
-        "hardware_id": 904, "hardware_name": "APP-02", "status": "offline", "ip": "10.0.0.21"
+      { 
+        "id": "srv4", "hardware_id": 904, "hardware_name": "APP-NODE-2", "type": "server", "status": "warning", "ip": "10.0.0.21", "mac": "AA:BB:CC:DD:EE:13",
+        "pos_x": 440, "pos_y": 140,
+        "layout": { "table": "rack_cabinet", "chair": "none", "device": "server_unit", "rotation": 0 }
       },
-      {
-        "id": "sw1", "type": "switch", "pos_x": 140, "pos_y": 310,
-        "hardware_id": 999, "hardware_name": "CORE-SW-01", "status": "online", "ip": "10.0.0.1"
+      { 
+        "id": "sw1", "hardware_id": 910, "hardware_name": "CORE-SW-DC", "type": "switch", "status": "online", "ip": "10.0.0.1", "mac": "AA:BB:CC:DD:EE:14",
+        "pos_x": 140, "pos_y": 310,
+        "layout": { "table": "rack_cabinet", "chair": "none", "device": "switch_unit", "rotation": 0 }
       },
-      {
-        "id": "sw2", "type": "switch", "pos_x": 240, "pos_y": 310,
-        "hardware_id": 1000, "hardware_name": "CORE-SW-02", "status": "online", "ip": "10.0.0.2"
+      { 
+        "id": "sw2", "hardware_id": 911, "hardware_name": "SAN-SW", "type": "switch", "status": "online", "ip": "10.0.0.2", "mac": "AA:BB:CC:DD:EE:15",
+        "pos_x": 240, "pos_y": 310,
+        "layout": { "table": "rack_cabinet", "chair": "none", "device": "switch_unit", "rotation": 0 }
+      },
+      { 
+        "id": "sto1", "hardware_id": 920, "hardware_name": "NAS-STORAGE", "type": "server", "status": "offline", "ip": "10.0.0.50", "mac": "AA:BB:CC:DD:EE:16",
+        "pos_x": 340, "pos_y": 310,
+        "layout": { "table": "rack_cabinet", "chair": "none", "device": "server_unit", "rotation": 0 }
+      },
+      { 
+        "id": "ac1", "type": "furniture", "pos_x": 570, "pos_y": 100,
+        "layout": { "table": "ac_unit", "chair": "none", "device": "none", "rotation": 0 }
+      },
+      { 
+        "id": "ac2", "type": "furniture", "pos_x": 570, "pos_y": 300,
+        "layout": { "table": "ac_unit", "chair": "none", "device": "none", "rotation": 0 }
       }
     ]
   }

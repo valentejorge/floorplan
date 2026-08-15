@@ -11,7 +11,7 @@ import {
   getRelativePointerPosition, snapToGrid, applySnapOnDragEnd, GRID_SIZE,
 } from './engine.js';
 import { SHADOW_LIGHT, SHADOW_HEAVY, buildFurnitureNode, FURNITURE_TYPES } from './furniture.js';
-import { SkinManager, BOUNDING_BOX } from './skins.js';
+import { skinManager } from './skins.js';
 import { refreshExplorer, selectNodeById, clearSelection } from './explorer.js';
 
 // ── Tool enum ──────────────────────────────────────────────────────
@@ -349,8 +349,8 @@ export function createAssetNode(asset) {
 
   group.add(new Konva.Image({
     image: img,
-    width: BOUNDING_BOX,
-    height: BOUNDING_BOX,
+    width: 40,
+    height: 40,
     ...SHADOW_LIGHT,
   }));
 
@@ -359,9 +359,9 @@ export function createAssetNode(asset) {
     fontSize: 9,
     fontFamily: 'Inter, sans-serif',
     fill: '#333',
-    width: BOUNDING_BOX + 30,
+    width: 70,
     align: 'center',
-    y: BOUNDING_BOX + 2,
+    y: 42,
     x: -15,
     listening: false,
   }));

@@ -94,6 +94,7 @@ export async function api(endpoint, options = {}) {
             return {
               type: 'asset',
               hardware_id: a.hardware_id,
+              asset_id: a.id,
               hardware_name: a.hardware_name,
               ip: a.ip,
               mac: mac,

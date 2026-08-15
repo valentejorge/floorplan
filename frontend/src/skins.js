@@ -1,137 +1,84 @@
 /**
- * SkinManager - Asset visual theme engine.
- *
- * Manages SVG-based skins for hardware types rendered on the Konva canvas.
- * Each skin defines an SVG icon per asset type. Icons are pre-loaded as
- * Image objects and cached for instant Konva.Image rendering.
- *
- * Bounding Box Rule: All icons are designed within a 40×40px boundary
- * so that swapping skins never breaks asset positions on the map.
+ * Modular SkinManager - Parametric Asset visual theme engine.
+ * Flat & Modern Design Style (Visio-like).
  */
 
-/** @type {number} Standardized asset bounding box (pixels). */
-export const BOUNDING_BOX = 40;
-
-/**
- * SVG definitions for the default corporate skin.
- * Gray/blue tones matching OCS Inventory's visual language.
- */
-const THEME_VISIO = {
-  server: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
-    <rect x="4" y="2" width="32" height="36" rx="3" fill="#4a5568" stroke="#2d3748" stroke-width="1.5"/>
-    <rect x="7" y="5" width="26" height="9" rx="1.5" fill="#5a6a7e"/>
-    <circle cx="28" cy="9.5" r="2" fill="#48bb78"/>
-    <rect x="9" y="7.5" width="10" height="1.5" rx=".75" fill="#a0aec0"/>
-    <rect x="9" y="10.5" width="7" height="1.5" rx=".75" fill="#a0aec0"/>
-    <rect x="7" y="16" width="26" height="9" rx="1.5" fill="#5a6a7e"/>
-    <circle cx="28" cy="20.5" r="2" fill="#48bb78"/>
-    <rect x="9" y="18.5" width="10" height="1.5" rx=".75" fill="#a0aec0"/>
-    <rect x="9" y="21.5" width="7" height="1.5" rx=".75" fill="#a0aec0"/>
-    <rect x="7" y="27" width="26" height="9" rx="1.5" fill="#5a6a7e"/>
-    <circle cx="28" cy="31.5" r="2" fill="#48bb78"/>
-    <rect x="9" y="29.5" width="10" height="1.5" rx=".75" fill="#a0aec0"/>
-    <rect x="9" y="32.5" width="7" height="1.5" rx=".75" fill="#a0aec0"/>
-  </svg>`,
-
-  desktop: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
-    <rect x="4" y="3" width="32" height="22" rx="2" fill="#5a6a7e" stroke="#3d4f5f" stroke-width="1.5"/>
-    <rect x="7" y="6" width="26" height="16" rx="1" fill="#a8c4d8"/>
-    <rect x="16" y="25" width="8" height="5" fill="#5a6a7e"/>
-    <rect x="11" y="30" width="18" height="3" rx="1.5" fill="#4a5568"/>
-    <circle cx="20" cy="35" r="1" fill="#a0aec0"/>
-  </svg>`,
-
-  printer: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
-    <rect x="8" y="3" width="24" height="8" rx="1.5" fill="#e2e8f0" stroke="#a0aec0" stroke-width="1"/>
-    <rect x="4" y="11" width="32" height="16" rx="2.5" fill="#5a6a7e" stroke="#3d4f5f" stroke-width="1.5"/>
-    <rect x="8" y="27" width="24" height="9" rx="1.5" fill="#e2e8f0" stroke="#a0aec0" stroke-width="1"/>
-    <circle cx="30" cy="19" r="2" fill="#48bb78"/>
-    <rect x="10" y="15" width="14" height="1.5" rx=".75" fill="#a0aec0"/>
-    <rect x="10" y="30" width="20" height="1" fill="#cbd5e0"/>
-    <rect x="10" y="32" width="16" height="1" fill="#cbd5e0"/>
-  </svg>`,
-
-  switch: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
-    <rect x="2" y="10" width="36" height="20" rx="2.5" fill="#4a5568" stroke="#2d3748" stroke-width="1.5"/>
-    <rect x="5" y="14" width="4" height="6" rx="1" fill="#a8c4d8"/>
-    <rect x="10" y="14" width="4" height="6" rx="1" fill="#a8c4d8"/>
-    <rect x="15" y="14" width="4" height="6" rx="1" fill="#a8c4d8"/>
-    <rect x="20" y="14" width="4" height="6" rx="1" fill="#a8c4d8"/>
-    <rect x="25" y="14" width="4" height="6" rx="1" fill="#a8c4d8"/>
-    <rect x="30" y="14" width="4" height="6" rx="1" fill="#a8c4d8"/>
-    <circle cx="7" cy="25" r="1.5" fill="#48bb78"/>
-    <circle cx="12" cy="25" r="1.5" fill="#48bb78"/>
-    <circle cx="17" cy="25" r="1.5" fill="#48bb78"/>
-    <circle cx="22" cy="25" r="1.5" fill="#f6ad55"/>
-    <circle cx="27" cy="25" r="1.5" fill="#a0aec0"/>
-    <circle cx="32" cy="25" r="1.5" fill="#a0aec0"/>
-  </svg>`,
+const SVG_TABLES = {
+  desk_small: `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="60" viewBox="0 0 100 60"><rect width="100" height="60" rx="4" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/></svg>`,
+  desk_straight: `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="70" viewBox="0 0 140 70"><rect width="140" height="70" rx="4" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/></svg>`,
+  desk_l: `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140"><path d="M0,4C0,1.8,1.8,0,4,0H136C138.2,0,140,1.8,140,4V70C140,72.2,138.2,74,136,74H74V136C74,138.2,72.2,140,70,140H4C1.8,140,0,138.2,0,136V4Z" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/></svg>`,
+  desk_round: `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><circle cx="80" cy="80" r="78" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/><circle cx="80" cy="80" r="15" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/></svg>`,
+  rack_cabinet: `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="120" viewBox="0 0 80 120"><rect width="80" height="120" rx="2" fill="#1e293b" stroke="#0f172a" stroke-width="2"/><rect x="10" y="10" width="60" height="100" fill="#334155"/></svg>`,
+  sofa: `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60" viewBox="0 0 120 60"><rect width="120" height="60" rx="10" fill="#94a3b8"/><rect x="10" y="10" width="100" height="40" rx="4" fill="#cbd5e1"/></svg>`,
+  plant: `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="2"/><path d="M20,20 Q10,5 20,0 Q30,5 20,20 Z" fill="#34d399" transform="rotate(0 20 20)"/><path d="M20,20 Q10,5 20,0 Q30,5 20,20 Z" fill="#10b981" transform="rotate(72 20 20)"/><path d="M20,20 Q10,5 20,0 Q30,5 20,20 Z" fill="#059669" transform="rotate(144 20 20)"/><path d="M20,20 Q10,5 20,0 Q30,5 20,20 Z" fill="#34d399" transform="rotate(216 20 20)"/><path d="M20,20 Q10,5 20,0 Q30,5 20,20 Z" fill="#10b981" transform="rotate(288 20 20)"/></svg>`,
+  ac_unit: `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="100" viewBox="0 0 40 100"><rect width="40" height="100" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/><rect x="10" y="10" width="20" height="80" fill="#e2e8f0"/></svg>`,
+  none: ``
 };
 
-/** Registry of all available skins. */
-const SKINS = {
-  theme_visio: THEME_VISIO,
+const SVG_CHAIRS = {
+  office_chair: `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><rect x="5" y="8" width="30" height="24" rx="6" fill="#475569"/><rect x="2" y="15" width="4" height="10" rx="2" fill="#334155"/><rect x="34" y="15" width="4" height="10" rx="2" fill="#334155"/><rect x="8" y="2" width="24" height="6" rx="3" fill="#64748b"/></svg>`,
+  executive_chair: `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50"><rect x="8" y="10" width="34" height="30" rx="8" fill="#1e293b"/><rect x="4" y="18" width="5" height="14" rx="2.5" fill="#0f172a"/><rect x="41" y="18" width="5" height="14" rx="2.5" fill="#0f172a"/><rect x="10" y="2" width="30" height="10" rx="4" fill="#334155"/></svg>`,
+  meeting_chairs_4: `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+    <g transform="translate(60, -10)"><rect x="5" y="8" width="30" height="24" rx="6" fill="#475569"/><rect x="8" y="2" width="24" height="6" rx="3" fill="#64748b"/></g>
+    <g transform="translate(60, 146) rotate(180 20 20)"><rect x="5" y="8" width="30" height="24" rx="6" fill="#475569"/><rect x="8" y="2" width="24" height="6" rx="3" fill="#64748b"/></g>
+    <g transform="translate(-10, 60) rotate(270 20 20)"><rect x="5" y="8" width="30" height="24" rx="6" fill="#475569"/><rect x="8" y="2" width="24" height="6" rx="3" fill="#64748b"/></g>
+    <g transform="translate(146, 60) rotate(90 20 20)"><rect x="5" y="8" width="30" height="24" rx="6" fill="#475569"/><rect x="8" y="2" width="24" height="6" rx="3" fill="#64748b"/></g>
+  </svg>`,
+  none: ``
 };
+
+const SVG_DEVICES = {
+  desktop_single: `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="30" viewBox="0 0 50 30"><rect x="5" y="0" width="40" height="8" rx="2" fill="#0f172a"/><rect x="23" y="8" width="4" height="6" fill="#334155"/><rect x="18" y="14" width="14" height="4" rx="1" fill="#475569"/><rect x="10" y="20" width="30" height="10" rx="1" fill="#cbd5e1"/><rect x="42" y="22" width="6" height="8" rx="2" fill="#94a3b8"/></svg>`,
+  desktop_dual: `<svg xmlns="http://www.w3.org/2000/svg" width="90" height="40" viewBox="0 0 90 40">
+    <g transform="translate(2, 4) rotate(-10 20 4)"><rect x="0" y="0" width="40" height="8" rx="2" fill="#0f172a"/><rect x="18" y="8" width="4" height="6" fill="#334155"/><rect x="13" y="14" width="14" height="4" rx="1" fill="#475569"/></g>
+    <g transform="translate(48, 4) rotate(10 20 4)"><rect x="0" y="0" width="40" height="8" rx="2" fill="#0f172a"/><rect x="18" y="8" width="4" height="6" fill="#334155"/><rect x="13" y="14" width="14" height="4" rx="1" fill="#475569"/></g>
+    <rect x="30" y="26" width="30" height="10" rx="1" fill="#cbd5e1"/><rect x="62" y="28" width="6" height="8" rx="2" fill="#94a3b8"/>
+  </svg>`,
+  laptop: `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30" viewBox="0 0 40 30"><rect x="0" y="0" width="40" height="20" rx="2" fill="#cbd5e1"/><rect x="2" y="2" width="36" height="16" rx="1" fill="#0f172a"/><rect x="0" y="20" width="40" height="10" rx="2" fill="#e2e8f0"/><rect x="15" y="22" width="10" height="6" rx="1" fill="#cbd5e1"/></svg>`,
+  server_unit: `<svg xmlns="http://www.w3.org/2000/svg" width="70" height="20" viewBox="0 0 70 20"><rect width="70" height="20" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1"/><circle cx="10" cy="10" r="3" fill="#10b981"/><circle cx="18" cy="10" r="3" fill="#10b981"/><rect x="30" y="5" width="30" height="10" fill="#475569"/></svg>`,
+  switch_unit: `<svg xmlns="http://www.w3.org/2000/svg" width="70" height="16" viewBox="0 0 70 16"><rect width="70" height="16" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/><circle cx="10" cy="8" r="2" fill="#10b981"/><circle cx="16" cy="8" r="2" fill="#10b981"/><circle cx="22" cy="8" r="2" fill="#10b981"/><circle cx="28" cy="8" r="2" fill="#f59e0b"/><circle cx="34" cy="8" r="2" fill="#94a3b8"/></svg>`,
+  printer_unit: `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30" viewBox="0 0 40 30"><rect x="4" y="0" width="32" height="10" rx="2" fill="#f1f5f9"/><rect x="0" y="10" width="40" height="16" rx="3" fill="#cbd5e1"/><rect x="8" y="26" width="24" height="4" fill="#f8fafc"/><rect x="12" y="12" width="6" height="4" rx="1" fill="#3b82f6"/></svg>`,
+  monitor_wall: `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="10" viewBox="0 0 60 10"><rect width="60" height="10" rx="2" fill="#0f172a"/><rect x="2" y="8" width="56" height="2" fill="#334155"/></svg>`,
+  conference_phone: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><polygon points="10,0 20,15 10,20 0,15" fill="#475569"/><circle cx="10" cy="12" r="3" fill="#1e293b"/><circle cx="10" cy="12" r="1" fill="#3b82f6"/></svg>`,
+  none: ``
+};
+
+const ALL_SVGS = { ...SVG_TABLES, ...SVG_CHAIRS, ...SVG_DEVICES };
 
 export class SkinManager {
   constructor() {
-    /** @type {string} */
-    this.activeSkin = 'theme_visio';
-
-    /** @type {Map<string, HTMLImageElement>} */
     this.imageCache = new Map();
   }
 
-  /**
-   * Pre-loads all SVG icons for the given skin into Image objects.
-   * Must be awaited before rendering assets on the canvas.
-   *
-   * @param {string} [skinName='theme_visio']
-   * @returns {Promise<void>}
-   */
-  async load(skinName = 'theme_visio') {
-    this.activeSkin = skinName;
-    const skin = SKINS[skinName];
+  async load() {
+    const promises = Object.entries(ALL_SVGS).map(([key, svgStr]) => {
+      if (!svgStr) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        
+        img.onload = () => {
+          this.imageCache.set(key, img);
+          URL.revokeObjectURL(url);
+          resolve();
+        };
+        
+        img.onerror = () => {
+          console.error(`Failed to load SVG for: ${key}`);
+          URL.revokeObjectURL(url);
+          reject(new Error(`SVG load error for ${key}`));
+        };
+        
+        img.src = url;
+      });
+    });
 
-    if (!skin) {
-      throw new Error(`[floorplan:skins] Unknown skin: ${skinName}`);
-    }
-
-    const entries = Object.entries(skin);
-    await Promise.all(
-      entries.map(
-        ([type, svgMarkup]) =>
-          new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
-              this.imageCache.set(type, img);
-              resolve();
-            };
-            img.onerror = reject;
-            img.src =
-              'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgMarkup)));
-          }),
-      ),
-    );
+    await Promise.all(promises);
   }
 
-  /**
-   * Returns the cached Image for a given asset type.
-   * Falls back to 'desktop' if the type is unknown.
-   *
-   * @param {string} type - Asset type (server, desktop, printer, switch).
-   * @returns {HTMLImageElement}
-   */
-  getImage(type) {
-    return this.imageCache.get(type) || this.imageCache.get('desktop');
-  }
-
-  /**
-   * Returns the list of available skin names.
-   * @returns {string[]}
-   */
-  static available() {
-    return Object.keys(SKINS);
+  getImage(key) {
+    return this.imageCache.get(key) || null;
   }
 }
 

@@ -193,7 +193,7 @@ function bindSearch() {
             `;
           } else {
             return `
-              <div class="fp-search-results__item" data-type="asset" data-hw-id="${item.hardware_id}" data-room-id="${item.room_id}" data-r="${item.room_name}" data-b="${item.building_name}" data-f="${item.floor_name}">
+              <div class="fp-search-results__item" data-type="asset" data-asset-id="${item.asset_id}" data-hw-id="${item.hardware_id}" data-room-id="${item.room_id}" data-r="${item.room_name}" data-b="${item.building_name}" data-f="${item.floor_name}">
                 <span class="fp-search-results__name">💻 ${item.hardware_name} — ${item.ip || '—'}</span>
                 <span class="fp-search-results__location">📍 ${item.building_name} › ${item.floor_name} › ${item.room_name}</span>
               </div>
@@ -211,7 +211,7 @@ function bindSearch() {
               // It's an asset. We must switch to the room AND focus the asset!
               const roomId = el.dataset.roomId;
               const roomName = el.dataset.r;
-              const hwId = parseInt(el.dataset.hwId);
+              const assetId = el.dataset.assetId;
               
               updateBreadcrumb(el.dataset.b, el.dataset.f, roomName);
               notify(`Carregando mapa e focando: ${el.dataset.hwId}`);
@@ -226,18 +226,8 @@ function bindSearch() {
                       // After load, we must focus the asset! Wait a tick for rendering.
                       setTimeout(() => {
                         import('./engine.js').then(({ stage, assetsLayer }) => {
-                          const group = assetsLayer.getChildren().find(node => node.id() === hwId);
+                          const group = assetsLayer.getChildren().find(node => node.id() === assetId);
                           if (group) {
-                            const scale = stage.scaleX();
-                            new Konva.Tween({
-                              node: stage,
-                              duration: 0.8,
-                              x: stage.width() / 2 - group.x() * scale,
-                              y: stage.height() / 2 - group.y() * scale,
-                              easing: Konva.Easings.StrongEaseOut,
-                              onUpdate: () => stage.batchDraw()
-                            }).play();
-                            
                             // Pulse effect on the found asset
                             const pulse = new Konva.Circle({
                               x: group.x(), y: group.y(),

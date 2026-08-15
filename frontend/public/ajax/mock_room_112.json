@@ -28,22 +28,20 @@
     "doors": [
       { "id": "d1", "x": 0, "y": 300, "width": 8, "height": 80 }
     ],
-    "furniture": [
-      { "id": "table1", "type": "desk_round", "x": 200, "y": 200, "width": 160, "height": 160, "rotation": 0 },
-      { "id": "chair1", "type": "chair", "x": 100, "y": 200, "width": 40, "height": 40, "rotation": 90 },
-      { "id": "chair2", "type": "chair", "x": 300, "y": 200, "width": 40, "height": 40, "rotation": -90 },
-      { "id": "chair3", "type": "chair", "x": 200, "y": 100, "width": 40, "height": 40, "rotation": 180 },
-      { "id": "chair4", "type": "chair", "x": 200, "y": 300, "width": 40, "height": 40, "rotation": 0 },
-      { "id": "plant1", "type": "plant", "x": 50, "y": 50, "width": 40, "height": 40, "rotation": 0 }
-    ],
     "assets": [
       {
         "id": "tv1", "type": "monitor", "pos_x": 380, "pos_y": 200,
-        "hardware_id": 501, "hardware_name": "MEET-TV-ALPHA", "status": "online", "ip": "10.0.2.50"
+        "hardware_id": 501, "hardware_name": "MEET-TV-ALPHA", "status": "online", "ip": "10.0.2.50", "mac": "AA:BB:CC:DD:EE:50",
+        "layout": { "table": "none", "chair": "none", "device": "monitor_wall", "rotation": 270 }
       },
       {
         "id": "phone1", "type": "phone", "pos_x": 200, "pos_y": 200,
-        "hardware_id": 502, "hardware_name": "MEET-PHONE", "status": "online", "ip": "10.0.2.51"
+        "hardware_id": 502, "hardware_name": "MEET-PHONE", "status": "online", "ip": "10.0.2.51", "mac": "AA:BB:CC:DD:EE:51",
+        "layout": { "table": "desk_round", "chair": "meeting_chairs_4", "device": "conference_phone", "rotation": 0 }
+      },
+      {
+        "id": "plant1", "type": "furniture", "pos_x": 50, "pos_y": 50,
+        "layout": { "table": "plant", "chair": "none", "device": "none", "rotation": 0 }
       }
     ]
   }

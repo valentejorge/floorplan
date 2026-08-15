@@ -28,27 +28,37 @@
     "doors": [
       { "id": "d1", "x": 500, "y": 100, "width": 8, "height": 100 }
     ],
-    "furniture": [
-      { "id": "rec_desk", "type": "desk_straight", "x": 100, "y": 50, "width": 200, "height": 60, "rotation": 0 },
-      { "id": "rec_chair", "type": "chair", "x": 180, "y": 20, "width": 40, "height": 40, "rotation": 0 },
-      
-      { "id": "sofa1", "type": "sofa", "x": 50, "y": 200, "width": 120, "height": 60, "rotation": 0 },
-      { "id": "sofa2", "type": "sofa", "x": 200, "y": 200, "width": 120, "height": 60, "rotation": 0 },
-      { "id": "plant1", "type": "plant", "x": 450, "y": 50, "width": 40, "height": 40, "rotation": 0 },
-      { "id": "plant2", "type": "plant", "x": 450, "y": 250, "width": 40, "height": 40, "rotation": 0 }
-    ],
     "assets": [
       {
         "id": "pc1", "type": "desktop", "pos_x": 150, "pos_y": 80,
-        "hardware_id": 101, "hardware_name": "REC-PC-01", "status": "online", "ip": "10.0.1.10"
+        "hardware_id": 101, "hardware_name": "REC-PC-01", "status": "online", "ip": "10.0.1.10", "mac": "AA:BB:CC:DD:EE:20",
+        "layout": { "table": "desk_straight", "chair": "office_chair", "device": "desktop_single", "rotation": 0 }
       },
       {
         "id": "prn1", "type": "printer", "pos_x": 250, "pos_y": 80,
-        "hardware_id": 102, "hardware_name": "REC-PRN-01", "status": "online", "ip": "10.0.1.11"
+        "hardware_id": 102, "hardware_name": "REC-PRN-01", "status": "online", "ip": "10.0.1.11", "mac": "AA:BB:CC:DD:EE:21",
+        "layout": { "table": "desk_small", "chair": "none", "device": "printer_unit", "rotation": 0 }
       },
       {
         "id": "tv1", "type": "monitor", "pos_x": 350, "pos_y": 20,
-        "hardware_id": 103, "hardware_name": "LOBBY-TV", "status": "offline", "ip": "10.0.1.12"
+        "hardware_id": 103, "hardware_name": "LOBBY-TV", "status": "offline", "ip": "10.0.1.12", "mac": "AA:BB:CC:DD:EE:22",
+        "layout": { "table": "none", "chair": "none", "device": "monitor_wall", "rotation": 180 }
+      },
+      {
+        "id": "sofa1", "type": "furniture", "pos_x": 50, "pos_y": 200,
+        "layout": { "table": "sofa", "chair": "none", "device": "none", "rotation": 0 }
+      },
+      {
+        "id": "sofa2", "type": "furniture", "pos_x": 200, "pos_y": 200,
+        "layout": { "table": "sofa", "chair": "none", "device": "none", "rotation": 0 }
+      },
+      {
+        "id": "plant1", "type": "furniture", "pos_x": 450, "pos_y": 50,
+        "layout": { "table": "plant", "chair": "none", "device": "none", "rotation": 0 }
+      },
+      {
+        "id": "plant2", "type": "furniture", "pos_x": 450, "pos_y": 250,
+        "layout": { "table": "plant", "chair": "none", "device": "none", "rotation": 0 }
       }
     ]
   }

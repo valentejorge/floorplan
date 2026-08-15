@@ -1,6 +1,6 @@
 import Konva from 'konva';
 import { zonesLayer, wallsLayer, assetsLayer, requestRender, animateMapEntrance } from './engine.js';
-import { skinManager, BOUNDING_BOX } from './skins.js';
+import { skinManager } from './skins.js';
 
 export function loadMapData(data) {
   if (!data) return;
@@ -79,179 +79,157 @@ export function loadMapData(data) {
     });
   }
 
-  // 4. Render Furniture
-  if (data.furniture) {
-    data.furniture.forEach(furn => {
-      const group = new Konva.Group({
-        x: furn.x,
-        y: furn.y,
-        rotation: furn.rotation || 0,
-        id: furn.id,
-        name: 'furniture'
-      });
-
-      // Flat but beautiful Figma-style furniture
-      const rect = new Konva.Rect({
-        width: furn.width,
-        height: furn.height,
-        fillLinearGradientStartPoint: { x: 0, y: 0 },
-        fillLinearGradientEndPoint: { x: 0, y: furn.height },
-        fillLinearGradientColorStops: [0, '#ffffff', 1, '#f8fafc'],
-        stroke: '#cbd5e0',
-        strokeWidth: 2,
-        cornerRadius: 6,
-        perfectDrawEnabled: false
-      });
-
-      // Add a subtle inner line to represent a desk edge
-      const innerRect = new Konva.Rect({
-        x: 2, y: 2,
-        width: furn.width - 4,
-        height: furn.height - 4,
-        stroke: '#e2e8f0',
-        strokeWidth: 1,
-        cornerRadius: 4,
-        perfectDrawEnabled: false
-      });
-
-      group.add(rect);
-      group.add(innerRect);
-      
-      // Cache the group to convert vectors to bitmap memory!
-      group.cache();
-      
-      assetsLayer.add(group);
-    });
-  }
-
-  // 5. Render IT Assets (Computers, Printers, etc.)
+  // 4. Render Parametric Assets (Tables, Chairs, IT Devices)
   if (data.assets) {
     data.assets.forEach(asset => {
       const group = new Konva.Group({
-        x: asset.pos_x,
-        y: asset.pos_y,
+        x: asset.pos_x || asset.x,
+        y: asset.pos_y || asset.y,
+        rotation: asset.layout ? (asset.layout.rotation || 0) : 0,
         id: asset.id,
         name: 'it-asset'
       });
 
-      const imgObj = skinManager.getImage(asset.type);
-      
-      if (imgObj) {
-        const icon = new Konva.Image({
-          image: imgObj,
-          width: BOUNDING_BOX,
-          height: BOUNDING_BOX,
-          x: -BOUNDING_BOX / 2,
-          y: -BOUNDING_BOX / 2,
-          perfectDrawEnabled: false
-        });
-        group.add(icon);
-      } else {
+      let tw = 40, th = 40; // Default bounding box for labels
+
+      if (asset.layout) {
+        // Render Table Layer
+        if (asset.layout.table && asset.layout.table !== 'none') {
+          const imgObj = skinManager.getImage(asset.layout.table);
+          if (imgObj) {
+            tw = Math.max(tw, imgObj.width);
+            th = Math.max(th, imgObj.height);
+            const tableNode = new Konva.Image({
+              image: imgObj,
+              x: -imgObj.width / 2,
+              y: -imgObj.height / 2,
+              perfectDrawEnabled: false
+            });
+            group.add(tableNode);
+          }
+        }
+
+        // Render Chair Layer (offset to the edge of the table)
+        if (asset.layout.chair && asset.layout.chair !== 'none') {
+          const imgObj = skinManager.getImage(asset.layout.chair);
+          if (imgObj) {
+            let cy = th > 40 ? th / 2 + 5 : 0;
+            if (asset.layout.table === 'desk_round' || asset.layout.table === 'none') {
+              cy = 0; // Don't offset for round tables, the SVG handles it.
+            }
+            const chairNode = new Konva.Image({
+              image: imgObj,
+              x: -imgObj.width / 2,
+              y: cy - imgObj.height / 2,
+              perfectDrawEnabled: false
+            });
+            group.add(chairNode);
+          }
+        }
+
+        // Render Device Layer (offset slightly to the "top" of the desk)
+        if (asset.layout.device && asset.layout.device !== 'none') {
+          const imgObj = skinManager.getImage(asset.layout.device);
+          if (imgObj) {
+            let cy = th > 40 && asset.layout.table !== 'none' ? -15 : 0;
+            const deviceNode = new Konva.Image({
+              image: imgObj,
+              x: -imgObj.width / 2,
+              y: cy - imgObj.height / 2,
+              perfectDrawEnabled: false
+            });
+            group.add(deviceNode);
+          }
+        }
+      }
+
+      // Fallback
+      if (group.getChildren().length === 0) {
         const fallback = new Konva.Circle({
-          radius: BOUNDING_BOX / 2,
-          fill: '#e2e8f0',
-          stroke: '#a0aec0',
-          strokeWidth: 2,
-          perfectDrawEnabled: false
+          radius: 20, fill: '#e2e8f0', stroke: '#a0aec0', strokeWidth: 2, perfectDrawEnabled: false
         });
         group.add(fallback);
       }
 
-      // Hardware Name Label Background
-      const labelBg = new Konva.Rect({
-        x: -BOUNDING_BOX + 10,
-        y: BOUNDING_BOX / 2 + 1,
-        width: BOUNDING_BOX * 2 - 20,
-        height: 14,
-        fill: 'rgba(255, 255, 255, 0.85)',
-        cornerRadius: 3,
-        perfectDrawEnabled: false
-      });
-      group.add(labelBg);
+      // Only add labels and tooltips if it is an actual IT hardware (has hardware_id)
+      if (asset.hardware_id) {
+        // Hardware Name Label Background
+        const labelBg = new Konva.Rect({
+          x: -tw / 2 + 10,
+          y: th / 2 + 10,
+          width: tw - 20,
+          height: 14,
+          fill: 'rgba(255, 255, 255, 0.85)',
+          cornerRadius: 3,
+          perfectDrawEnabled: false
+        });
+        group.add(labelBg);
 
-      // Hardware Name Label Text
-      const label = new Konva.Text({
-        text: asset.hardware_name,
-        fontSize: 9,
-        fontStyle: 'bold',
-        fontFamily: 'sans-serif',
-        fill: '#4a5568',
-        y: BOUNDING_BOX / 2 + 3,
-        align: 'center',
-        width: BOUNDING_BOX * 2,
-        x: -BOUNDING_BOX,
-        perfectDrawEnabled: false
-      });
-      group.add(label);
+        // Hardware Name Label Text
+        const label = new Konva.Text({
+          text: asset.hardware_name,
+          fontSize: 9, fontStyle: 'bold', fontFamily: 'sans-serif', fill: '#4a5568',
+          y: th / 2 + 12, align: 'center', width: tw, x: -tw / 2,
+          perfectDrawEnabled: false
+        });
+        group.add(label);
 
-      const dotColor = asset.status === 'offline' ? '#e53e3e' : 
-                      asset.status === 'warning' ? '#d69e2e' : '#5cb85c';
-      
-      // Outer glow/stroke for the dot
-      const dotBg = new Konva.Circle({
-        radius: 5,
-        fill: '#fff',
-        x: BOUNDING_BOX / 2 - 4,
-        y: -BOUNDING_BOX / 2 + 4,
-        perfectDrawEnabled: false
-      });
-      const dot = new Konva.Circle({
-        radius: 3.5,
-        fill: dotColor,
-        x: BOUNDING_BOX / 2 - 4,
-        y: -BOUNDING_BOX / 2 + 4,
-        perfectDrawEnabled: false
-      });
-      group.add(dotBg);
-      group.add(dot);
-
-      // Cache for performance
-      group.cache();
-      
-      // Hover Insights (Tooltip)
-      // Note: we must set listening to true for tooltips!
-      group.listening(true);
-      
-      group.on('mouseenter', (e) => {
-        document.body.style.cursor = 'pointer';
-        const tooltip = document.getElementById('asset-tooltip');
-        if (!tooltip) return;
+        const dotColor = asset.status === 'offline' ? '#e53e3e' : 
+                        asset.status === 'warning' ? '#d69e2e' : '#5cb85c';
         
-        const mac = asset.mac || `00:1A:2B:3C:4D:${asset.hardware_id.toString().substring(0,2)}`;
-        const user = asset.user || (asset.type === 'desktop' ? 'jorge.silva' : 'system');
-        const desc = asset.description || `Equipamento ${asset.type} padrão`;
-        
-        tooltip.innerHTML = `
-          <div class="fp-tooltip__header">
-            <div class="fp-tooltip__title">
-              <div style="width:8px;height:8px;border-radius:50%;background:${dotColor};box-shadow:0 0 8px ${dotColor}80;"></div>
-              ${asset.hardware_name}
+        // Outer glow/stroke for the dot
+        const dotBg = new Konva.Circle({
+          radius: 5, fill: '#fff', x: tw / 2 - 10, y: -th / 2 + 10, perfectDrawEnabled: false
+        });
+        const dot = new Konva.Circle({
+          radius: 3.5, fill: dotColor, x: tw / 2 - 10, y: -th / 2 + 10, perfectDrawEnabled: false
+        });
+        group.add(dotBg);
+        group.add(dot);
+
+        // Hover Insights (Tooltip)
+        group.listening(true);
+        group.on('mouseenter', (e) => {
+          document.body.style.cursor = 'pointer';
+          const tooltip = document.getElementById('asset-tooltip');
+          if (!tooltip) return;
+          
+          const mac = asset.mac || `00:1A:2B:3C:4D:${asset.hardware_id.toString().substring(0,2)}`;
+          const user = asset.user || (asset.type === 'desktop' ? 'jorge.silva' : 'system');
+          const desc = asset.description || `Equipamento ${asset.type} padrão`;
+          
+          tooltip.innerHTML = `
+            <div class="fp-tooltip__header">
+              <div class="fp-tooltip__title">
+                <div style="width:8px;height:8px;border-radius:50%;background:${dotColor};box-shadow:0 0 8px ${dotColor}80;"></div>
+                ${asset.hardware_name}
+              </div>
+              <div class="fp-tooltip__subtitle">ID: ${asset.hardware_id} • ${asset.type.toUpperCase()}</div>
             </div>
-            <div class="fp-tooltip__subtitle">ID: ${asset.hardware_id} • ${asset.type.toUpperCase()}</div>
-          </div>
-          <div class="fp-tooltip__body">
-            <div class="fp-tooltip__row"><span class="fp-tooltip__label">IP Addr</span><span class="fp-tooltip__value">${asset.ip || '—'}</span></div>
-            <div class="fp-tooltip__row"><span class="fp-tooltip__label">MAC Addr</span><span class="fp-tooltip__value">${mac}</span></div>
-            <div class="fp-tooltip__row"><span class="fp-tooltip__label">Assignee</span><span class="fp-tooltip__value">${user}</span></div>
-            <div class="fp-tooltip__row"><span class="fp-tooltip__label">Details</span><span class="fp-tooltip__value" style="font-weight:400;color:#cbd5e1;">${desc}</span></div>
-          </div>
-        `;
-        tooltip.classList.add('visible');
-      });
-      
-      group.on('mousemove', (e) => {
-        const tooltip = document.getElementById('asset-tooltip');
-        if (tooltip && tooltip.classList.contains('visible')) {
-          tooltip.style.left = e.evt.clientX + 'px';
-          tooltip.style.top = e.evt.clientY + 'px';
-        }
-      });
-      
-      group.on('mouseleave', () => {
-        document.body.style.cursor = 'default';
-        const tooltip = document.getElementById('asset-tooltip');
-        if (tooltip) tooltip.classList.remove('visible');
-      });
+            <div class="fp-tooltip__body">
+              <div class="fp-tooltip__row"><span class="fp-tooltip__label">IP Addr</span><span class="fp-tooltip__value">${asset.ip || '—'}</span></div>
+              <div class="fp-tooltip__row"><span class="fp-tooltip__label">MAC Addr</span><span class="fp-tooltip__value">${mac}</span></div>
+              <div class="fp-tooltip__row"><span class="fp-tooltip__label">Assignee</span><span class="fp-tooltip__value">${user}</span></div>
+              <div class="fp-tooltip__row"><span class="fp-tooltip__label">Details</span><span class="fp-tooltip__value" style="font-weight:400;color:#cbd5e1;">${desc}</span></div>
+            </div>
+          `;
+          tooltip.classList.add('visible');
+        });
+        
+        group.on('mousemove', (e) => {
+          const tooltip = document.getElementById('asset-tooltip');
+          if (tooltip && tooltip.classList.contains('visible')) {
+            tooltip.style.left = e.evt.clientX + 'px';
+            tooltip.style.top = e.evt.clientY + 'px';
+          }
+        });
+        
+        group.on('mouseleave', () => {
+          document.body.style.cursor = 'default';
+          const tooltip = document.getElementById('asset-tooltip');
+          if (tooltip) tooltip.classList.remove('visible');
+        });
+      }
 
       assetsLayer.add(group);
     });
@@ -308,14 +286,15 @@ function populateObjectExplorer(assets) {
       const group = assetsLayer.getChildren().find(node => node.id() === asset.id);
       if (group) {
         import('./engine.js').then(({ stage }) => {
-          const scale = stage.scaleX();
+          // Pulse effect on the found asset
+          const pulse = new Konva.Circle({
+            x: group.x(), y: group.y(),
+            radius: 30, stroke: '#961B7E', strokeWidth: 2, opacity: 1
+          });
+          assetsLayer.add(pulse);
           new Konva.Tween({
-            node: stage,
-            duration: 0.6,
-            x: stage.width() / 2 - group.x() * scale,
-            y: stage.height() / 2 - group.y() * scale,
-            easing: Konva.Easings.StrongEaseOut,
-            onUpdate: () => stage.batchDraw()
+            node: pulse, duration: 1, radius: 100, opacity: 0,
+            onFinish: () => pulse.destroy()
           }).play();
         });
       }
