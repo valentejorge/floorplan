@@ -3,6 +3,7 @@
  */
 import { api } from './api.js';
 import { initEngine, zoomIn, zoomOut, zoomFit } from './engine.js';
+import { loadMapData } from './renderer.js';
 import './style.css';
 
 let currentMapTree = null;
@@ -25,9 +26,25 @@ async function init() {
   bindModeToggle();
   
   // Initial Mock State
+  setTimeout(async () => {
+    try {
+      const { skinManager } = await import('./skins.js');
+      await skinManager.load();
+      
+      const res = await fetch('/ajax/mock_room_1.json');
+      const json = await res.json();
+      
+      if (json.status === 'success') {
+        loadMapData(json.data);
+      }
+    } catch (e) {
+      console.warn("Error loading mock data", e);
+    }
+  }, 100);
+
   updateBreadcrumb('Headquarters', 'Ground Floor', 'Open Office A');
 
-  console.info(`[floorplan] Phase 1.7: View/Edit Modes + UX Fixes loaded.`);
+  console.info(`[floorplan] Phase 3: Data Layer & Konva Rendering loaded.`);
 }
 
 function updateBreadcrumb(building, floor, room) {

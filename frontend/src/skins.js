@@ -134,3 +134,5 @@ export class SkinManager {
     return Object.keys(SKINS);
   }
 }
+
+export const skinManager = new SkinManager();

@@ -1,15 +1,15 @@
 import Konva from 'konva';
 
-let stage;
-let backgroundLayer;
-let zonesLayer;
-let wallsLayer;
-let assetsLayer;
+export let stage;
+export let backgroundLayer;
+export let zonesLayer;
+export let wallsLayer;
+export let assetsLayer;
 
 // Constants
 const SCALE_BY = 1.15;
-const MIN_SCALE = 0.1;
-const MAX_SCALE = 10;
+const MIN_SCALE = 0.05;
+const MAX_SCALE = 20;
 const GRID_SIZE = 20;
 
 export function initEngine(containerId) {
@@ -24,14 +24,14 @@ export function initEngine(containerId) {
     container: containerId,
     width: container.clientWidth,
     height: container.clientHeight,
-    draggable: true, // Enables Pan by default
+    draggable: true,
   });
 
-  // Create Layers
-  backgroundLayer = new Konva.Layer();
-  zonesLayer = new Konva.Layer();
-  wallsLayer = new Konva.Layer();
-  assetsLayer = new Konva.Layer();
+  // Create Layers with optimizations
+  backgroundLayer = new Konva.Layer({ listening: false });
+  zonesLayer = new Konva.Layer({ listening: false }); // Disable events for zones temporarily
+  wallsLayer = new Konva.Layer({ listening: false });
+  assetsLayer = new Konva.Layer(); // Only assets need click events for now
 
   stage.add(backgroundLayer);
   stage.add(zonesLayer);
@@ -42,7 +42,7 @@ export function initEngine(containerId) {
   window.addEventListener('resize', () => {
     stage.width(container.clientWidth);
     stage.height(container.clientHeight);
-    updateGrid();
+    stage.batchDraw();
   });
 
   // Wheel Zoom Mathematics
@@ -50,16 +50,13 @@ export function initEngine(containerId) {
     e.evt.preventDefault();
     const oldScale = stage.scaleX();
     const pointer = stage.getPointerPosition();
-
     if (!pointer) return;
 
-    // The logic is: calculate pointer position on the canvas's local coordinates
     const mousePointTo = {
       x: (pointer.x - stage.x()) / oldScale,
       y: (pointer.y - stage.y()) / oldScale,
     };
 
-    // Determine direction
     let direction = e.evt.deltaY > 0 ? -1 : 1;
     if (e.evt.ctrlKey) {
       direction = -direction;
@@ -70,55 +67,36 @@ export function initEngine(containerId) {
 
     stage.scale({ x: newScale, y: newScale });
 
-    // Calculate new position of the stage to keep the pointer over the same local coordinate
     const newPos = {
       x: pointer.x - mousePointTo.x * newScale,
       y: pointer.y - mousePointTo.y * newScale,
     };
     stage.position(newPos);
-    updateGrid();
+    
+    stage.batchDraw();
   });
 
   // Drag pan event
   stage.on('dragmove', () => {
-    updateGrid();
+    // Only redraw the stage if necessary, though dragging natively pans the stage
   });
 
-  // Initial Grid sync
-  updateGrid();
+  stage.batchDraw();
 }
 
-/**
- * Synchronize the CSS background grid with Konva's Transform Matrix.
- * This guarantees 60fps infinite grid without drawing thousands of lines.
- */
-function updateGrid() {
-  const container = document.getElementById('canvas-area');
-  if (!container) return;
-  
-  const scale = stage.scaleX();
-  const x = stage.x();
-  const y = stage.y();
-  
-  const scaledGridSize = GRID_SIZE * scale;
-  
-  container.style.backgroundPosition = `${x}px ${y}px`;
-  container.style.backgroundSize = `${scaledGridSize}px ${scaledGridSize}px`;
+export function requestRender() {
+  if (!stage) return;
+  stage.batchDraw();
 }
 
 // ── UI Camera Controls ────────────────────────────────────────────────
-export function zoomIn() {
-  zoomBy(SCALE_BY);
-}
-
-export function zoomOut() {
-  zoomBy(1 / SCALE_BY);
-}
+export function zoomIn() { zoomBy(SCALE_BY); }
+export function zoomOut() { zoomBy(1 / SCALE_BY); }
 
 export function zoomFit() {
   stage.scale({ x: 1, y: 1 });
   stage.position({ x: 0, y: 0 });
-  updateGrid();
+  stage.batchDraw();
 }
 
 function zoomBy(factor) {
@@ -126,23 +104,16 @@ function zoomBy(factor) {
   let newScale = oldScale * factor;
   newScale = Math.max(MIN_SCALE, Math.min(newScale, MAX_SCALE));
 
-  // Zoom center is middle of screen if triggered by button
-  const center = {
-    x: stage.width() / 2,
-    y: stage.height() / 2,
-  };
-
+  const center = { x: stage.width() / 2, y: stage.height() / 2 };
   const mousePointTo = {
     x: (center.x - stage.x()) / oldScale,
     y: (center.y - stage.y()) / oldScale,
   };
 
   stage.scale({ x: newScale, y: newScale });
-
-  const newPos = {
+  stage.position({
     x: center.x - mousePointTo.x * newScale,
     y: center.y - mousePointTo.y * newScale,
-  };
-  stage.position(newPos);
-  updateGrid();
+  });
+  stage.batchDraw();
 }
