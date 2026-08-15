@@ -787,14 +787,15 @@ body {
 }
 .fp-search-results.visible { display: block; }
 .fp-search-results__item {
-  padding: 8px 14px;
+  padding: 10px 12px;
   cursor: pointer;
-  border-bottom: 1px solid #f1f3f5;
+  border-bottom: 1px solid var(--fp-border);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
-.fp-search-results__item:hover { background: #f8f9fa; }
+.fp-search-results__item:hover,
+.fp-search-results__item.selected { background: #f8f9fa; }
 .fp-search-results__name { font-weight: 600; color: var(--fp-text); }
 .fp-search-results__location { font-size: 11px; color: var(--fp-text-muted); }
 .fp-search-results__empty { padding: 16px; text-align: center; color: var(--fp-text-muted); }

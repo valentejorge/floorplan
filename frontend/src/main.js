@@ -63,7 +63,10 @@ function updateBreadcrumb(building, floor, room) {
   bc.querySelectorAll('a').forEach(a => {
     a.addEventListener('click', (e) => {
       e.preventDefault();
-      if (window.openMapNavigator) window.openMapNavigator();
+      if (window.openMapNavigator) {
+        const text = a.dataset.nav === 'root' ? '' : a.innerText.trim();
+        window.openMapNavigator(text);
+      }
     });
   });
 }
@@ -168,17 +171,20 @@ function bindSearch() {
   const input = document.getElementById('search-input');
   const btn = document.getElementById('search-btn');
   const results = document.getElementById('search-results');
+  let selectedIndex = -1;
 
   async function doSearch() {
     const q = input.value.trim();
     if (!q) {
       results.classList.remove('visible');
+      selectedIndex = -1;
       return;
     }
 
     try {
       const res = await api(`ajax/search_asset.php?q=${encodeURIComponent(q)}`);
       const items = res.data || [];
+      selectedIndex = -1;
 
       if (items.length === 0) {
         results.innerHTML = '<div class="fp-search-results__empty">No results.</div>';
@@ -186,7 +192,7 @@ function bindSearch() {
         results.innerHTML = items.map(item => {
           if (item.type === 'room') {
             return `
-              <div class="fp-search-results__item" data-type="room" data-b="${item.building_name}" data-f="${item.floor_name}" data-r="${item.room_name}">
+              <div class="fp-search-results__item" data-type="room" data-room-id="${item.room_id}" data-b="${item.building_name}" data-f="${item.floor_name}" data-r="${item.room_name}">
                 <span class="fp-search-results__name">🗺️ Mapa: ${item.room_name}</span>
                 <span class="fp-search-results__location">📍 ${item.building_name} › ${item.floor_name}</span>
               </div>
@@ -203,10 +209,21 @@ function bindSearch() {
 
         results.querySelectorAll('.fp-search-results__item').forEach(el => {
           el.addEventListener('click', () => {
+            const roomId = el.dataset.roomId || el.dataset.rId; // rId for rooms if I set it
+            const roomName = el.dataset.r;
+            
             if (el.dataset.type === 'room') {
-              updateBreadcrumb(el.dataset.b, el.dataset.f, el.dataset.r);
-              notify(`Switched to map: ${el.dataset.r}`);
-              // Room navigation logic can be bound here later
+              updateBreadcrumb(el.dataset.b, el.dataset.f, roomName);
+              notify(`Switched to map: ${roomName}`);
+              
+              const fetchId = el.dataset.roomId; // wait, let's check what data attribute it has
+              fetch(`/ajax/mock_room_${fetchId}.json`)
+                .then(r => r.json())
+                .then(json => {
+                  if (json.status === 'success') {
+                    import('./renderer.js').then(({ loadMapData }) => loadMapData(json.data));
+                  }
+                });
             } else {
               // It's an asset. We must switch to the room AND focus the asset!
               const roomId = el.dataset.roomId;
@@ -230,16 +247,6 @@ function bindSearch() {
                           const group = assetsLayer.getChildren().find(node => String(node.getAttr('hardware_id')) === String(hwId) || String(node.id()) === String(assetId));
                           
                           if (group) {
-                            // Pan camera to center the asset
-                            const scale = stage.scaleX();
-                            new Konva.Tween({
-                              node: stage,
-                              duration: 0.5,
-                              x: window.innerWidth / 2 - group.x() * scale,
-                              y: window.innerHeight / 2 - group.y() * scale,
-                              easing: Konva.Easings.EaseInOut
-                            }).play();
-
                             // Pulse effect on the found asset
                             const pulse = new Konva.Circle({
                               x: group.x(), y: group.y(),
@@ -279,6 +286,41 @@ function bindSearch() {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(doSearch, 300);
   });
+
+  input?.addEventListener('keydown', (e) => {
+    if (!results.classList.contains('visible')) return;
+    
+    const items = Array.from(results.querySelectorAll('.fp-search-results__item'));
+    if (items.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedIndex = (selectedIndex + 1) % items.length;
+      updateSelection(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+      updateSelection(items);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (selectedIndex >= 0 && selectedIndex < items.length) {
+        items[selectedIndex].click();
+      } else if (items.length > 0) {
+        items[0].click(); // default to first if none selected
+      }
+    }
+  });
+
+  function updateSelection(items) {
+    items.forEach((item, idx) => {
+      if (idx === selectedIndex) {
+        item.classList.add('selected');
+        item.scrollIntoView({ block: 'nearest' });
+      } else {
+        item.classList.remove('selected');
+      }
+    });
+  }
 
   btn?.addEventListener('click', () => {
     clearTimeout(searchTimeout);
@@ -321,24 +363,30 @@ function bindFurnitureModal() {
   });
 }
 
-window.openMapNavigator = async function() {
+window.openMapNavigator = async function(preselect = '') {
   const modal = document.getElementById('map-navigator-modal');
   const sidebar = document.getElementById('navigator-sidebar');
+  const sidebarSearch = document.getElementById('nav-sidebar-search');
   if (!modal) return;
 
   modal.classList.add('visible');
+  
+  if (sidebarSearch) {
+    sidebarSearch.value = ''; // clear search box so we don't filter out things
+  }
+
   if (!currentMapTree) {
     try {
       const res = await fetch('/ajax/mock_map_tree.json');
       currentMapTree = await res.json();
-      window.renderNavigatorSidebar();
+      window.renderNavigatorSidebar('', preselect);
     } catch (e) {
       console.error("Failed to load map tree", e);
       if (sidebar) sidebar.innerHTML = '<div style="padding:16px;color:red;">Error loading tree.</div>';
     }
   } else {
     // If it's already loaded, just render it again to reset search state if needed
-    window.renderNavigatorSidebar();
+    window.renderNavigatorSidebar('', preselect);
   }
 };
 
@@ -356,7 +404,7 @@ function bindMapNavigator() {
     if (e.target === modal) window.closeModal(modal);
   });
 
-  window.renderNavigatorSidebar = function(filter = '') {
+  window.renderNavigatorSidebar = function(filter = '', preselect = '') {
     if (!currentMapTree) return;
     let html = '';
     
@@ -388,11 +436,24 @@ function bindMapNavigator() {
       });
     });
     
-    // Auto-select first floor when rendering
-    const firstFloor = sidebar.querySelector('.fp-nav-floor');
-    if (firstFloor) firstFloor.click();
-    else grid.innerHTML = '<div style="padding:40px;grid-column:1/-1;text-align:center;">Select a floor</div>';
-  }
+    // Auto-select floor
+    let targetFloor = null;
+    if (preselect) {
+      const pLower = preselect.toLowerCase();
+      targetFloor = Array.from(sidebar.querySelectorAll('.fp-nav-floor')).find(el => el.innerText.trim().toLowerCase() === pLower);
+    }
+    
+    if (!targetFloor) {
+      targetFloor = sidebar.querySelector('.fp-nav-floor');
+    }
+
+    if (targetFloor) {
+      targetFloor.click();
+      if (preselect) targetFloor.scrollIntoView({ block: 'nearest' });
+    } else {
+      grid.innerHTML = '<div style="padding:40px;grid-column:1/-1;text-align:center;">Select a floor</div>';
+    }
+  };
 
   sidebarSearch?.addEventListener('input', (e) => {
     renderNavigatorSidebar(e.target.value.toLowerCase().trim());

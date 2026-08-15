@@ -77,6 +77,7 @@ export async function api(endpoint, options = {}) {
           if (!roomJson.data || !roomJson.data.assets) continue;
           
           const assetMatches = roomJson.data.assets.filter(a => {
+            if (!a.hardware_name || !a.hardware_id) return false;
             const mac = a.mac || `00:1A:2B:3C:4D:${a.hardware_id.toString().substring(0,2)}`;
             const user = a.user || (a.type === 'desktop' ? 'jorge.silva' : 'system');
             const desc = a.description || `Equipamento ${a.type} padrão`;
@@ -107,7 +108,9 @@ export async function api(endpoint, options = {}) {
             };
           });
           results.push(...assetMatches);
-        } catch(e) {}
+        } catch(e) {
+          console.error("API Search Error:", e);
+        }
       }
     } catch(e) {}
 

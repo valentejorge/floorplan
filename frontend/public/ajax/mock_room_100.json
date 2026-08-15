@@ -1,8 +1,14 @@
 {
   "status": "success",
   "data": {
-    "building": { "id": 1, "name": "Headquarters" },
-    "floor": { "id": 1, "name": "Ground Floor" },
+    "building": {
+      "id": 1,
+      "name": "Headquarters"
+    },
+    "floor": {
+      "id": 1,
+      "name": "Ground Floor"
+    },
     "room": {
       "id": 1,
       "name": "Open Office A",
@@ -14,115 +20,298 @@
       {
         "id": "fz-1",
         "name": "Main Office Carpet",
-        "x": 0, "y": 0, "width": 1200, "height": 900,
+        "x": 0,
+        "y": 0,
+        "width": 1200,
+        "height": 900,
         "fill": "#9ab8a0",
         "opacity": 0.4
       },
       {
         "id": "fz-2",
         "name": "Meeting Room Floor",
-        "x": 0, "y": 540, "width": 500, "height": 360,
+        "x": 0,
+        "y": 540,
+        "width": 500,
+        "height": 360,
         "fill": "#9ab8a0",
         "opacity": 0.55
       },
       {
         "id": "fz-3",
         "name": "Server Closet Tile",
-        "x": 800, "y": 0, "width": 400, "height": 300,
+        "x": 800,
+        "y": 0,
+        "width": 400,
+        "height": 300,
         "fill": "#d4cfc4",
         "opacity": 0.5
       }
     ],
     "walls": [
-      { "id": "w-outer", "name": "Outer Wall", "wallType": "exterior", "points": [0,0, 1200,0, 1200,900, 0,900, 0,0] },
-      { "id": "w-meeting", "name": "Meeting Room N", "wallType": "exterior", "points": [0,540, 500,540] },
-      { "id": "w-meeting-e", "name": "Meeting Room E", "wallType": "exterior", "points": [500,540, 500,900] },
-      { "id": "w-server-s", "name": "Server Room S", "wallType": "exterior", "points": [800,300, 1200,300] },
-      { "id": "w-server-w", "name": "Server Room W", "wallType": "interior", "points": [800,0, 800,300] },
-      { "id": "w-glass-1", "name": "Glass Partition", "wallType": "glass", "points": [500,200, 800,200] }
+      {
+        "id": "w-outer",
+        "name": "Outer Wall",
+        "wallType": "exterior",
+        "points": [
+          0,
+          0,
+          1200,
+          0,
+          1200,
+          900,
+          0,
+          900,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "w-meeting",
+        "name": "Meeting Room N",
+        "wallType": "exterior",
+        "points": [
+          0,
+          540,
+          500,
+          540
+        ]
+      },
+      {
+        "id": "w-meeting-e",
+        "name": "Meeting Room E",
+        "wallType": "exterior",
+        "points": [
+          500,
+          540,
+          500,
+          900
+        ]
+      },
+      {
+        "id": "w-server-s",
+        "name": "Server Room S",
+        "wallType": "exterior",
+        "points": [
+          800,
+          300,
+          1200,
+          300
+        ]
+      },
+      {
+        "id": "w-server-w",
+        "name": "Server Room W",
+        "wallType": "interior",
+        "points": [
+          800,
+          0,
+          800,
+          300
+        ]
+      },
+      {
+        "id": "w-glass-1",
+        "name": "Glass Partition",
+        "wallType": "glass",
+        "points": [
+          500,
+          200,
+          800,
+          200
+        ]
+      }
     ],
     "doors": [
-      { "id": "d-1", "name": "Main Entrance", "x": 0, "y": 220, "width": 8, "height": 60 },
-      { "id": "d-2", "name": "Meeting Door", "x": 200, "y": 536, "width": 60, "height": 8 },
-      { "id": "d-3", "name": "Server Door", "x": 796, "y": 100, "width": 8, "height": 60 }
+      {
+        "id": "d-1",
+        "name": "Main Entrance",
+        "x": 0,
+        "y": 220,
+        "width": 8,
+        "height": 60
+      },
+      {
+        "id": "d-2",
+        "name": "Meeting Door",
+        "x": 200,
+        "y": 536,
+        "width": 60,
+        "height": 8
+      },
+      {
+        "id": "d-3",
+        "name": "Server Door",
+        "x": 796,
+        "y": 100,
+        "width": 8,
+        "height": 60
+      }
     ],
     "assets": [
-      { 
-        "id": "pc-l1", "hardware_id": 5, "hardware_name": "PC-DIR-001", "type": "desktop", 
-        "pos_x": 100, "pos_y": 100, "ip": "192.168.10.45", "mac": "AA:BB:CC:DD:EE:05",
-        "layout": { "table": "desk_l", "chair": "executive_chair", "chair_x": 25, "chair_y": 25, "chair_r": -45, "device": "desktop_dual", "device_x": -20, "device_y": -20, "device_r": -45, "rotation": 0 }
-      },
-      { 
-        "id": "pc-cl1", "hardware_id": 1, "hardware_name": "PC-OP-001", "type": "desktop", 
-        "pos_x": 350, "pos_y": 150, "ip": "192.168.10.20", "mac": "AA:BB:CC:DD:EE:01",
-        "layout": { "table": "desk_straight", "chair": "office_chair", "chair_y": -45, "chair_r": 180, "device": "desktop_single", "device_y": 15, "device_r": 180, "rotation": 0 }
-      },
-      { 
-        "id": "pc-cl2", "hardware_id": 2, "hardware_name": "PC-OP-002", "type": "desktop", 
-        "pos_x": 350, "pos_y": 220, "ip": "192.168.10.21", "mac": "AA:BB:CC:DD:EE:02",
-        "layout": { "table": "desk_straight", "chair": "office_chair", "chair_y": 45, "chair_r": 0, "device": "desktop_single", "device_y": -15, "device_r": 0, "rotation": 0 }
-      },
-      { 
-        "id": "pc-cl3", "hardware_id": 3, "hardware_name": "PC-OP-003", "type": "desktop", 
-        "pos_x": 490, "pos_y": 150, "ip": "192.168.10.22", "mac": "AA:BB:CC:DD:EE:03",
-        "layout": { "table": "desk_straight", "chair": "office_chair", "chair_y": -45, "chair_r": 180, "device": "desktop_single", "device_y": 15, "device_r": 180, "rotation": 0 }
-      },
-      { 
-        "id": "pc-cl4", "hardware_id": 4, "hardware_name": "PC-OP-004", "type": "desktop", 
-        "pos_x": 490, "pos_y": 220, "ip": "192.168.10.23", "mac": "AA:BB:CC:DD:EE:04",
-        "layout": { "table": "desk_straight", "chair": "office_chair", "chair_y": 45, "chair_r": 0, "device": "desktop_single", "device_y": -15, "device_r": 0, "rotation": 0 }
-      },
-      { 
-        "id": "pc-cl5", "hardware_id": 6, "hardware_name": "PC-OP-005", "type": "desktop", 
-        "pos_x": 680, "pos_y": 150, "ip": "192.168.10.24", "mac": "AA:BB:CC:DD:EE:06",
-        "layout": { "table": "desk_straight", "chair": "office_chair", "chair_y": -45, "chair_r": 180, "device": "desktop_single", "device_y": 15, "device_r": 180, "rotation": 0 }
-      },
-      { 
-        "id": "pc-cl6", "hardware_id": 7, "hardware_name": "PC-OP-006", "type": "desktop", 
-        "pos_x": 680, "pos_y": 220, "ip": "192.168.10.25", "mac": "AA:BB:CC:DD:EE:07",
-        "layout": { "table": "desk_straight", "chair": "office_chair", "chair_y": 45, "chair_r": 0, "device": "desktop_single", "device_y": -15, "device_r": 0, "rotation": 0 }
+      {
+        "id": "srv1",
+        "hardware_id": 1,
+        "hardware_name": "SRV-DC-01",
+        "type": "server",
+        "pos_x": 870,
+        "pos_y": 50,
+        "ip": "192.168.10.5",
+        "mac": "AA:BB:CC:DD:EE:01",
+        "layout": {
+          "table": "rack_cabinet",
+          "chair": "none",
+          "device": "server_unit",
+          "rotation": 0
+        }
       },
       {
-        "id": "mt-1", "type": "furniture", "pos_x": 1000, "pos_y": 150,
-        "layout": { "table": "desk_round", "chair": "meeting_chairs_4", "device": "none", "rotation": 0 }
-      },
-      { 
-        "id": "pc-rec", "hardware_id": 8, "hardware_name": "PC-REC-001", "type": "desktop", 
-        "pos_x": 650, "pos_y": 500, "ip": "192.168.10.30", "mac": "AA:BB:CC:DD:EE:08",
-        "layout": { "table": "desk_straight", "chair": "office_chair", "chair_y": 45, "chair_r": 0, "device": "desktop_single", "device_y": -15, "device_r": 0, "rotation": 0 }
-      },
-      {
-        "id": "mt-2", "type": "furniture", "pos_x": 250, "pos_y": 700,
-        "layout": { "table": "desk_round", "chair": "meeting_chairs_4", "device": "none", "rotation": 0 }
-      },
-      {
-        "id": "mt-3", "type": "furniture", "pos_x": 150, "pos_y": 700,
-        "layout": { "table": "desk_round", "chair": "meeting_chairs_4", "device": "none", "rotation": 0 }
-      },
-      {
-        "id": "sofa1", "type": "furniture", "pos_x": 1000, "pos_y": 600,
-        "layout": { "table": "sofa", "chair": "none", "device": "none", "rotation": 90 }
+        "id": "srv2",
+        "hardware_id": 2,
+        "hardware_name": "SRV-DC-02",
+        "type": "server",
+        "pos_x": 870,
+        "pos_y": 130,
+        "ip": "192.168.10.6",
+        "mac": "AA:BB:CC:DD:EE:02",
+        "layout": {
+          "table": "rack_cabinet",
+          "chair": "none",
+          "device": "server_unit",
+          "rotation": 0
+        }
       },
       {
-        "id": "sofa2", "type": "furniture", "pos_x": 1000, "pos_y": 750,
-        "layout": { "table": "sofa", "chair": "none", "device": "none", "rotation": 90 }
+        "id": "pc1",
+        "hardware_id": 3,
+        "hardware_name": "PC-RH-003",
+        "type": "desktop",
+        "pos_x": 140,
+        "pos_y": 90,
+        "ip": "192.168.10.20",
+        "mac": "AA:BB:CC:DD:EE:03",
+        "layout": {
+          "table": "desk_straight",
+          "chair": "office_chair",
+          "device": "desktop_single",
+          "rotation": 90
+        }
       },
       {
-        "id": "prn1", "hardware_id": 9, "hardware_name": "IMP-GERAL", "type": "printer", 
-        "pos_x": 150, "pos_y": 400, "ip": "192.168.10.80", "mac": "AA:BB:CC:DD:EE:09",
-        "layout": { "table": "desk_small", "chair": "none", "device": "printer_unit", "rotation": 0 }
+        "id": "pc2",
+        "hardware_id": 4,
+        "hardware_name": "PC-RH-004",
+        "type": "desktop",
+        "pos_x": 140,
+        "pos_y": 170,
+        "ip": "192.168.10.21",
+        "mac": "AA:BB:CC:DD:EE:04",
+        "layout": {
+          "table": "desk_straight",
+          "chair": "office_chair",
+          "device": "desktop_single",
+          "rotation": 90
+        }
       },
       {
-        "id": "p1", "type": "furniture", "pos_x": 40, "pos_y": 40,
-        "layout": { "table": "plant", "chair": "none", "device": "none", "rotation": 0 }
+        "id": "pc3",
+        "hardware_id": 5,
+        "hardware_name": "PC-FIN-001",
+        "type": "desktop",
+        "pos_x": 360,
+        "pos_y": 100,
+        "ip": "192.168.10.45",
+        "mac": "AA:BB:CC:DD:EE:05",
+        "layout": {
+          "table": "desk_l",
+          "chair": "executive_chair",
+          "device": "desktop_dual",
+          "rotation": 0
+        }
       },
       {
-        "id": "p2", "type": "furniture", "pos_x": 800, "pos_y": 40,
-        "layout": { "table": "plant", "chair": "none", "device": "none", "rotation": 0 }
+        "id": "prn1",
+        "hardware_id": 6,
+        "hardware_name": "IMP-FINANCEIRO",
+        "type": "printer",
+        "pos_x": 620,
+        "pos_y": 400,
+        "ip": "192.168.10.80",
+        "mac": "AA:BB:CC:DD:EE:06",
+        "layout": {
+          "table": "desk_small",
+          "chair": "none",
+          "device": "printer_unit",
+          "rotation": 270
+        }
       },
       {
-        "id": "p3", "type": "furniture", "pos_x": 1150, "pos_y": 500,
-        "layout": { "table": "plant", "chair": "none", "device": "none", "rotation": 0 }
+        "id": "sw1",
+        "hardware_id": 7,
+        "hardware_name": "SW-CORE-01",
+        "type": "switch",
+        "pos_x": 1000,
+        "pos_y": 60,
+        "ip": "192.168.10.1",
+        "mac": "AA:BB:CC:DD:EE:07",
+        "layout": {
+          "table": "rack_cabinet",
+          "chair": "none",
+          "device": "switch_unit",
+          "rotation": 0
+        }
+      },
+      {
+        "id": "ap1",
+        "hardware_id": 8,
+        "hardware_name": "AP-WIFI-SALA",
+        "type": "desktop",
+        "pos_x": 600,
+        "pos_y": 120,
+        "ip": "192.168.10.2",
+        "mac": "AA:BB:CC:DD:EE:08",
+        "layout": {
+          "table": "none",
+          "chair": "none",
+          "device": "laptop",
+          "rotation": 0
+        }
+      },
+      {
+        "id": "mt1",
+        "type": "furniture",
+        "pos_x": 250,
+        "pos_y": 680,
+        "layout": {
+          "table": "desk_round",
+          "chair": "meeting_chairs_4",
+          "device": "none",
+          "rotation": 0
+        }
+      },
+      {
+        "id": "p1",
+        "type": "furniture",
+        "pos_x": 30,
+        "pos_y": 30,
+        "layout": {
+          "table": "plant",
+          "chair": "none",
+          "device": "none",
+          "rotation": 0
+        }
+      },
+      {
+        "id": "p2",
+        "type": "furniture",
+        "pos_x": 740,
+        "pos_y": 860,
+        "layout": {
+          "table": "plant",
+          "chair": "none",
+          "device": "none",
+          "rotation": 0
+        }
       }
     ]
   }
