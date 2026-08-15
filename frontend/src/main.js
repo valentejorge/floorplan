@@ -12,15 +12,40 @@ let currentMapTree = null;
 // Global Helpers
 // ════════════════════════════════════════════════════════════════════
 window.checkEditMode = function() {
-  const layout = document.getElementById('main-layout');
-  if (layout && layout.classList.contains('is-editing')) {
-    if (window.confirm("Atenção! Você está no modo de edição. Deseja descartar suas alterações e continuar?")) {
-      document.getElementById('btn-cancel-edit')?.click();
-      return true;
+  return new Promise((resolve) => {
+    const layout = document.getElementById('main-layout');
+    if (layout && layout.classList.contains('is-editing')) {
+      const modal = document.getElementById('confirm-modal');
+      const btnCancel = document.getElementById('confirm-modal-cancel');
+      const btnOk = document.getElementById('confirm-modal-ok');
+      
+      if (!modal) return resolve(true);
+
+      modal.classList.add('visible');
+
+      const cleanup = () => {
+        modal.classList.remove('visible');
+        btnCancel.removeEventListener('click', onCancel);
+        btnOk.removeEventListener('click', onOk);
+      };
+
+      const onCancel = () => {
+        cleanup();
+        resolve(false);
+      };
+
+      const onOk = () => {
+        cleanup();
+        document.getElementById('btn-cancel-edit')?.click();
+        resolve(true);
+      };
+
+      btnCancel.addEventListener('click', onCancel);
+      btnOk.addEventListener('click', onOk);
+    } else {
+      resolve(true);
     }
-    return false; // Stay in edit mode
-  }
-  return true;
+  });
 };
 
 // ════════════════════════════════════════════════════════════════════
@@ -76,9 +101,9 @@ function updateBreadcrumb(building, floor, room) {
   `;
 
   bc.querySelectorAll('a').forEach(a => {
-    a.addEventListener('click', (e) => {
+    a.addEventListener('click', async (e) => {
       e.preventDefault();
-      if (!window.checkEditMode()) return;
+      if (!(await window.checkEditMode())) return;
       
       if (window.openMapNavigator) {
         const text = a.dataset.nav === 'root' ? '' : a.innerText.trim();
@@ -225,8 +250,8 @@ function bindSearch() {
         }).join('');
 
         results.querySelectorAll('.fp-search-results__item').forEach(el => {
-          el.addEventListener('click', () => {
-            if (!window.checkEditMode()) return;
+          el.addEventListener('click', async () => {
+            if (!(await window.checkEditMode())) return;
             
             const roomId = el.dataset.roomId || el.dataset.rId; // rId for rooms if I set it
             const roomName = el.dataset.r;
@@ -413,7 +438,7 @@ function bindFurnitureModal() {
 }
 
 window.openMapNavigator = async function(preselect = '') {
-  if (!window.checkEditMode()) return;
+  if (!(await window.checkEditMode())) return;
   
   const modal = document.getElementById('map-navigator-modal');
   const sidebar = document.getElementById('navigator-sidebar');
@@ -530,7 +555,9 @@ function bindMapNavigator() {
     `).join('');
 
     grid.querySelectorAll('.fp-room-card').forEach(card => {
-      card.addEventListener('click', () => {
+      card.addEventListener('click', async () => {
+        if (!(await window.checkEditMode())) return;
+        
         const roomName = card.dataset.rname;
         const roomId = card.dataset.roomId || '100'; // Default fallback
         updateBreadcrumb(card.dataset.bname, card.dataset.fname, roomName);

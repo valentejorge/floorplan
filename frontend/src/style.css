@@ -577,6 +577,34 @@ body {
   color: var(--fp-text-muted);
 }
 
+/* ── Confirm Dialog ──────────────────────────────────────────────── */
+.fp-confirm-dialog {
+  width: 320px;
+  padding: 24px;
+  text-align: center;
+}
+.fp-confirm-dialog__icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+.fp-confirm-dialog__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fp-text);
+  margin-bottom: 8px;
+}
+.fp-confirm-dialog__message {
+  font-size: 13px;
+  color: var(--fp-text-muted);
+  line-height: 1.4;
+  margin-bottom: 24px;
+}
+.fp-confirm-dialog__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
 /* ── Map Navigator (Habbo Style) ─────────────────────────────────── */
 .fp-navigator {
   width: 760px;
