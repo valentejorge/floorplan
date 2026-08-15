@@ -11,6 +11,9 @@ let currentMapTree = null;
 // ════════════════════════════════════════════════════════════════════
 
 async function init() {
+  // Remove preload class to enable CSS transitions
+  setTimeout(() => document.body.classList.remove('preload'), 50);
+
   bindToolbar();
   bindSearch();
   bindFurnitureModal();
@@ -189,18 +192,28 @@ function bindSearch() {
   });
 }
 
+window.closeModal = function(modal) {
+  if (!modal || !modal.classList.contains('visible')) return;
+  modal.classList.add('hiding');
+  // Wait for animation to finish before hiding
+  setTimeout(() => {
+    modal.classList.remove('visible');
+    modal.classList.remove('hiding');
+  }, 250);
+};
+
 function bindFurnitureModal() {
   const modal = document.getElementById('furniture-modal');
   if (!modal) return;
 
   modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.classList.remove('visible');
+    if (e.target === modal) window.closeModal(modal);
   });
 
   modal.querySelectorAll('.fp-furniture-card').forEach(card => {
     card.addEventListener('click', () => {
       const type = card.dataset.type;
-      modal.classList.remove('visible');
+      window.closeModal(modal);
       notify(`Furniture "${type}" selected for placement.`);
       document.querySelectorAll('.fp-tool-btn').forEach(b => b.classList.remove('active'));
       document.querySelector('.fp-tool-btn[data-tool="select"]')?.classList.add('active');
@@ -238,9 +251,9 @@ function bindMapNavigator() {
 
   if (!modal) return;
 
-  closeBtn?.addEventListener('click', () => modal.classList.remove('visible'));
+  closeBtn?.addEventListener('click', () => window.closeModal(modal));
   modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.classList.remove('visible');
+    if (e.target === modal) window.closeModal(modal);
   });
 
   window.renderNavigatorSidebar = function(filter = '') {

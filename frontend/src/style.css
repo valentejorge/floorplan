@@ -3,7 +3,11 @@
    OCS-Native palette with 3-column CAD layout.
    ================================================================ */
 
-/* ── Reset ──────────────────────────────────────────────────────── */
+/* ── Reset & Core Variables ────────────────────────────────────────── */
+.preload * {
+  transition: none !important;
+  animation: none !important;
+}
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 /* ── Tokens ─────────────────────────────────────────────────────── */
@@ -146,49 +150,51 @@ body {
   overflow: hidden; /* Hide offscreen panels */
 }
 
-/* ── Canvas Area ─────────────────────────────────────────────────── */
+/* ── Canvas Area (Infinite, 100% width) ──────────────────────────── */
 .fp-canvas-area {
   position: absolute;
   top: 0;
   left: 0;
   height: 100%;
   width: 100%;
-  /* Default View Mode: Explorer is on the LEFT */
-  padding-left: var(--fp-explorer-w);
-  padding-right: 0;
   background: var(--fp-canvas-bg);
-  transition: padding 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  /* No more padding needed, canvas is full screen and panels float! */
 }
 .fp-canvas-area #floorplan-container {
   width: 100%;
   height: 100%;
 }
 
-.fp-layout.is-editing .fp-canvas-area {
-  /* Edit Mode: Toolbar on the LEFT, Explorer on the RIGHT */
-  padding-left: var(--fp-toolbar-w);
-  padding-right: var(--fp-explorer-w);
+/* ── Floating Overlays (Breadcrumb & Camera) ─────────────────────── */
+@keyframes slideInLeft {
+  from { opacity: 0; translate: -20px 0; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes slideInRight {
+  from { opacity: 0; translate: 20px 0; }
+  to { opacity: 1; translate: 0 0; }
 }
 
-/* ── Floating Overlays (Breadcrumb & Camera) ─────────────────────── */
 .fp-canvas-breadcrumb {
   position: absolute;
   top: 16px;
-  left: 0;
-  /* View Mode: Explorer is on the LEFT */
+  left: 16px;
+  /* View Mode: Explorer is on the LEFT (width + 16px gap) */
   transform: translateX(calc(var(--fp-explorer-w) + 16px));
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(4px);
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(8px);
   padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--fp-border);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
   font-size: 13px;
   color: var(--fp-text-muted);
   z-index: 40;
   display: flex;
   gap: 6px;
+  animation: slideInLeft 0.5s cubic-bezier(0.2, 0, 0, 1) backwards;
+  animation-delay: 0.1s;
 }
 .fp-layout.is-editing .fp-canvas-breadcrumb {
   /* Edit Mode: Toolbar is on the LEFT */
@@ -198,67 +204,86 @@ body {
 .fp-camera-controls {
   position: absolute;
   bottom: 16px;
-  right: 0;
+  right: 16px;
   /* View Mode: nothing on the right */
-  transform: translateX(-16px);
+  transform: translateX(0);
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  background: #fff;
-  border: 1px solid var(--fp-border);
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
   overflow: hidden;
   z-index: 40;
+  animation: slideInRight 0.5s cubic-bezier(0.2, 0, 0, 1) backwards;
+  animation-delay: 0.3s;
 }
 .fp-layout.is-editing .fp-camera-controls {
   /* Edit Mode: Explorer is on the RIGHT */
   transform: translateX(calc(-1 * var(--fp-explorer-w) - 16px));
 }
 
-/* ── Panels Shared Transition ────────────────────────────────────── */
+/* ── Floating Panels Shared ──────────────────────────────────────── */
 .fp-explorer, .fp-toolbar {
   position: absolute;
-  top: 0;
-  left: 0; /* Ancorados na esquerda por padrão */
-  height: 100%;
-  background: #fff;
+  top: 16px;
+  left: 16px;
+  height: calc(100% - 32px); /* 16px gap top and bottom */
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 20px rgba(0,0,0,0.1);
   z-index: 50;
+  overflow: hidden;
 }
 
 /* ── Explorer Panel (Starts Left, Moves Right) ───────────────────── */
 .fp-explorer {
   width: var(--fp-explorer-w);
-  border-right: 1px solid var(--fp-border);
+  display: flex;
+  flex-direction: column;
+  /* View Mode: sitting on the left */
+  transform: translateX(0); 
+  animation: slideInLeft 0.5s cubic-bezier(0.2, 0, 0, 1) backwards;
+  animation-delay: 0.2s;
+}
+
+/* ── Explorer Panel (Starts Left, Moves Right) ───────────────────── */
+.fp-explorer {
+  width: var(--fp-explorer-w);
   display: flex;
   flex-direction: column;
   /* View Mode: sitting on the left */
   transform: translateX(0); 
 }
 .fp-layout.is-editing .fp-explorer {
-  /* Edit Mode: cruza a tela toda para a direita! */
-  transform: translateX(calc(100vw - var(--fp-explorer-w)));
-  border-right: none;
-  border-left: 1px solid var(--fp-border);
+  /* Edit Mode: travels right. Total screen width minus its width, minus 32px (left margin + right margin) */
+  transform: translateX(calc(100vw - var(--fp-explorer-w) - 32px));
 }
 
 /* ── Toolbar Panel (Starts offscreen Left, Moves into Left) ──────── */
 .fp-toolbar {
   width: var(--fp-toolbar-w);
-  border-right: 1px solid var(--fp-border);
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 8px 0;
   gap: 2px;
   /* View Mode: hidden completely offscreen to the left */
-  transform: translateX(-100%);
+  transform: translateX(calc(-100% - 32px));
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
 }
 .fp-layout.is-editing .fp-toolbar {
   /* Edit Mode: slides into view on the left */
   transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .fp-tool-btn {
@@ -444,7 +469,24 @@ body {
 }
 .fp-properties__row span:first-child { color: var(--fp-text-muted); }
 
-/* ── Modals (Generic) ──────────────────────────────────────────────── */
+/* ── Modals (Generic & Animated) ───────────────────────────────────── */
+@keyframes modalFadeIn {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to { opacity: 1; backdrop-filter: blur(2px); }
+}
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes modalFadeOut {
+  from { opacity: 1; backdrop-filter: blur(2px); }
+  to { opacity: 0; backdrop-filter: blur(0px); }
+}
+@keyframes modalSlideDown {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(30px) scale(0.97); }
+}
+
 .fp-modal {
   display: none;
   position: fixed;
@@ -455,7 +497,14 @@ body {
   align-items: center;
   backdrop-filter: blur(2px);
 }
-.fp-modal.visible { display: flex; }
+.fp-modal.visible { 
+  display: flex; 
+  animation: modalFadeIn 0.25s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+.fp-modal.hiding {
+  animation: modalFadeOut 0.25s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
 .fp-modal__content {
   background: #fff;
   border: 1px solid var(--fp-border);
@@ -464,6 +513,12 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+.fp-modal.visible .fp-modal__content {
+  animation: modalSlideUp 0.25s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+.fp-modal.hiding .fp-modal__content {
+  animation: modalSlideDown 0.25s cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
 /* ── Furniture Catalog ───────────────────────────────────────────── */
