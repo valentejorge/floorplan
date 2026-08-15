@@ -225,10 +225,21 @@ function bindSearch() {
                       
                       // After load, we must focus the asset! Wait a tick for rendering.
                       setTimeout(() => {
-                        import('./engine.js').then(({ stage, assetsLayer }) => {
+                        import('./engine.js').then(({ stage, assetsLayer, getTransformer }) => {
                           const hwId = el.dataset.hwId;
                           const group = assetsLayer.getChildren().find(node => String(node.getAttr('hardware_id')) === String(hwId) || String(node.id()) === String(assetId));
+                          
                           if (group) {
+                            // Pan camera to center the asset
+                            const scale = stage.scaleX();
+                            new Konva.Tween({
+                              node: stage,
+                              duration: 0.5,
+                              x: window.innerWidth / 2 - group.x() * scale,
+                              y: window.innerHeight / 2 - group.y() * scale,
+                              easing: Konva.Easings.EaseInOut
+                            }).play();
+
                             // Pulse effect on the found asset
                             const pulse = new Konva.Circle({
                               x: group.x(), y: group.y(),
@@ -239,15 +250,21 @@ function bindSearch() {
                               node: pulse, duration: 1, radius: 100, opacity: 0,
                               onFinish: () => pulse.destroy()
                             }).play();
+
+                            // Select it
+                            const tr = getTransformer();
+                            tr.nodes([group]);
+                            tr.getLayer().batchDraw();
+                          } else {
+                            console.warn("Searched asset not found in Konva layer. hwId:", hwId, "assetId:", assetId);
                           }
                         });
-                      }, 100);
+                      }, 200);
                     });
                   }
                 });
             }
             results.classList.remove('visible');
-            input.value = ''; // clear search
           });
         });
       }
@@ -257,8 +274,16 @@ function bindSearch() {
     }
   }
 
-  btn?.addEventListener('click', doSearch);
-  input?.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+  let searchTimeout;
+  input?.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(doSearch, 300);
+  });
+
+  btn?.addEventListener('click', () => {
+    clearTimeout(searchTimeout);
+    doSearch();
+  });
 
   document.addEventListener('click', (e) => {
     if (results?.classList.contains('visible') && !results.contains(e.target) && e.target !== input && e.target !== btn) {
