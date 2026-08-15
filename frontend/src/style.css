@@ -50,6 +50,46 @@ body {
   height: 100vh;
 }
 
+/* ── Buttons ─────────────────────────────────────────────────────── */
+.fp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  font-family: inherit;
+}
+.fp-btn:hover {
+  transform: translateY(-1px);
+}
+.fp-btn:active {
+  transform: translateY(0);
+}
+
+.fp-btn--primary {
+  background: var(--fp-primary);
+  color: #fff;
+}
+.fp-btn--primary:hover {
+  background: var(--fp-primary-hover);
+  box-shadow: 0 2px 6px rgba(150, 27, 126, 0.3);
+}
+
+.fp-btn--outline {
+  background: transparent;
+  color: var(--fp-text);
+  border-color: var(--fp-border);
+}
+.fp-btn--outline:hover {
+  background: #f8f9fa;
+  border-color: #ced4da;
+}
+
 /* ── Topbar ──────────────────────────────────────────────────────── */
 .fp-topbar {
   height: var(--fp-topbar-h);
