@@ -3,7 +3,8 @@
  *
  * Initializes Konva.js with three isolated layers (static, assets, overlay),
  * manages Read/Edit modes, snap-to-grid, batch saving, HTML tooltips,
- * and global search integration.
+ * global search integration with pan/zoom animation, wall drawing,
+ * and DOM-to-Canvas Drag & Drop.
  */
 import Konva from 'konva';
 import { api } from './api.js';
@@ -12,11 +13,14 @@ import './style.css';
 
 // ── Constants ──────────────────────────────────────────────────────
 const GRID_SIZE = 20;
+const SCALE_BY = 1.1;
 
 // ── State ──────────────────────────────────────────────────────────
 let stage;
 let staticLayer, assetsLayer, overlayLayer;
 let isEditMode = false;
+let isDrawingWall = false;
+let currentWallLine = null;
 let roomData = null;
 const skinManager = new SkinManager();
 
@@ -24,8 +28,10 @@ const skinManager = new SkinManager();
 const originalPositions = new Map();
 
 // ── DOM References ─────────────────────────────────────────────────
+const $wrapper       = () => document.getElementById('canvas-wrapper');
 const $container     = () => document.getElementById('floorplan-container');
 const $btnEdit       = () => document.getElementById('btn-edit');
+const $btnDrawWall   = () => document.getElementById('btn-draw-wall');
 const $btnSave       = () => document.getElementById('btn-save');
 const $btnCancel     = () => document.getElementById('btn-cancel');
 const $editBadge     = () => document.getElementById('edit-badge');
@@ -35,7 +41,14 @@ const $searchBtn     = () => document.getElementById('search-btn');
 const $searchResults = () => document.getElementById('search-results');
 const $breadcrumb    = () => document.getElementById('breadcrumb');
 const $roomInfo      = () => document.getElementById('room-info');
-const $legend        = () => document.getElementById('legend');
+const $unassignedList   = () => document.getElementById('unassigned-list');
+const $unassignedSearch = () => document.getElementById('unassigned-search');
+
+// Camera controls
+const $btnZoomIn     = () => document.getElementById('btn-zoom-in');
+const $btnZoomOut    = () => document.getElementById('btn-zoom-out');
+const $btnZoomReset  = () => document.getElementById('btn-zoom-reset');
+const $btnZoomFit    = () => document.getElementById('btn-zoom-fit');
 
 // ════════════════════════════════════════════════════════════════════
 // Bootstrap
@@ -51,6 +64,7 @@ async function init() {
   renderStaticElements();
   renderAssets();
   updateSidebar();
+  renderUnassignedAssets();
   bindEvents();
 
   console.info(
@@ -71,9 +85,10 @@ function createStage() {
     container: 'floorplan-container',
     width: w,
     height: h,
+    draggable: true, // Enables Panning
   });
 
-  // Layer 1 — static elements (walls/doors), non-interactive
+  // Layer 1 — static elements (walls/doors), interactive only in edit mode
   staticLayer = new Konva.Layer({ listening: false });
 
   // Layer 2 — assets (PCs, servers, etc.), interactive
@@ -84,34 +99,162 @@ function createStage() {
 
   stage.add(staticLayer, assetsLayer, overlayLayer);
 
-  // Center the room drawing in the canvas
-  const offsetX = Math.round((w - roomData.room.width) / 2);
-  const offsetY = Math.round((h - roomData.room.height) / 2);
-  [staticLayer, assetsLayer, overlayLayer].forEach((layer) => {
-    layer.offsetX(-offsetX);
-    layer.offsetY(-offsetY);
-  });
+  // Initial Fit
+  fitStage();
 
   // Resize handler
   const ro = new ResizeObserver(() => {
-    const nw = wrapper.clientWidth;
-    const nh = wrapper.clientHeight;
-    stage.width(nw);
-    stage.height(nh);
-
-    const ox = Math.round((nw - roomData.room.width) / 2);
-    const oy = Math.round((nh - roomData.room.height) / 2);
-    [staticLayer, assetsLayer, overlayLayer].forEach((layer) => {
-      layer.offsetX(-ox);
-      layer.offsetY(-oy);
-    });
+    stage.width(wrapper.clientWidth);
+    stage.height(wrapper.clientHeight);
   });
   ro.observe(wrapper);
+
+  // Mouse wheel zoom
+  stage.on('wheel', (e) => {
+    e.evt.preventDefault();
+    const oldScale = stage.scaleX();
+    const pointer = stage.getPointerPosition();
+
+    const mousePointTo = {
+      x: (pointer.x - stage.x()) / oldScale,
+      y: (pointer.y - stage.y()) / oldScale,
+    };
+
+    const direction = e.evt.deltaY > 0 ? -1 : 1;
+    const newScale = direction > 0 ? oldScale * SCALE_BY : oldScale / SCALE_BY;
+
+    stage.scale({ x: newScale, y: newScale });
+
+    const newPos = {
+      x: pointer.x - mousePointTo.x * newScale,
+      y: pointer.y - mousePointTo.y * newScale,
+    };
+    stage.position(newPos);
+  });
+
+  // Wall Drawing logic
+  stage.on('mousedown', (e) => {
+    if (!isDrawingWall) return;
+    if (e.evt.button !== 0) return; // Only left click
+
+    const pos = getRelativePointerPosition(stage);
+    
+    // Snap to grid
+    const snappedX = Math.round(pos.x / GRID_SIZE) * GRID_SIZE;
+    const snappedY = Math.round(pos.y / GRID_SIZE) * GRID_SIZE;
+
+    if (!currentWallLine) {
+      currentWallLine = new Konva.Line({
+        points: [snappedX, snappedY, snappedX, snappedY],
+        stroke: '#4a5568',
+        strokeWidth: 4,
+        lineCap: 'round',
+        lineJoin: 'round',
+        listening: true,
+        draggable: true,
+      });
+      bindWallEvents(currentWallLine);
+      staticLayer.add(currentWallLine);
+    } else {
+      const points = currentWallLine.points();
+      points.push(snappedX, snappedY);
+      currentWallLine.points(points);
+    }
+    staticLayer.batchDraw();
+  });
+
+  stage.on('mousemove', () => {
+    if (!isDrawingWall || !currentWallLine) return;
+
+    const pos = getRelativePointerPosition(stage);
+    const snappedX = Math.round(pos.x / GRID_SIZE) * GRID_SIZE;
+    const snappedY = Math.round(pos.y / GRID_SIZE) * GRID_SIZE;
+
+    const points = currentWallLine.points().slice();
+    points[points.length - 2] = snappedX;
+    points[points.length - 1] = snappedY;
+    currentWallLine.points(points);
+    staticLayer.batchDraw();
+  });
+
+  stage.on('dblclick', () => {
+    if (isDrawingWall && currentWallLine) {
+      // Remove last temp point
+      const points = currentWallLine.points();
+      points.splice(-2, 2);
+      currentWallLine.points(points);
+      currentWallLine = null;
+      staticLayer.batchDraw();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isDrawingWall && currentWallLine) {
+      const points = currentWallLine.points();
+      points.splice(-2, 2);
+      currentWallLine.points(points);
+      currentWallLine = null;
+      staticLayer.batchDraw();
+    }
+  });
+}
+
+function getRelativePointerPosition(node) {
+  const transform = node.getAbsoluteTransform().copy();
+  transform.invert();
+  const pos = node.getStage().getPointerPosition();
+  return transform.point(pos);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Camera Controls
+// ════════════════════════════════════════════════════════════════════
+
+function zoomIn() {
+  const oldScale = stage.scaleX();
+  stage.scale({ x: oldScale * SCALE_BY, y: oldScale * SCALE_BY });
+  stage.batchDraw();
+}
+
+function zoomOut() {
+  const oldScale = stage.scaleX();
+  stage.scale({ x: oldScale / SCALE_BY, y: oldScale / SCALE_BY });
+  stage.batchDraw();
+}
+
+function resetZoom() {
+  stage.scale({ x: 1, y: 1 });
+  stage.batchDraw();
+}
+
+function fitStage() {
+  const padding = 40;
+  const scaleX = stage.width() / (roomData.room.width + padding * 2);
+  const scaleY = stage.height() / (roomData.room.height + padding * 2);
+  const scale = Math.min(scaleX, scaleY, 1); // Cap at 100%
+
+  stage.scale({ x: scale, y: scale });
+
+  const offsetX = (stage.width() - roomData.room.width * scale) / 2;
+  const offsetY = (stage.height() - roomData.room.height * scale) / 2;
+
+  stage.position({ x: offsetX, y: offsetY });
+  stage.batchDraw();
 }
 
 // ════════════════════════════════════════════════════════════════════
 // Renderers
 // ════════════════════════════════════════════════════════════════════
+
+function bindWallEvents(line) {
+  line.on('dragend', () => {
+    // Snap whole line to grid
+    const x = Math.round(line.x() / GRID_SIZE) * GRID_SIZE;
+    const y = Math.round(line.y() / GRID_SIZE) * GRID_SIZE;
+    line.position({ x, y });
+    staticLayer.batchDraw();
+  });
+}
 
 function renderStaticElements() {
   const { static_elements: elements } = roomData;
@@ -119,15 +262,18 @@ function renderStaticElements() {
 
   elements.forEach((el) => {
     if (el.type === 'wall') {
-      staticLayer.add(
-        new Konva.Line({
-          points: el.points,
-          stroke: el.stroke || '#4a5568',
-          strokeWidth: el.strokeWidth || 2,
-          dash: el.dash || [],
-          closed: el.points.length > 4,
-        }),
-      );
+      const line = new Konva.Line({
+        points: el.points,
+        stroke: el.stroke || '#4a5568',
+        strokeWidth: el.strokeWidth || 4,
+        dash: el.dash || [],
+        closed: el.points.length > 4,
+        lineCap: 'round',
+        lineJoin: 'round',
+        draggable: false, // Updated in edit mode
+      });
+      bindWallEvents(line);
+      staticLayer.add(line);
     } else if (el.type === 'door') {
       staticLayer.add(
         new Konva.Rect({
@@ -135,7 +281,7 @@ function renderStaticElements() {
           y: el.y,
           width: el.width,
           height: el.height,
-          fill: el.fill || '#e2a854',
+          fill: el.fill || '#1c1c1c',
           cornerRadius: 1,
         }),
       );
@@ -146,59 +292,56 @@ function renderStaticElements() {
 }
 
 function renderAssets() {
-  roomData.assets.forEach((asset) => {
-    const img = skinManager.getImage(asset.type);
+  assetsLayer.destroyChildren();
+  roomData.assets.forEach(createAssetNode);
+  assetsLayer.batchDraw();
+}
 
-    const group = new Konva.Group({
-      x: asset.pos_x,
-      y: asset.pos_y,
-      draggable: false,
-      id: `asset-${asset.id}`,
-    });
+function createAssetNode(asset) {
+  const img = skinManager.getImage(asset.type);
 
-    // Store asset metadata for tooltip and batch save
-    group.setAttr('assetData', asset);
-
-    // Bounding Box Rule — icon always rendered within BOUNDING_BOX
-    group.add(
-      new Konva.Image({
-        image: img,
-        width: BOUNDING_BOX,
-        height: BOUNDING_BOX,
-      }),
-    );
-
-    // Label below icon
-    group.add(
-      new Konva.Text({
-        text: asset.hardware_name,
-        fontSize: 10,
-        fontFamily: 'sans-serif',
-        fill: '#4a5568',
-        width: BOUNDING_BOX + 30,
-        align: 'center',
-        y: BOUNDING_BOX + 3,
-        x: -15,
-        listening: false,
-      }),
-    );
-
-    // ── Snap to Grid (dragend) ───────────────────────────────
-    group.on('dragend', () => {
-      const snappedX = Math.round(group.x() / GRID_SIZE) * GRID_SIZE;
-      const snappedY = Math.round(group.y() / GRID_SIZE) * GRID_SIZE;
-      group.position({ x: snappedX, y: snappedY });
-      assetsLayer.batchDraw();
-    });
-
-    // ── Tooltip events ───────────────────────────────────────
-    group.on('mouseenter', () => showTooltip(group));
-    group.on('mouseleave', hideTooltip);
-
-    assetsLayer.add(group);
+  const group = new Konva.Group({
+    x: asset.pos_x,
+    y: asset.pos_y,
+    draggable: isEditMode,
+    id: `asset-${asset.id}`,
   });
 
-  assetsLayer.batchDraw();
+  group.setAttr('assetData', asset);
+
+  group.add(
+    new Konva.Image({
+      image: img,
+      width: BOUNDING_BOX,
+      height: BOUNDING_BOX,
+    }),
+  );
+
+  group.add(
+    new Konva.Text({
+      text: asset.hardware_name,
+      fontSize: 10,
+      fontFamily: 'sans-serif',
+      fill: '#4a5568',
+      width: BOUNDING_BOX + 30,
+      align: 'center',
+      y: BOUNDING_BOX + 3,
+      x: -15,
+      listening: false,
+    }),
+  );
+
+  group.on('dragend', () => {
+    const snappedX = Math.round(group.x() / GRID_SIZE) * GRID_SIZE;
+    const snappedY = Math.round(group.y() / GRID_SIZE) * GRID_SIZE;
+    group.position({ x: snappedX, y: snappedY });
+    assetsLayer.batchDraw();
+  });
+
+  group.on('mouseenter', () => showTooltip(group));
+  group.on('mouseleave', hideTooltip);
+
+  assetsLayer.add(group);
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -206,6 +349,7 @@ function renderAssets() {
 // ════════════════════════════════════════════════════════════════════
 
 function showTooltip(group) {
+  if (isEditMode || isDrawingWall) return; // Don't show in edit modes
   const data = group.getAttr('assetData');
   if (!data) return;
 
@@ -218,10 +362,9 @@ function showTooltip(group) {
   // Position relative to the canvas wrapper
   const stageBox = stage.container().getBoundingClientRect();
   const absPos   = group.getAbsolutePosition();
-  const layerOff = assetsLayer.getAbsolutePosition();
 
-  $t.style.left = `${stageBox.left + absPos.x + layerOff.x + BOUNDING_BOX + 10}px`;
-  $t.style.top  = `${stageBox.top + absPos.y + layerOff.y}px`;
+  $t.style.left = `${stageBox.left + absPos.x + BOUNDING_BOX + 10}px`;
+  $t.style.top  = `${stageBox.top + absPos.y}px`;
   $t.classList.add('visible');
 }
 
@@ -230,7 +373,7 @@ function hideTooltip() {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// Edit Mode
+// Edit Mode & Draw Wall
 // ════════════════════════════════════════════════════════════════════
 
 function toggleEditMode() {
@@ -243,6 +386,9 @@ function toggleEditMode() {
       g.draggable(true);
     });
 
+    staticLayer.listening(true);
+    staticLayer.find('Line').forEach(l => l.draggable(true));
+
     $btnEdit().classList.add('fp-btn--warning');
     $btnEdit().innerHTML = `
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
@@ -250,21 +396,42 @@ function toggleEditMode() {
         <line x1="5" y1="5" x2="11" y2="11"/>
         <line x1="11" y1="5" x2="5" y2="11"/>
       </svg>
-      Editing…`;
+      <span>Editing</span>`;
     $btnSave().style.display = '';
     $btnCancel().style.display = '';
+    $btnDrawWall().style.display = '';
     $editBadge().classList.add('active');
-    stage.container().style.cursor = 'grab';
   } else {
     exitEditMode();
   }
 }
 
+function toggleDrawWall() {
+  if (!isEditMode) return;
+  isDrawingWall = !isDrawingWall;
+  currentWallLine = null;
+
+  if (isDrawingWall) {
+    $btnDrawWall().classList.add('fp-btn--primary');
+    stage.container().style.cursor = 'crosshair';
+    stage.draggable(false); // disable panning while drawing
+  } else {
+    $btnDrawWall().classList.remove('fp-btn--primary');
+    stage.container().style.cursor = 'default';
+    stage.draggable(true);
+  }
+}
+
 function exitEditMode() {
   isEditMode = false;
+  isDrawingWall = false;
+  currentWallLine = null;
 
   assetsLayer.find('Group').forEach((g) => g.draggable(false));
   originalPositions.clear();
+
+  staticLayer.listening(false);
+  staticLayer.find('Line').forEach(l => l.draggable(false));
 
   $btnEdit().classList.remove('fp-btn--warning');
   $btnEdit().innerHTML = `
@@ -272,11 +439,14 @@ function exitEditMode() {
       <path d="M11.5 1.5 14.5 4.5 5 14H2v-3z"/>
       <line x1="9.5" y1="3.5" x2="12.5" y2="6.5"/>
     </svg>
-    Edit Mode`;
+    <span>Edit</span>`;
   $btnSave().style.display = 'none';
   $btnCancel().style.display = 'none';
+  $btnDrawWall().style.display = 'none';
+  $btnDrawWall().classList.remove('fp-btn--primary');
   $editBadge().classList.remove('active');
-  stage.container().style.cursor = '';
+  stage.container().style.cursor = 'default';
+  stage.draggable(true);
 }
 
 function cancelEdit() {
@@ -301,25 +471,91 @@ async function batchSave() {
       pos_x: g.x(),
       pos_y: g.y(),
     });
-    // Update local asset data to match new position
     data.pos_x = g.x();
     data.pos_y = g.y();
   });
 
   try {
-    // In dev mode this hits the mock; in production it calls the real endpoint
     await api('ajax/batch_update_assets.php', {
       method: 'POST',
       body: JSON.stringify({ room_id: roomData.room.id, assets: payload }),
     });
     notify(`${payload.length} assets saved successfully.`, 'success');
   } catch (err) {
-    // In dev mock may not exist for POST — that's fine
     console.warn('[floorplan] Batch save (dev mock):', err.message);
     notify(`${payload.length} assets saved (dev mode).`, 'success');
   }
 
   exitEditMode();
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Unassigned Assets Drag & Drop
+// ════════════════════════════════════════════════════════════════════
+
+// Mock unassigned assets
+const MOCK_UNASSIGNED = [
+  { id: 9, hardware_id: 9, hardware_name: "SRV-BACKUP-01", type: "server", ip: "192.168.10.15", mac: "AA:BB:CC:DD:EE:09" },
+  { id: 10, hardware_id: 10, hardware_name: "PC-TI-01", type: "desktop", ip: "192.168.10.30", mac: "AA:BB:CC:DD:EE:10" },
+  { id: 11, hardware_id: 11, hardware_name: "IMP-TI", type: "printer", ip: "192.168.10.81", mac: "AA:BB:CC:DD:EE:11" },
+];
+
+function renderUnassignedAssets() {
+  const query = $unassignedSearch().value.toLowerCase();
+  
+  const filtered = MOCK_UNASSIGNED.filter(a => 
+    a.hardware_name.toLowerCase().includes(query) || 
+    a.ip.toLowerCase().includes(query)
+  );
+
+  $unassignedList().innerHTML = filtered.map(a => `
+    <div class="fp-unassigned-item" draggable="true" data-asset='${JSON.stringify(a)}'>
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="3" width="12" height="10" rx="2"/></svg>
+      ${a.hardware_name} <span style="color:#adb5bd;font-size:10px">${a.ip}</span>
+    </div>
+  `).join('');
+
+  // Bind drag events
+  document.querySelectorAll('.fp-unassigned-item').forEach(el => {
+    el.addEventListener('dragstart', (e) => {
+      if (!isEditMode) {
+        e.preventDefault();
+        notify('Please enter Edit Mode to place assets.', 'warning');
+        return;
+      }
+      e.dataTransfer.setData('application/json', el.dataset.asset);
+    });
+  });
+}
+
+function handleDropOnCanvas(e) {
+  e.preventDefault();
+  if (!isEditMode) return;
+
+  const dataStr = e.dataTransfer.getData('application/json');
+  if (!dataStr) return;
+
+  const assetData = JSON.parse(dataStr);
+  
+  // Convert screen coordinates to relative stage coordinates
+  stage.setPointersPositions(e);
+  const pos = getRelativePointerPosition(stage);
+
+  // Snap to grid
+  assetData.pos_x = Math.round(pos.x / GRID_SIZE) * GRID_SIZE;
+  assetData.pos_y = Math.round(pos.y / GRID_SIZE) * GRID_SIZE;
+
+  // Add to map
+  roomData.assets.push(assetData);
+  createAssetNode(assetData);
+  assetsLayer.batchDraw();
+
+  // Remove from unassigned
+  const idx = MOCK_UNASSIGNED.findIndex(a => a.id === assetData.id);
+  if (idx !== -1) MOCK_UNASSIGNED.splice(idx, 1);
+  renderUnassignedAssets();
+
+  notify(`${assetData.hardware_name} placed.`, 'success');
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -342,7 +578,7 @@ async function handleSearch() {
       $results.innerHTML = items
         .map(
           (item) => `
-        <div class="fp-search-results__item" data-hardware-id="${item.hardware_id}">
+        <div class="fp-search-results__item" data-hardware-id="${item.hardware_id}" data-room-id="${item.room_id}">
           <span class="fp-search-results__name">${item.hardware_name} — ${item.ip || '—'}</span>
           <span class="fp-search-results__location">
             📍 ${item.building_name} › ${item.floor_name} › ${item.room_name}
@@ -355,6 +591,14 @@ async function handleSearch() {
       $results.querySelectorAll('.fp-search-results__item').forEach((el) => {
         el.addEventListener('click', () => {
           const hwId = parseInt(el.dataset.hardwareId, 10);
+          const rId = parseInt(el.dataset.roomId, 10);
+          
+          if (rId !== roomData.room.id) {
+            notify(`Simulating navigation to room ${rId}...`, 'warning');
+            // In a real app we would load the new room data here.
+            // For now, let's just pretend we are there.
+          }
+          
           highlightAsset(hwId);
           $results.classList.remove('visible');
         });
@@ -376,35 +620,67 @@ function highlightAsset(hardwareId) {
     return d && d.hardware_id === hardwareId;
   });
 
-  if (!target) return;
+  if (!target) {
+    notify('Asset not rendered on current map.', 'danger');
+    return;
+  }
+
+  // Animate Pan to center the asset
+  const targetX = target.x() + BOUNDING_BOX / 2;
+  const targetY = target.y() + BOUNDING_BOX / 2;
+  
+  const scale = stage.scaleX();
+  const newPos = {
+    x: stage.width() / 2 - targetX * scale,
+    y: stage.height() / 2 - targetY * scale,
+  };
+
+  const panTween = new Konva.Tween({
+    node: stage,
+    duration: 0.5,
+    x: newPos.x,
+    y: newPos.y,
+    easing: Konva.Easings.EaseInOut,
+  });
+  panTween.play();
 
   // Pulsing ring around the found asset
   const ring = new Konva.Circle({
-    x: target.x() + BOUNDING_BOX / 2,
-    y: target.y() + BOUNDING_BOX / 2,
+    x: targetX,
+    y: targetY,
     radius: BOUNDING_BOX,
-    stroke: '#337ab7',
-    strokeWidth: 2,
+    stroke: '#8058a5', // OCS Purple
+    strokeWidth: 4,
     dash: [6, 3],
     opacity: 0,
   });
 
   overlayLayer.add(ring);
 
-  // Pulse animation
+  // Pulse animation & opacity flash
   const anim = new Konva.Animation((frame) => {
-    const scale = 0.8 + Math.sin(frame.time / 300) * 0.15;
-    ring.scaleX(scale);
-    ring.scaleY(scale);
-    ring.opacity(0.6 + Math.sin(frame.time / 300) * 0.4);
+    const s = 0.8 + Math.sin(frame.time / 300) * 0.2;
+    ring.scaleX(s);
+    ring.scaleY(s);
+    ring.opacity(0.6 + Math.sin(frame.time / 150) * 0.4); // Faster blink
   }, overlayLayer);
 
   anim.start();
+
+  // Flash the target opacity too
+  const targetTween = new Konva.Tween({
+    node: target,
+    duration: 0.3,
+    opacity: 0.2,
+    yoyo: true,
+  });
+  targetTween.play();
 
   // Stop after 4 seconds
   setTimeout(() => {
     anim.stop();
     ring.destroy();
+    target.opacity(1);
     overlayLayer.batchDraw();
   }, 4000);
 }
@@ -413,42 +689,31 @@ function highlightAsset(hardwareId) {
 // Sidebar Updates
 // ════════════════════════════════════════════════════════════════════
 
+// Exposed globally for the inline onclick handlers in breadcrumb
+window.mockNavigate = (type, id) => {
+  console.log(`[floorplan] Simulating navigation: ${type} = ${id}`);
+  notify(`Navigating to ${type} ${id}...`, 'warning');
+  fitStage(); // Reset as a mock action
+};
+
 function updateSidebar() {
   const { building, floor, room, assets } = roomData;
 
-  // Breadcrumb
+  // Breadcrumb - Interactive
   $breadcrumb().innerHTML =
-    `${building.name} <span>›</span> ${floor.name} <span>›</span> <span>${room.name}</span>`;
+    `<a href="#" onclick="window.mockNavigate('Building', ${building.id}); return false;">${building.name}</a> 
+     <span>›</span> 
+     <a href="#" onclick="window.mockNavigate('Floor', ${floor.id}); return false;">${floor.name}</a> 
+     <span>›</span> 
+     <span>${room.name}</span>`;
 
   // Room info
-  const types = {};
-  assets.forEach((a) => { types[a.type] = (types[a.type] || 0) + 1; });
-
   $roomInfo().innerHTML = `
     <strong>Room:</strong> ${room.name}<br/>
     <strong>Size:</strong> ${room.width} × ${room.height}px<br/>
     <strong>Grid:</strong> ${room.grid_size}px<br/>
     <strong>Assets:</strong> ${assets.length}
   `;
-
-  // Legend
-  const legendColors = {
-    server:  { label: 'Server',  color: '#4a5568' },
-    desktop: { label: 'Desktop', color: '#5a6a7e' },
-    printer: { label: 'Printer', color: '#5a6a7e' },
-    switch:  { label: 'Switch',  color: '#4a5568' },
-  };
-
-  $legend().innerHTML = Object.entries(legendColors)
-    .filter(([type]) => types[type])
-    .map(
-      ([type, cfg]) =>
-        `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-          <span style="width:12px;height:12px;border-radius:2px;background:${cfg.color};display:inline-block;"></span>
-          ${cfg.label} <span style="color:var(--fp-text-muted)">(${types[type]})</span>
-        </div>`,
-    )
-    .join('');
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -467,14 +732,33 @@ function notify(message, type = 'success') {
 // ════════════════════════════════════════════════════════════════════
 
 function bindEvents() {
+  // Tools
   $btnEdit().addEventListener('click', toggleEditMode);
+  $btnDrawWall().addEventListener('click', toggleDrawWall);
   $btnSave().addEventListener('click', batchSave);
   $btnCancel().addEventListener('click', cancelEdit);
 
+  // Camera
+  $btnZoomIn().addEventListener('click', zoomIn);
+  $btnZoomOut().addEventListener('click', zoomOut);
+  $btnZoomReset().addEventListener('click', resetZoom);
+  $btnZoomFit().addEventListener('click', fitStage);
+
+  // Search
   $searchBtn().addEventListener('click', handleSearch);
   $searchInput().addEventListener('keydown', (e) => {
     if (e.key === 'Enter') handleSearch();
   });
+
+  // Unassigned Assets Filter
+  $unassignedSearch().addEventListener('input', renderUnassignedAssets);
+
+  // Canvas Drop
+  const wrapper = $wrapper();
+  wrapper.addEventListener('dragover', (e) => {
+    e.preventDefault(); // Necessary to allow dropping
+  });
+  wrapper.addEventListener('drop', handleDropOnCanvas);
 
   // Close search results on outside click
   document.addEventListener('click', (e) => {

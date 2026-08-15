@@ -59,18 +59,29 @@
                 <path d="M11.5 1.5 14.5 4.5 5 14H2v-3z"/>
                 <line x1="9.5" y1="3.5" x2="12.5" y2="6.5"/>
               </svg>
-              Edit Mode
+              <span>Edit</span>
             </button>
-            <button id="btn-save" class="fp-btn fp-btn--success" style="display:none" title="Save all changes">
+            <button id="btn-draw-wall" class="fp-btn" style="display:none" title="Draw Wall">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 14V2h12v12H2z" stroke-dasharray="2 2"/>
+                <path d="M2 8h12M8 2v12"/>
+              </svg>
+              <span>Wall</span>
+            </button>
+            <button id="btn-save" class="fp-btn fp-btn--success" style="display:none" title="Save changes">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M2 2h9l3 3v9H2z"/>
                 <rect x="5" y="2" width="6" height="4"/>
                 <rect x="4" y="9" width="8" height="5"/>
               </svg>
-              Save Changes
+              <span>Save</span>
             </button>
-            <button id="btn-cancel" class="fp-btn fp-btn--danger fp-btn--sm" style="display:none" title="Discard changes">
-              Cancel
+            <button id="btn-cancel" class="fp-btn fp-btn--danger" style="display:none" title="Discard">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="4" x2="12" y2="12"/>
+                <line x1="12" y1="4" x2="4" y2="12"/>
+              </svg>
+              <span>Cancel</span>
             </button>
           </div>
         </div>
@@ -90,14 +101,23 @@
         </div>
 
         <div class="fp-sidebar__section">
-          <div class="fp-sidebar__title">Legend</div>
-          <div id="legend" class="fp-sidebar__info"></div>
+          <div class="fp-sidebar__title">Unassigned Assets</div>
+          <input type="text" id="unassigned-search" class="fp-unassigned-search" placeholder="Filter assets...">
+          <div id="unassigned-list" class="fp-unassigned-list">
+            <!-- Populated via JS -->
+          </div>
         </div>
       </aside>
 
       <!-- Canvas -->
-      <div class="fp-canvas-wrapper">
+      <div class="fp-canvas-wrapper" id="canvas-wrapper">
         <div id="floorplan-container"></div>
+        <div class="fp-camera-controls">
+          <button id="btn-zoom-in" title="Zoom In">+</button>
+          <button id="btn-zoom-out" title="Zoom Out">−</button>
+          <button id="btn-zoom-reset" class="text-btn" title="100%">100%</button>
+          <button id="btn-zoom-fit" class="text-btn" title="Fit to screen">Fit</button>
+        </div>
       </div>
     </div>
 
