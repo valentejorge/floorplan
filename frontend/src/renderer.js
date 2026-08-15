@@ -216,6 +216,119 @@ export function loadMapData(data) {
 
   requestRender();
   
-  // Slide and fade map gracefully
+// Slide and fade map gracefully
   animateMapEntrance();
+  
+  populateObjectExplorer(data.assets);
+}
+
+function populateObjectExplorer(assets) {
+  const explorerBody = document.getElementById('explorer-body');
+  if (!explorerBody || !assets) return;
+  
+  if (assets.length === 0) {
+    explorerBody.innerHTML = `<div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">Nenhum equipamento encontrado.</div>`;
+    return;
+  }
+  
+  explorerBody.innerHTML = '';
+  const list = document.createElement('div');
+  list.style.display = 'flex';
+  list.style.flexDirection = 'column';
+  
+  assets.forEach(asset => {
+    const item = document.createElement('div');
+    item.className = 'explorer-item';
+    item.style.padding = '8px 12px';
+    item.style.borderBottom = '1px solid var(--fp-border)';
+    item.style.cursor = 'pointer';
+    item.style.display = 'flex';
+    item.style.alignItems = 'center';
+    item.style.gap = '8px';
+    item.style.fontSize = '12px';
+    
+    // Hover effect
+    item.onmouseenter = () => item.style.backgroundColor = '#f8fafc';
+    item.onmouseleave = () => item.style.backgroundColor = 'transparent';
+    
+    const dotColor = asset.status === 'offline' ? '#e53e3e' : 
+                     asset.status === 'warning' ? '#d69e2e' : '#5cb85c';
+                     
+    item.innerHTML = `
+      <div style="width:8px;height:8px;border-radius:50%;background-color:${dotColor};"></div>
+      <div style="font-weight:600;color:var(--fp-text);flex:1;">${asset.hardware_name}</div>
+      <div style="color:var(--fp-text-muted);font-size:11px;">${asset.type}</div>
+    `;
+    
+    item.onclick = () => {
+      // Find asset in Konva
+      const group = assetsLayer.getChildren().find(node => node.id() === asset.id);
+      if (group) {
+        import('./engine.js').then(({ stage }) => {
+          const scale = stage.scaleX();
+          new Konva.Tween({
+            node: stage,
+            duration: 0.6,
+            x: stage.width() / 2 - group.x() * scale,
+            y: stage.height() / 2 - group.y() * scale,
+            easing: Konva.Easings.StrongEaseOut,
+            onUpdate: () => stage.batchDraw()
+          }).play();
+        });
+      }
+    };
+    
+    list.appendChild(item);
+  });
+  
+  explorerBody.appendChild(list);
+}
+
+export function toggleAssetEditMode(isEditing) {
+  assetsLayer.getChildren().forEach(group => {
+    // Clear the cache to make changes
+    group.clearCache();
+    
+    // Find existing bounding box if any
+    let bbox = group.findOne('.edit-bbox');
+    
+    if (isEditing) {
+      // Enable interaction
+      group.listening(true);
+      group.on('mouseenter', () => {
+        document.body.style.cursor = 'grab';
+      });
+      group.on('mouseleave', () => {
+        document.body.style.cursor = 'default';
+      });
+      
+      if (!bbox) {
+        // Calculate bounds (roughly based on children)
+        const rect = group.getClientRect({ skipTransform: true });
+        bbox = new Konva.Rect({
+          x: rect.x - 2,
+          y: rect.y - 2,
+          width: rect.width + 4,
+          height: rect.height + 4,
+          stroke: '#63b3ed', // Blue
+          strokeWidth: 1.5,
+          dash: [4, 4],
+          name: 'edit-bbox',
+          listening: false
+        });
+        group.add(bbox);
+      }
+      bbox.show();
+    } else {
+      // Disable interaction
+      group.listening(false);
+      group.off('mouseenter mouseleave');
+      if (bbox) bbox.hide();
+    }
+    
+    // Re-cache for performance
+    group.cache();
+  });
+  
+  requestRender();
 }

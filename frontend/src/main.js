@@ -31,7 +31,7 @@ async function init() {
       const { skinManager } = await import('./skins.js');
       await skinManager.load();
       
-      const res = await fetch('/ajax/mock_room_1.json');
+      const res = await fetch('/ajax/mock_room_100.json');
       const json = await res.json();
       
       if (json.status === 'success') {
@@ -116,8 +116,13 @@ function bindModeToggle() {
       notify(mode === 'save' ? 'Alterações salvas com sucesso!' : 'Edição cancelada.', 'success');
     }
     
-    import('./engine.js').then(({ panToSafeArea }) => {
+    import('./engine.js').then(({ panToSafeArea, setEngineEditMode }) => {
       panToSafeArea();
+      setEngineEditMode(mode === 'edit');
+    });
+    
+    import('./renderer.js').then(({ toggleAssetEditMode }) => {
+      toggleAssetEditMode(mode === 'edit');
     });
   }
 
@@ -337,7 +342,7 @@ function bindMapNavigator() {
     }
 
     grid.innerHTML = floor.rooms.map(r => `
-      <div class="fp-room-card" data-bname="${building.name}" data-fname="${floor.name}" data-rname="${r.name}">
+      <div class="fp-room-card" data-bname="${building.name}" data-fname="${floor.name}" data-rname="${r.name}" data-room-id="${r.id}">
         <div class="fp-room-thumb" style="background:${r.color};">${r.icon}</div>
         <div class="fp-room-info">
           <div class="fp-room-name" title="${r.name}">${r.name}</div>
@@ -351,10 +356,39 @@ function bindMapNavigator() {
 
     grid.querySelectorAll('.fp-room-card').forEach(card => {
       card.addEventListener('click', () => {
-        updateBreadcrumb(card.dataset.bname, card.dataset.fname, card.dataset.rname);
-        modal.classList.remove('visible');
-        notify(`Switched to map: ${card.dataset.rname}`);
+        const roomName = card.dataset.rname;
+        const roomId = card.dataset.roomId || '100'; // Default fallback
+        updateBreadcrumb(card.dataset.bname, card.dataset.fname, roomName);
+        window.closeModal(modal);
+        
+        notify(`Carregando mapa: ${roomName}...`);
+        
+        fetch(`/ajax/mock_room_${roomId}.json`)
+          .then(r => {
+            if (!r.ok) throw new Error('Not found');
+            return r.json();
+          })
+          .then(json => {
+            if (json.status === 'success') {
+              import('./renderer.js').then(({ loadMapData }) => {
+                loadMapData(json.data);
+              });
+            }
+          })
+          .catch(() => {
+            notify(`Nenhum dado mockado para "${roomName}". Carregando mapa vazio.`, 'warning');
+            import('./renderer.js').then(({ loadMapData }) => {
+              loadMapData({ floor_zones: [], walls: [], doors: [], furniture: [], assets: [] });
+            });
+          });
       });
+    });
+  }
+
+  const btnNewMap = document.getElementById('btn-new-map');
+  if (btnNewMap) {
+    btnNewMap.addEventListener('click', () => {
+      notify('A criação de mapas será implementada na Fase 6 (Integração com Backend OCS).', 'warning');
     });
   }
 }

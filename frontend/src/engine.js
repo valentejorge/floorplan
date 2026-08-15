@@ -2,6 +2,7 @@ import Konva from 'konva';
 
 export let stage;
 export let backgroundLayer;
+export let gridLayer;
 export let zonesLayer;
 export let wallsLayer;
 export let assetsLayer;
@@ -27,13 +28,50 @@ export function initEngine(containerId) {
     draggable: true,
   });
 
-  // Create Layers with optimizations
+  // Create Layers
   backgroundLayer = new Konva.Layer({ listening: false });
-  zonesLayer = new Konva.Layer({ listening: false }); // Disable events for zones temporarily
+  gridLayer = new Konva.Layer({ listening: false, opacity: 0 }); // Hidden by default
+  zonesLayer = new Konva.Layer({ listening: false }); 
   wallsLayer = new Konva.Layer({ listening: false });
-  assetsLayer = new Konva.Layer(); // Only assets need click events for now
+  assetsLayer = new Konva.Layer(); 
+
+  // Fast GPU Pattern Grid
+  const patternCanvas = document.createElement('canvas');
+  patternCanvas.width = GRID_SIZE;
+  patternCanvas.height = GRID_SIZE;
+  const pCtx = patternCanvas.getContext('2d');
+  pCtx.fillStyle = 'rgba(99, 179, 237, 0.4)';
+  pCtx.beginPath();
+  pCtx.arc(1, 1, 1, 0, Math.PI * 2);
+  pCtx.fill();
+
+  const gridShape = new Konva.Rect({
+    x: 0,
+    y: 0,
+    width: stage.width(),
+    height: stage.height(),
+    fillPatternImage: patternCanvas,
+    listening: false,
+    perfectDrawEnabled: false
+  });
+  gridLayer.add(gridShape);
+
+  // Sync grid offset and scale on every render
+  gridLayer.on('beforeDraw', () => {
+    const scale = stage.scaleX();
+    gridShape.width(stage.width() / scale);
+    gridShape.height(stage.height() / scale);
+    gridShape.x(-stage.x() / scale);
+    gridShape.y(-stage.y() / scale);
+    gridShape.fillPatternScale({ x: 1/scale, y: 1/scale });
+    gridShape.fillPatternOffset({
+      x: stage.x(),
+      y: stage.y()
+    });
+  });
 
   stage.add(backgroundLayer);
+  stage.add(gridLayer);
   stage.add(zonesLayer);
   stage.add(wallsLayer);
   stage.add(assetsLayer);
@@ -281,5 +319,16 @@ export function animateMapEntrance() {
     y: newY,
     easing: Konva.Easings.StrongEaseOut,
     onUpdate: () => stage.batchDraw()
+  }).play();
+}
+
+export function setEngineEditMode(isEditing) {
+  // Fade grid in/out
+  new Konva.Tween({
+    node: gridLayer,
+    duration: 0.6,
+    opacity: isEditing ? 1 : 0,
+    easing: Konva.Easings.StrongEaseOut,
+    onUpdate: () => gridLayer.batchDraw()
   }).play();
 }
