@@ -87,6 +87,7 @@ export function loadMapData(data) {
         y: asset.pos_y || asset.y,
         rotation: asset.layout ? (asset.layout.rotation || 0) : 0,
         id: asset.id,
+        hardware_id: asset.hardware_id,
         name: 'it-asset'
       });
 
@@ -266,7 +267,9 @@ function populateObjectExplorer(assets) {
   const explorerBody = document.getElementById('explorer-body');
   if (!explorerBody || !assets) return;
   
-  if (assets.length === 0) {
+  const itAssets = assets.filter(a => a.hardware_id);
+  
+  if (itAssets.length === 0) {
     explorerBody.innerHTML = `<div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">Nenhum equipamento encontrado.</div>`;
     return;
   }
@@ -276,7 +279,7 @@ function populateObjectExplorer(assets) {
   list.style.display = 'flex';
   list.style.flexDirection = 'column';
   
-  assets.forEach(asset => {
+  itAssets.forEach(asset => {
     const item = document.createElement('div');
     item.className = 'explorer-item';
     item.style.padding = '8px 12px';

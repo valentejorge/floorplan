@@ -226,7 +226,8 @@ function bindSearch() {
                       // After load, we must focus the asset! Wait a tick for rendering.
                       setTimeout(() => {
                         import('./engine.js').then(({ stage, assetsLayer }) => {
-                          const group = assetsLayer.getChildren().find(node => node.id() === assetId);
+                          const hwId = el.dataset.hwId;
+                          const group = assetsLayer.getChildren().find(node => String(node.getAttr('hardware_id')) === String(hwId) || String(node.id()) === String(assetId));
                           if (group) {
                             // Pulse effect on the found asset
                             const pulse = new Konva.Circle({
