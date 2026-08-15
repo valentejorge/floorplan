@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Interactive floor plan viewer for OCS Inventory — map and manage physical IT infrastructure." />
-    <title>floorplan — OCS Inventory</title>
+    <meta name="description" content="Enterprise floor plan CAD editor for OCS Inventory — design and manage physical IT infrastructure." />
+    <title>floorplan — OCS Inventory CAD</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
@@ -20,118 +20,159 @@
         floorplan
       </div>
 
+      <nav id="breadcrumb" class="fp-topbar__breadcrumb">Loading…</nav>
+
+      <div class="fp-topbar__spacer"></div>
+
       <div class="fp-topbar__search">
-        <input
-          id="search-input"
-          class="fp-topbar__input"
-          type="text"
-          placeholder="Search by hostname, IP or MAC…"
-          autocomplete="off"
-        />
-        <button id="search-btn" class="fp-btn fp-btn--primary fp-btn--sm">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-            <circle cx="7" cy="7" r="5"/>
-            <line x1="11" y1="11" x2="14.5" y2="14.5"/>
-          </svg>
+        <input id="search-input" class="fp-topbar__input" type="text" placeholder="Search hostname, IP, MAC…" autocomplete="off" />
+        <button id="search-btn" style="background:var(--fp-accent);color:#fff;border:none;padding:5px 12px;border-radius:4px;font-size:11px;cursor:pointer;">
           Search
         </button>
       </div>
     </header>
 
-    <!-- ── Breadcrumb ──────────────────────────────────────────── -->
-    <nav id="breadcrumb" class="fp-breadcrumb">
-      <span>Loading…</span>
-    </nav>
-
-    <!-- ── Search Results Overlay ──────────────────────────────── -->
+    <!-- ── Search Results ──────────────────────────────────────── -->
     <div id="search-results" class="fp-search-results"></div>
 
-    <!-- ── Main Layout ─────────────────────────────────────────── -->
+    <!-- ── Main Layout (3-column) ──────────────────────────────── -->
     <div class="fp-layout">
 
-      <!-- Sidebar -->
-      <aside class="fp-sidebar">
-        <div class="fp-sidebar__section">
-          <div class="fp-sidebar__title">Tools</div>
-          <div class="fp-sidebar__tools">
-            <button id="btn-edit" class="fp-btn" title="Toggle Edit Mode">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11.5 1.5 14.5 4.5 5 14H2v-3z"/>
-                <line x1="9.5" y1="3.5" x2="12.5" y2="6.5"/>
-              </svg>
-              <span>Edit</span>
-            </button>
-            <button id="btn-draw-wall" class="fp-btn" style="display:none" title="Draw Wall">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 14V2h12v12H2z" stroke-dasharray="2 2"/>
-                <path d="M2 8h12M8 2v12"/>
-              </svg>
-              <span>Wall</span>
-            </button>
-            <button id="btn-save" class="fp-btn fp-btn--success" style="display:none" title="Save changes">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 2h9l3 3v9H2z"/>
-                <rect x="5" y="2" width="6" height="4"/>
-                <rect x="4" y="9" width="8" height="5"/>
-              </svg>
-              <span>Save</span>
-            </button>
-            <button id="btn-cancel" class="fp-btn fp-btn--danger" style="display:none" title="Discard">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="4" y1="4" x2="12" y2="12"/>
-                <line x1="12" y1="4" x2="4" y2="12"/>
-              </svg>
-              <span>Cancel</span>
-            </button>
-          </div>
-          
-          <div id="wall-toolbar" class="fp-wall-toolbar" style="display:none">
-            <div class="fp-wall-toolbar__title">Wall Type:</div>
-            <select id="wall-type-select" class="fp-select">
-              <option value="exterior">Exterior (Solid, Thick)</option>
-              <option value="interior">Interior (Solid, Thin)</option>
-              <option value="glass">Glass (Dashed, Blue)</option>
-              <option value="virtual">Virtual (Dotted, Red)</option>
-            </select>
-          </div>
-        </div>
-
-        <div id="edit-badge" class="fp-edit-badge">
-          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6">
-            <circle cx="8" cy="8" r="6"/>
-            <line x1="8" y1="5" x2="8" y2="9"/>
-            <circle cx="8" cy="11.5" r=".8" fill="currentColor"/>
+      <!-- Left Toolbar -->
+      <aside class="fp-toolbar">
+        <!-- Select -->
+        <button class="fp-tool-btn active" data-tool="select" data-tooltip="Select / Transform">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 2 L4 16 L8 12 L12 18 L14 17 L10 11 L15 10 Z"/>
           </svg>
-          Editing — drag assets to reposition
-        </div>
+        </button>
 
-        <div class="fp-sidebar__section">
-          <div class="fp-sidebar__title">Room Info</div>
-          <div id="room-info" class="fp-sidebar__info">Loading…</div>
-        </div>
+        <div class="fp-toolbar__sep"></div>
 
-        <div class="fp-sidebar__section">
-          <div class="fp-sidebar__title">Unassigned Assets</div>
-          <input type="text" id="unassigned-search" class="fp-unassigned-search" placeholder="Filter assets...">
-          <div id="unassigned-list" class="fp-unassigned-list">
-            <!-- Populated via JS -->
-          </div>
-        </div>
+        <!-- Draw Floor Zone -->
+        <button class="fp-tool-btn" data-tool="floor" data-tooltip="Draw Floor Zone">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+            <rect x="2" y="2" width="16" height="16" rx="1" stroke-dasharray="3 2"/>
+          </svg>
+        </button>
+
+        <!-- Draw Wall -->
+        <button class="fp-tool-btn" data-tool="wall" data-tooltip="Draw Wall">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M3 17 L10 4 L17 17"/>
+          </svg>
+        </button>
+
+        <div class="fp-toolbar__sep"></div>
+
+        <!-- Furniture Catalog -->
+        <button class="fp-tool-btn" data-tool="furniture" data-tooltip="Furniture Catalog">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="8" width="14" height="8" rx="1"/>
+            <rect x="5" y="4" width="10" height="4" rx="1"/>
+            <line x1="5" y1="16" x2="5" y2="19"/>
+            <line x1="15" y1="16" x2="15" y2="19"/>
+          </svg>
+        </button>
+
+        <!-- IT Assets -->
+        <button class="fp-tool-btn" data-tool="assets" data-tooltip="IT Assets">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="2" width="14" height="16" rx="2"/>
+            <rect x="5" y="4" width="10" height="4" rx="1"/>
+            <circle cx="13" cy="6" r="1.2" fill="currentColor"/>
+            <rect x="5" y="10" width="10" height="4" rx="1"/>
+            <circle cx="13" cy="12" r="1.2" fill="currentColor"/>
+          </svg>
+        </button>
       </aside>
 
-      <!-- Canvas -->
-      <div class="fp-canvas-wrapper" id="canvas-wrapper">
+      <!-- Floor Color Picker (appears when floor tool active) -->
+      <div id="floor-color-picker" class="fp-color-picker">
+        <div class="fp-color-swatch active" data-color="#9ab8a0" style="background:#9ab8a0;" title="Carpet Green"></div>
+        <div class="fp-color-swatch" data-color="#d4cfc4" style="background:#d4cfc4;" title="Tile Beige"></div>
+        <div class="fp-color-swatch" data-color="#8fa8c8" style="background:#8fa8c8;" title="Corporate Blue"></div>
+        <div class="fp-color-swatch" data-color="#c4b896" style="background:#c4b896;" title="Wood Floor"></div>
+        <div class="fp-color-swatch" data-color="#bbb" style="background:#bbb;" title="Concrete"></div>
+        <div class="fp-color-swatch" data-color="#e8e0d0" style="background:#e8e0d0;" title="White Tile"></div>
+        <div class="fp-color-swatch" data-color="#7a9a8a" style="background:#7a9a8a;" title="Dark Carpet"></div>
+        <div class="fp-color-swatch" data-color="#dbb8a0" style="background:#dbb8a0;" title="Terracotta"></div>
+      </div>
+
+      <!-- Wall Type Picker -->
+      <div id="wall-type-picker" class="fp-wall-picker">
+        <div class="fp-wall-option active" data-type="exterior">
+          <div class="fp-wall-option__line" style="background:#6b7a88;height:6px;"></div>
+          Exterior
+        </div>
+        <div class="fp-wall-option" data-type="interior">
+          <div class="fp-wall-option__line" style="background:#8a9aaa;height:3px;"></div>
+          Interior
+        </div>
+        <div class="fp-wall-option" data-type="glass">
+          <div class="fp-wall-option__line" style="background:#5b9ecf;height:2px;border-top:2px dashed #5b9ecf;"></div>
+          Glass
+        </div>
+      </div>
+
+      <!-- Canvas Area -->
+      <div class="fp-canvas-area">
         <div id="floorplan-container"></div>
         <div class="fp-camera-controls">
           <button id="btn-zoom-in" title="Zoom In">+</button>
           <button id="btn-zoom-out" title="Zoom Out">−</button>
           <button id="btn-zoom-reset" class="text-btn" title="100%">100%</button>
-          <button id="btn-zoom-fit" class="text-btn" title="Fit to screen">Fit</button>
+          <button id="btn-zoom-fit" class="text-btn" title="Fit">Fit</button>
+        </div>
+      </div>
+
+      <!-- Right Explorer Panel -->
+      <aside class="fp-explorer">
+        <div class="fp-explorer__header">Object Explorer</div>
+        <div id="explorer-body" class="fp-explorer__body">
+          <!-- Populated by explorer.js -->
+        </div>
+        <div id="properties-panel" class="fp-properties">
+          <div class="fp-properties__title">Properties</div>
+          <div style="color:var(--fp-chrome-text2);font-size:11px;">No selection</div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- ── Furniture Modal ─────────────────────────────────────── -->
+    <div id="furniture-modal" class="fp-furniture-modal">
+      <div class="fp-furniture-modal__content">
+        <div class="fp-furniture-modal__title">Furniture Catalog</div>
+        <div class="fp-furniture-grid">
+          <div class="fp-furniture-card" data-type="desk_straight">
+            <svg viewBox="0 0 48 48" fill="none"><rect x="4" y="14" width="40" height="20" rx="2" fill="#c4a882" stroke="#7a5c30" stroke-width="1.5"/><rect x="6" y="28" width="36" height="4" rx="1" fill="#8b6914" opacity=".5"/></svg>
+            <div class="fp-furniture-card__label">Straight Desk</div>
+          </div>
+          <div class="fp-furniture-card" data-type="desk_l">
+            <svg viewBox="0 0 48 48" fill="none"><rect x="4" y="8" width="40" height="16" rx="2" fill="#c4a882" stroke="#7a5c30" stroke-width="1.5"/><rect x="28" y="8" width="16" height="32" rx="2" fill="#c4a882" stroke="#7a5c30" stroke-width="1.5"/></svg>
+            <div class="fp-furniture-card__label">L-Desk</div>
+          </div>
+          <div class="fp-furniture-card" data-type="desk_round">
+            <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="18" fill="#c4a882" stroke="#7a5c30" stroke-width="1.5"/><circle cx="24" cy="24" r="4" fill="#8b6914" opacity=".3"/></svg>
+            <div class="fp-furniture-card__label">Round Table</div>
+          </div>
+          <div class="fp-furniture-card" data-type="chair">
+            <svg viewBox="0 0 48 48" fill="none"><rect x="10" y="14" width="28" height="24" rx="4" fill="#555566"/><rect x="14" y="8" width="20" height="6" rx="3" fill="#444455"/></svg>
+            <div class="fp-furniture-card__label">Chair</div>
+          </div>
+          <div class="fp-furniture-card" data-type="plant">
+            <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="14" fill="#5a9e4b" opacity=".8"/><circle cx="24" cy="24" r="6" fill="#8b6914"/></svg>
+            <div class="fp-furniture-card__label">Plant</div>
+          </div>
+          <div class="fp-furniture-card" data-type="partition">
+            <svg viewBox="0 0 48 48" fill="none"><rect x="22" y="4" width="4" height="40" rx="1" fill="#9e9eb0" stroke="#7a7a8c" stroke-width="1"/></svg>
+            <div class="fp-furniture-card__label">Partition</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- ── Tooltip (HTML absolute) ─────────────────────────────── -->
+    <!-- ── Tooltip ─────────────────────────────────────────────── -->
     <div id="tooltip" class="fp-tooltip">
       <div id="tooltip-hostname" class="fp-tooltip__hostname"></div>
       <div class="fp-tooltip__row"><strong>IP</strong> <span id="tooltip-ip"></span></div>

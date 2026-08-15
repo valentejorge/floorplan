@@ -526,32 +526,3 @@ body {
     transform: translateX(-50%) translateY(0);
   }
 }
-/* Wall Toolbar */
-.fp-wall-toolbar {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--fp-border);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.fp-wall-toolbar__title {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--fp-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.fp-select {
-  width: 100%;
-  padding: 6px 8px;
-  font-size: 12px;
-  border: 1px solid var(--fp-border);
-  border-radius: 4px;
-  background-color: var(--fp-bg);
-  color: var(--fp-text);
-  outline: none;
-}
-.fp-select:focus {
-  border-color: var(--fp-primary);
-}

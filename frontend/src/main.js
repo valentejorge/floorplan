@@ -1,824 +1,352 @@
 /**
- * floorplan - Main Canvas Engine
+ * main.js — Orchestrator
  *
- * Initializes Konva.js with three isolated layers (static, assets, overlay),
- * manages Read/Edit modes, snap-to-grid, batch saving, HTML tooltips,
- * global search integration with pan/zoom animation, wall drawing,
- * and DOM-to-Canvas Drag & Drop.
+ * Initializes the CAD engine, loads mock data, wires up the toolbar,
+ * populates all Konva layers, and binds DOM events.
  */
 import Konva from 'konva';
 import { api } from './api.js';
-import { SkinManager, BOUNDING_BOX } from './skins.js';
+import {
+  initEngine, fitStage, getStage,
+  getLayerFloor, getLayerArchitecture, getLayerFurniture, getLayerAssets,
+  getTransformer, applySnapOnDragEnd, snapToGrid, getRelativePointerPosition,
+  zoomIn, zoomOut, resetZoom, GRID_SIZE,
+} from './engine.js';
+import { SHADOW_LIGHT, SHADOW_HEAVY, buildFurnitureNode, FURNITURE_TYPES } from './furniture.js';
+import {
+  TOOLS, setActiveTool, getActiveTool, setFloorColor, setWallType,
+  handleStageMouseDown, handleStageMouseMove, handleStageMouseUp,
+  handleStageDblClick, handleKeyDown, ensureSkins, createAssetNode,
+  startFurniturePlacement,
+} from './tools.js';
+import { refreshExplorer, onExplorerSelect, clearSelection } from './explorer.js';
 import './style.css';
 
-// ── Constants ──────────────────────────────────────────────────────
-const GRID_SIZE = 20;
-const SCALE_BY = 1.1;
-
 // ── State ──────────────────────────────────────────────────────────
-let stage;
-let staticLayer, assetsLayer, overlayLayer;
-let isEditMode = false;
-let isDrawingWall = false;
-let currentWallLine = null;
-let selectedWall = null;
 let roomData = null;
-const skinManager = new SkinManager();
-
-/** Tracks original positions before edit mode for cancel/revert. */
-const originalPositions = new Map();
-
-// ── DOM References ─────────────────────────────────────────────────
-const $wrapper       = () => document.getElementById('canvas-wrapper');
-const $container     = () => document.getElementById('floorplan-container');
-const $btnEdit       = () => document.getElementById('btn-edit');
-const $btnDrawWall   = () => document.getElementById('btn-draw-wall');
-const $btnSave       = () => document.getElementById('btn-save');
-const $btnCancel     = () => document.getElementById('btn-cancel');
-const $editBadge     = () => document.getElementById('edit-badge');
-const $tooltip       = () => document.getElementById('tooltip');
-const $searchInput   = () => document.getElementById('search-input');
-const $searchBtn     = () => document.getElementById('search-btn');
-const $searchResults = () => document.getElementById('search-results');
-const $breadcrumb    = () => document.getElementById('breadcrumb');
-const $roomInfo      = () => document.getElementById('room-info');
-const $unassignedList   = () => document.getElementById('unassigned-list');
-const $unassignedSearch = () => document.getElementById('unassigned-search');
-const $wallToolbar      = () => document.getElementById('wall-toolbar');
-const $wallTypeSelect   = () => document.getElementById('wall-type-select');
-
-// Camera controls
-const $btnZoomIn     = () => document.getElementById('btn-zoom-in');
-const $btnZoomOut    = () => document.getElementById('btn-zoom-out');
-const $btnZoomReset  = () => document.getElementById('btn-zoom-reset');
-const $btnZoomFit    = () => document.getElementById('btn-zoom-fit');
 
 // ════════════════════════════════════════════════════════════════════
 // Bootstrap
 // ════════════════════════════════════════════════════════════════════
 
 async function init() {
-  await skinManager.load('theme_visio');
+  // Load skins
+  await ensureSkins();
 
+  // Load room data
   const response = await api('ajax/get_room.php?id=1');
   roomData = response.data;
 
-  createStage();
-  renderStaticElements();
+  // Init Konva engine
+  initEngine('floorplan-container');
+
+  // Render all layers
+  renderFloorZones();
+  renderWalls();
+  renderDoors();
+  renderFurniture();
   renderAssets();
-  updateSidebar();
-  renderUnassignedAssets();
-  bindEvents();
+
+  // Fit camera
+  fitStage(roomData.room.width, roomData.room.height);
+
+  // Bind events
+  bindStageEvents();
+  bindToolbar();
+  bindCameraControls();
+  bindSearch();
+  bindFurnitureModal();
+  bindAssetsDragDrop();
+  bindBreadcrumb();
+
+  // Initial explorer refresh
+  refreshExplorer();
 
   console.info(
-    `[floorplan] Room "${roomData.room.name}" loaded — ${roomData.assets.length} assets.`,
+    `[floorplan] CAD Editor loaded — Room: "${roomData.room.name}" ` +
+    `| ${roomData.assets.length} assets | ${roomData.furniture.length} furniture`
   );
-}
-
-// ════════════════════════════════════════════════════════════════════
-// Stage & Layers
-// ════════════════════════════════════════════════════════════════════
-
-function createStage() {
-  const wrapper = $container().parentElement;
-  const w = wrapper.clientWidth;
-  const h = wrapper.clientHeight;
-
-  stage = new Konva.Stage({
-    container: 'floorplan-container',
-    width: w,
-    height: h,
-    draggable: true, // Enables Panning
-  });
-
-  // Layer 1 — static elements (walls/doors), interactive only in edit mode
-  staticLayer = new Konva.Layer({ listening: false });
-
-  // Layer 2 — assets (PCs, servers, etc.), interactive
-  assetsLayer = new Konva.Layer();
-
-  // Layer 3 — overlays (selection rings, highlights)
-  overlayLayer = new Konva.Layer();
-
-  stage.add(staticLayer, assetsLayer, overlayLayer);
-
-  // Initial Fit
-  fitStage();
-
-  // Resize handler
-  const ro = new ResizeObserver(() => {
-    stage.width(wrapper.clientWidth);
-    stage.height(wrapper.clientHeight);
-  });
-  ro.observe(wrapper);
-
-  // Mouse wheel zoom
-  stage.on('wheel', (e) => {
-    e.evt.preventDefault();
-    const oldScale = stage.scaleX();
-    const pointer = stage.getPointerPosition();
-
-    const mousePointTo = {
-      x: (pointer.x - stage.x()) / oldScale,
-      y: (pointer.y - stage.y()) / oldScale,
-    };
-
-    const direction = e.evt.deltaY > 0 ? -1 : 1;
-    const newScale = direction > 0 ? oldScale * SCALE_BY : oldScale / SCALE_BY;
-
-    stage.scale({ x: newScale, y: newScale });
-
-    const newPos = {
-      x: pointer.x - mousePointTo.x * newScale,
-      y: pointer.y - mousePointTo.y * newScale,
-    };
-    stage.position(newPos);
-  });
-
-  // Wall Drawing logic
-  stage.on('mousedown', (e) => {
-    if (!isDrawingWall) return;
-    if (e.evt.button !== 0) return; // Only left click
-
-    const pos = getRelativePointerPosition(stage);
-    
-    // Snap to grid
-    const snappedX = Math.round(pos.x / GRID_SIZE) * GRID_SIZE;
-    const snappedY = Math.round(pos.y / GRID_SIZE) * GRID_SIZE;
-
-    if (!currentWallLine) {
-      const type = $wallTypeSelect().value;
-      const style = WALL_STYLES[type] || WALL_STYLES.exterior;
-
-      currentWallLine = new Konva.Line({
-        points: [snappedX, snappedY, snappedX, snappedY],
-        stroke: style.stroke,
-        strokeWidth: style.strokeWidth,
-        dash: style.dash,
-        lineCap: 'round',
-        lineJoin: 'round',
-        listening: true,
-        draggable: true,
-      });
-      currentWallLine.setAttr('wallData', { type: 'wall', wallType: type, points: [] });
-      bindWallEvents(currentWallLine);
-      staticLayer.add(currentWallLine);
-    } else {
-      const points = currentWallLine.points();
-      points.push(snappedX, snappedY);
-      currentWallLine.points(points);
-    }
-    staticLayer.batchDraw();
-  });
-
-  stage.on('mousemove', () => {
-    if (!isDrawingWall || !currentWallLine) return;
-
-    const pos = getRelativePointerPosition(stage);
-    const snappedX = Math.round(pos.x / GRID_SIZE) * GRID_SIZE;
-    const snappedY = Math.round(pos.y / GRID_SIZE) * GRID_SIZE;
-
-    const points = currentWallLine.points().slice();
-    points[points.length - 2] = snappedX;
-    points[points.length - 1] = snappedY;
-    currentWallLine.points(points);
-    staticLayer.batchDraw();
-  });
-
-  stage.on('dblclick', () => {
-    if (isDrawingWall && currentWallLine) {
-      // Remove last temp point
-      const points = currentWallLine.points();
-      points.splice(-2, 2);
-      currentWallLine.points(points);
-      currentWallLine = null;
-      staticLayer.batchDraw();
-    }
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && isDrawingWall && currentWallLine) {
-      const points = currentWallLine.points();
-      points.splice(-2, 2);
-      currentWallLine.points(points);
-      currentWallLine = null;
-      staticLayer.batchDraw();
-    }
-    if ((e.key === 'Delete' || e.key === 'Backspace') && isEditMode && selectedWall) {
-      selectedWall.destroy();
-      selectedWall = null;
-      clearAnchors();
-      staticLayer.batchDraw();
-    }
-  });
-}
-
-function getRelativePointerPosition(node) {
-  const transform = node.getAbsoluteTransform().copy();
-  transform.invert();
-  const pos = node.getStage().getPointerPosition();
-  return transform.point(pos);
-}
-
-// ════════════════════════════════════════════════════════════════════
-// Camera Controls
-// ════════════════════════════════════════════════════════════════════
-
-function zoomIn() {
-  const oldScale = stage.scaleX();
-  stage.scale({ x: oldScale * SCALE_BY, y: oldScale * SCALE_BY });
-  stage.batchDraw();
-}
-
-function zoomOut() {
-  const oldScale = stage.scaleX();
-  stage.scale({ x: oldScale / SCALE_BY, y: oldScale / SCALE_BY });
-  stage.batchDraw();
-}
-
-function resetZoom() {
-  stage.scale({ x: 1, y: 1 });
-  stage.batchDraw();
-}
-
-function fitStage() {
-  const padding = 40;
-  const scaleX = stage.width() / (roomData.room.width + padding * 2);
-  const scaleY = stage.height() / (roomData.room.height + padding * 2);
-  const scale = Math.min(scaleX, scaleY, 1); // Cap at 100%
-
-  stage.scale({ x: scale, y: scale });
-
-  const offsetX = (stage.width() - roomData.room.width * scale) / 2;
-  const offsetY = (stage.height() - roomData.room.height * scale) / 2;
-
-  stage.position({ x: offsetX, y: offsetY });
-  stage.batchDraw();
 }
 
 // ════════════════════════════════════════════════════════════════════
 // Renderers
 // ════════════════════════════════════════════════════════════════════
 
-const WALL_STYLES = {
-  exterior: { stroke: '#4a5568', strokeWidth: 4, dash: [] },
-  interior: { stroke: '#a0aec0', strokeWidth: 2, dash: [] },
-  glass:    { stroke: '#3182ce', strokeWidth: 2, dash: [4, 4] },
-  virtual:  { stroke: '#e53e3e', strokeWidth: 1, dash: [2, 4] },
-};
-
-let currentAnchors = [];
-
-function clearAnchors() {
-  currentAnchors.forEach(a => a.destroy());
-  currentAnchors = [];
-  overlayLayer.batchDraw();
-}
-
-function buildAnchors(line) {
-  clearAnchors();
-  const points = line.points();
-  
-  // Create an anchor for every X,Y pair
-  for (let i = 0; i < points.length; i += 2) {
-    const anchor = new Konva.Circle({
-      x: points[i],
-      y: points[i + 1],
-      radius: 5,
-      fill: '#ffffff',
-      stroke: '#3182ce',
-      strokeWidth: 2,
+function renderFloorZones() {
+  const layer = getLayerFloor();
+  (roomData.floor_zones || []).forEach(fz => {
+    const rect = new Konva.Rect({
+      x: fz.x, y: fz.y, width: fz.width, height: fz.height,
+      fill: fz.fill,
+      opacity: fz.opacity || 0.4,
+      id: fz.id,
       draggable: true,
-      hitStrokeWidth: 10,
     });
-
-    anchor.on('dragmove', () => {
-      // Snap to grid
-      const snappedX = Math.round(anchor.x() / GRID_SIZE) * GRID_SIZE;
-      const snappedY = Math.round(anchor.y() / GRID_SIZE) * GRID_SIZE;
-      anchor.position({ x: snappedX, y: snappedY });
-
-      // Update line points
-      const pts = line.points();
-      pts[i] = snappedX;
-      pts[i + 1] = snappedY;
-      line.points(pts);
-      staticLayer.batchDraw();
-    });
-
-    anchor.on('mouseenter', () => stage.container().style.cursor = 'crosshair');
-    anchor.on('mouseleave', () => stage.container().style.cursor = 'default');
-
-    overlayLayer.add(anchor);
-    currentAnchors.push(anchor);
-  }
-  overlayLayer.batchDraw();
+    rect.setAttr('entityData', { ...fz, layer: 'floor' });
+    applySnapOnDragEnd(rect);
+    layer.add(rect);
+  });
+  layer.batchDraw();
 }
 
-function bindWallEvents(line) {
-  line.on('dragend', () => {
-    // Snap whole line to grid
-    const x = Math.round(line.x() / GRID_SIZE) * GRID_SIZE;
-    const y = Math.round(line.y() / GRID_SIZE) * GRID_SIZE;
-    line.position({ x, y });
-    staticLayer.batchDraw();
-  });
+function renderWalls() {
+  const WALL_STYLES = {
+    exterior: { stroke: '#6b7a88', strokeWidth: 12, dash: [] },
+    interior: { stroke: '#8a9aaa', strokeWidth: 6,  dash: [] },
+    glass:    { stroke: '#5b9ecf', strokeWidth: 4,  dash: [8, 6] },
+  };
 
-  line.on('click', () => {
-    if (!isEditMode) return;
-    if (selectedWall) {
-      const oldStyle = WALL_STYLES[selectedWall.getAttr('wallData')?.wallType || 'exterior'];
-      selectedWall.stroke(oldStyle.stroke);
-    }
-    selectedWall = line;
-    line.stroke('#d9534f'); // highlight red
-    staticLayer.batchDraw();
-    buildAnchors(line);
+  const layer = getLayerArchitecture();
+  (roomData.walls || []).forEach(w => {
+    const style = WALL_STYLES[w.wallType] || WALL_STYLES.exterior;
+    const line = new Konva.Line({
+      points: w.points,
+      stroke: style.stroke,
+      strokeWidth: style.strokeWidth,
+      dash: style.dash,
+      lineCap: 'round',
+      lineJoin: 'round',
+      closed: w.points.length > 4 && w.points[0] === w.points[w.points.length-2] && w.points[1] === w.points[w.points.length-1],
+      id: w.id,
+      draggable: true,
+      ...SHADOW_HEAVY,
+    });
+    line.setAttr('entityData', { ...w, layer: 'architecture' });
+    applySnapOnDragEnd(line);
+    layer.add(line);
   });
+  layer.batchDraw();
 }
 
-function renderStaticElements() {
-  const { static_elements: elements } = roomData;
-  if (!elements) return;
+function renderDoors() {
+  const layer = getLayerArchitecture();
+  (roomData.doors || []).forEach(d => {
+    const rect = new Konva.Rect({
+      x: d.x, y: d.y, width: d.width, height: d.height,
+      fill: '#c4a882',
+      stroke: '#8b6914',
+      strokeWidth: 1,
+      cornerRadius: 1,
+      id: d.id,
+      draggable: true,
+      ...SHADOW_LIGHT,
+    });
+    rect.setAttr('entityData', { ...d, name: d.name, type: 'door', layer: 'architecture' });
+    applySnapOnDragEnd(rect);
+    layer.add(rect);
+  });
+  layer.batchDraw();
+}
 
-  elements.forEach((el) => {
-    if (el.type === 'wall') {
-      const style = WALL_STYLES[el.wallType] || WALL_STYLES.exterior;
-      const line = new Konva.Line({
-        points: el.points,
-        stroke: style.stroke,
-        strokeWidth: style.strokeWidth,
-        dash: style.dash,
-        closed: el.points.length > 4 && el.points[0] === el.points[el.points.length-2] && el.points[1] === el.points[el.points.length-1],
-        lineCap: 'round',
-        lineJoin: 'round',
-        draggable: false, // Updated in edit mode
-      });
-      line.setAttr('wallData', el);
-      bindWallEvents(line);
-      staticLayer.add(line);
-    } else if (el.type === 'door') {
-      staticLayer.add(
-        new Konva.Rect({
-          x: el.x,
-          y: el.y,
-          width: el.width,
-          height: el.height,
-          fill: el.fill || '#1c1c1c',
-          cornerRadius: 1,
-        }),
-      );
+function renderFurniture() {
+  const layer = getLayerFurniture();
+  (roomData.furniture || []).forEach(f => {
+    const node = buildFurnitureNode(f);
+    if (node) {
+      node.draggable(true);
+      applySnapOnDragEnd(node);
+      layer.add(node);
     }
   });
-
-  staticLayer.batchDraw();
+  layer.batchDraw();
 }
 
 function renderAssets() {
-  assetsLayer.destroyChildren();
-  roomData.assets.forEach(createAssetNode);
-  assetsLayer.batchDraw();
-}
-
-function createAssetNode(asset) {
-  const img = skinManager.getImage(asset.type);
-
-  const group = new Konva.Group({
-    x: asset.pos_x,
-    y: asset.pos_y,
-    draggable: isEditMode,
-    id: `asset-${asset.id}`,
+  const layer = getLayerAssets();
+  (roomData.assets || []).forEach(asset => {
+    const node = createAssetNode(asset);
+    layer.add(node);
   });
-
-  group.setAttr('assetData', asset);
-
-  group.add(
-    new Konva.Image({
-      image: img,
-      width: BOUNDING_BOX,
-      height: BOUNDING_BOX,
-    }),
-  );
-
-  group.add(
-    new Konva.Text({
-      text: asset.hardware_name,
-      fontSize: 10,
-      fontFamily: 'sans-serif',
-      fill: '#4a5568',
-      width: BOUNDING_BOX + 30,
-      align: 'center',
-      y: BOUNDING_BOX + 3,
-      x: -15,
-      listening: false,
-    }),
-  );
-
-  group.on('dragend', () => {
-    const snappedX = Math.round(group.x() / GRID_SIZE) * GRID_SIZE;
-    const snappedY = Math.round(group.y() / GRID_SIZE) * GRID_SIZE;
-    group.position({ x: snappedX, y: snappedY });
-    assetsLayer.batchDraw();
-  });
-
-  group.on('mouseenter', () => showTooltip(group));
-  group.on('mouseleave', hideTooltip);
-
-  assetsLayer.add(group);
+  layer.batchDraw();
 }
 
 // ════════════════════════════════════════════════════════════════════
-// Tooltip (HTML)
+// Event Bindings
 // ════════════════════════════════════════════════════════════════════
 
-function showTooltip(group) {
-  if (isEditMode || isDrawingWall) return; // Don't show in edit modes
-  const data = group.getAttr('assetData');
-  if (!data) return;
+function bindStageEvents() {
+  const stage = getStage();
 
-  const $t = $tooltip();
-  document.getElementById('tooltip-hostname').textContent = data.hardware_name;
-  document.getElementById('tooltip-ip').textContent       = data.ip || '—';
-  document.getElementById('tooltip-mac').textContent      = data.mac || '—';
-  document.getElementById('tooltip-type').textContent     = data.type || '—';
+  stage.on('mousedown touchstart', (e) => handleStageMouseDown(e));
+  stage.on('mousemove touchmove', () => handleStageMouseMove());
+  stage.on('mouseup touchend', () => handleStageMouseUp());
+  stage.on('dblclick dbltap', () => handleStageDblClick());
 
-  // Position relative to the canvas wrapper
-  const stageBox = stage.container().getBoundingClientRect();
-  const absPos   = group.getAbsolutePosition();
-
-  $t.style.left = `${stageBox.left + absPos.x + BOUNDING_BOX + 10}px`;
-  $t.style.top  = `${stageBox.top + absPos.y}px`;
-  $t.classList.add('visible');
+  document.addEventListener('keydown', handleKeyDown);
 }
 
-function hideTooltip() {
-  $tooltip().classList.remove('visible');
-}
+function bindToolbar() {
+  const buttons = document.querySelectorAll('.fp-tool-btn[data-tool]');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tool = btn.dataset.tool;
+      setActiveTool(tool);
 
-// ════════════════════════════════════════════════════════════════════
-// Edit Mode & Draw Wall
-// ════════════════════════════════════════════════════════════════════
+      // Update active state
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
 
-function toggleEditMode() {
-  isEditMode = !isEditMode;
-
-  if (isEditMode) {
-    // Snapshot positions before editing
-    assetsLayer.find('Group').forEach((g) => {
-      originalPositions.set(g.id(), { x: g.x(), y: g.y() });
-      g.draggable(true);
-    });
-
-    staticLayer.listening(true);
-    staticLayer.find('Line').forEach(l => l.draggable(true));
-
-    $btnEdit().classList.add('fp-btn--warning');
-    $btnEdit().innerHTML = `
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-        <circle cx="8" cy="8" r="6"/>
-        <line x1="5" y1="5" x2="11" y2="11"/>
-        <line x1="11" y1="5" x2="5" y2="11"/>
-      </svg>
-      <span>Editing</span>`;
-    $btnSave().style.display = '';
-    $btnCancel().style.display = '';
-    $btnDrawWall().style.display = '';
-    $editBadge().classList.add('active');
-  } else {
-    exitEditMode();
-  }
-}
-
-function toggleDrawWall() {
-  if (!isEditMode) return;
-  isDrawingWall = !isDrawingWall;
-  currentWallLine = null;
-
-  if (isDrawingWall) {
-    $btnDrawWall().classList.add('fp-btn--primary');
-    $wallToolbar().style.display = 'flex';
-    stage.container().style.cursor = 'crosshair';
-    stage.draggable(false); // disable panning while drawing
-  } else {
-    $btnDrawWall().classList.remove('fp-btn--primary');
-    $wallToolbar().style.display = 'none';
-    stage.container().style.cursor = 'default';
-    stage.draggable(true);
-  }
-}
-
-function exitEditMode() {
-  isEditMode = false;
-  isDrawingWall = false;
-  currentWallLine = null;
-  clearAnchors();
-
-  assetsLayer.find('Group').forEach((g) => g.draggable(false));
-  originalPositions.clear();
-
-  if (selectedWall) {
-    const style = WALL_STYLES[selectedWall.getAttr('wallData')?.wallType || 'exterior'];
-    selectedWall.stroke(style.stroke);
-    selectedWall = null;
-  }
-
-  staticLayer.listening(false);
-  staticLayer.find('Line').forEach(l => l.draggable(false));
-
-  $btnEdit().classList.remove('fp-btn--warning');
-  $btnEdit().innerHTML = `
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M11.5 1.5 14.5 4.5 5 14H2v-3z"/>
-      <line x1="9.5" y1="3.5" x2="12.5" y2="6.5"/>
-    </svg>
-    <span>Edit</span>`;
-  $btnSave().style.display = 'none';
-  $btnCancel().style.display = 'none';
-  $btnDrawWall().style.display = 'none';
-  $btnDrawWall().classList.remove('fp-btn--primary');
-  $wallToolbar().style.display = 'none';
-  $editBadge().classList.remove('active');
-  stage.container().style.cursor = 'default';
-  stage.draggable(true);
-}
-
-function cancelEdit() {
-  // Revert to original positions
-  assetsLayer.find('Group').forEach((g) => {
-    const orig = originalPositions.get(g.id());
-    if (orig) g.position(orig);
-  });
-  assetsLayer.batchDraw();
-  exitEditMode();
-  notify('Changes discarded.', 'warning');
-}
-
-async function batchSave() {
-  const payload = [];
-
-  assetsLayer.find('Group').forEach((g) => {
-    const data = g.getAttr('assetData');
-    if (!data) return;
-    payload.push({
-      id: data.id,
-      pos_x: g.x(),
-      pos_y: g.y(),
-    });
-    data.pos_x = g.x();
-    data.pos_y = g.y();
-  });
-
-  try {
-    await api('ajax/batch_update_assets.php', {
-      method: 'POST',
-      body: JSON.stringify({ room_id: roomData.room.id, assets: payload }),
-    });
-    notify(`${payload.length} assets saved successfully.`, 'success');
-  } catch (err) {
-    console.warn('[floorplan] Batch save (dev mock):', err.message);
-    notify(`${payload.length} assets saved (dev mode).`, 'success');
-  }
-
-  exitEditMode();
-}
-
-// ════════════════════════════════════════════════════════════════════
-// Unassigned Assets Drag & Drop
-// ════════════════════════════════════════════════════════════════════
-
-// Mock unassigned assets
-const MOCK_UNASSIGNED = [
-  { id: 9, hardware_id: 9, hardware_name: "SRV-BACKUP-01", type: "server", ip: "192.168.10.15", mac: "AA:BB:CC:DD:EE:09" },
-  { id: 10, hardware_id: 10, hardware_name: "PC-TI-01", type: "desktop", ip: "192.168.10.30", mac: "AA:BB:CC:DD:EE:10" },
-  { id: 11, hardware_id: 11, hardware_name: "IMP-TI", type: "printer", ip: "192.168.10.81", mac: "AA:BB:CC:DD:EE:11" },
-];
-
-function renderUnassignedAssets() {
-  const query = $unassignedSearch().value.toLowerCase();
-  
-  const filtered = MOCK_UNASSIGNED.filter(a => 
-    a.hardware_name.toLowerCase().includes(query) || 
-    a.ip.toLowerCase().includes(query)
-  );
-
-  $unassignedList().innerHTML = filtered.map(a => `
-    <div class="fp-unassigned-item" draggable="true" data-asset='${JSON.stringify(a)}'>
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="3" width="12" height="10" rx="2"/></svg>
-      ${a.hardware_name} <span style="color:#adb5bd;font-size:10px">${a.ip}</span>
-    </div>
-  `).join('');
-
-  // Bind drag events
-  document.querySelectorAll('.fp-unassigned-item').forEach(el => {
-    el.addEventListener('dragstart', (e) => {
-      if (!isEditMode) {
-        e.preventDefault();
-        notify('Please enter Edit Mode to place assets.', 'warning');
-        return;
+      // If furniture tool, open the modal
+      if (tool === TOOLS.FURNITURE) {
+        document.getElementById('furniture-modal')?.classList.add('visible');
       }
-      e.dataTransfer.setData('application/json', el.dataset.asset);
     });
   });
 }
 
-function handleDropOnCanvas(e) {
-  e.preventDefault();
-  if (!isEditMode) return;
+function bindCameraControls() {
+  document.getElementById('btn-zoom-in')?.addEventListener('click', zoomIn);
+  document.getElementById('btn-zoom-out')?.addEventListener('click', zoomOut);
+  document.getElementById('btn-zoom-reset')?.addEventListener('click', resetZoom);
+  document.getElementById('btn-zoom-fit')?.addEventListener('click', () => {
+    fitStage(roomData.room.width, roomData.room.height);
+  });
 
-  const dataStr = e.dataTransfer.getData('application/json');
-  if (!dataStr) return;
+  // Floor color picker
+  document.querySelectorAll('.fp-color-swatch').forEach(s => {
+    s.addEventListener('click', () => {
+      document.querySelectorAll('.fp-color-swatch').forEach(x => x.classList.remove('active'));
+      s.classList.add('active');
+      setFloorColor(s.dataset.color);
+    });
+  });
 
-  const assetData = JSON.parse(dataStr);
-  
-  // Convert screen coordinates to relative stage coordinates
-  stage.setPointersPositions(e);
-  const pos = getRelativePointerPosition(stage);
-
-  // Snap to grid
-  assetData.pos_x = Math.round(pos.x / GRID_SIZE) * GRID_SIZE;
-  assetData.pos_y = Math.round(pos.y / GRID_SIZE) * GRID_SIZE;
-
-  // Add to map
-  roomData.assets.push(assetData);
-  createAssetNode(assetData);
-  assetsLayer.batchDraw();
-
-  // Remove from unassigned
-  const idx = MOCK_UNASSIGNED.findIndex(a => a.id === assetData.id);
-  if (idx !== -1) MOCK_UNASSIGNED.splice(idx, 1);
-  renderUnassignedAssets();
-
-  notify(`${assetData.hardware_name} placed.`, 'success');
+  // Wall type picker
+  document.querySelectorAll('.fp-wall-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.fp-wall-option').forEach(x => x.classList.remove('active'));
+      opt.classList.add('active');
+      setWallType(opt.dataset.type);
+    });
+  });
 }
 
-// ════════════════════════════════════════════════════════════════════
-// Global Search
-// ════════════════════════════════════════════════════════════════════
+function bindSearch() {
+  const input = document.getElementById('search-input');
+  const btn = document.getElementById('search-btn');
+  const results = document.getElementById('search-results');
 
-async function handleSearch() {
-  const query = $searchInput().value.trim();
-  if (!query) return;
+  async function doSearch() {
+    const q = input.value.trim();
+    if (!q) return;
 
-  const $results = $searchResults();
+    const res = await api(`ajax/search_asset.php?q=${encodeURIComponent(q)}`);
+    const items = res.data || [];
 
-  try {
-    const response = await api(`ajax/search_asset.php?q=${encodeURIComponent(query)}`);
-    const items = response.data;
-
-    if (!items || items.length === 0) {
-      $results.innerHTML = '<div class="fp-search-results__empty">No assets found.</div>';
+    if (items.length === 0) {
+      results.innerHTML = '<div class="fp-search-results__empty">No results.</div>';
     } else {
-      $results.innerHTML = items
-        .map(
-          (item) => `
-        <div class="fp-search-results__item" data-hardware-id="${item.hardware_id}" data-room-id="${item.room_id}">
+      results.innerHTML = items.map(item => `
+        <div class="fp-search-results__item" data-hw-id="${item.hardware_id}">
           <span class="fp-search-results__name">${item.hardware_name} — ${item.ip || '—'}</span>
-          <span class="fp-search-results__location">
-            📍 ${item.building_name} › ${item.floor_name} › ${item.room_name}
-          </span>
-        </div>`,
-        )
-        .join('');
+          <span class="fp-search-results__location">📍 ${item.building_name} › ${item.floor_name} › ${item.room_name}</span>
+        </div>
+      `).join('');
 
-      // Click to highlight on canvas
-      $results.querySelectorAll('.fp-search-results__item').forEach((el) => {
+      results.querySelectorAll('.fp-search-results__item').forEach(el => {
         el.addEventListener('click', () => {
-          const hwId = parseInt(el.dataset.hardwareId, 10);
-          const rId = parseInt(el.dataset.roomId, 10);
-          
-          if (rId !== roomData.room.id) {
-            notify(`Simulating navigation to room ${rId}...`, 'warning');
-            // In a real app we would load the new room data here.
-            // For now, let's just pretend we are there.
-          }
-          
+          const hwId = parseInt(el.dataset.hwId, 10);
           highlightAsset(hwId);
-          $results.classList.remove('visible');
+          results.classList.remove('visible');
         });
       });
     }
-
-    $results.classList.add('visible');
-  } catch (err) {
-    console.error('[floorplan] Search error:', err);
+    results.classList.add('visible');
   }
+
+  btn?.addEventListener('click', doSearch);
+  input?.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+  document.addEventListener('click', (e) => {
+    if (results?.classList.contains('visible') && !results.contains(e.target) && e.target !== input && e.target !== btn) {
+      results.classList.remove('visible');
+    }
+  });
 }
 
 function highlightAsset(hardwareId) {
-  // Clear previous highlights
-  overlayLayer.destroyChildren();
-
-  const target = assetsLayer.find('Group').find((g) => {
+  const stage = getStage();
+  const layer = getLayerAssets();
+  const target = layer.find('Group').find(g => {
     const d = g.getAttr('assetData');
     return d && d.hardware_id === hardwareId;
   });
 
   if (!target) {
-    notify('Asset not rendered on current map.', 'danger');
+    notify('Asset not on this map.', 'warning');
     return;
   }
 
-  // Animate Pan to center the asset
-  const targetX = target.x() + BOUNDING_BOX / 2;
-  const targetY = target.y() + BOUNDING_BOX / 2;
-  
+  // Pan to asset
   const scale = stage.scaleX();
-  const newPos = {
-    x: stage.width() / 2 - targetX * scale,
-    y: stage.height() / 2 - targetY * scale,
-  };
-
-  const panTween = new Konva.Tween({
+  const tween = new Konva.Tween({
     node: stage,
     duration: 0.5,
-    x: newPos.x,
-    y: newPos.y,
+    x: stage.width() / 2 - (target.x() + BOUNDING_BOX/2) * scale,
+    y: stage.height() / 2 - (target.y() + BOUNDING_BOX/2) * scale,
     easing: Konva.Easings.EaseInOut,
   });
-  panTween.play();
+  tween.play();
 
-  // Pulsing ring around the found asset
+  // Pulse ring
+  const overlay = getStage().findOne('.layer_overlay') || getStage().getLayers()[4];
   const ring = new Konva.Circle({
-    x: targetX,
-    y: targetY,
+    x: target.x() + BOUNDING_BOX/2,
+    y: target.y() + BOUNDING_BOX/2,
     radius: BOUNDING_BOX,
-    stroke: '#8058a5', // OCS Purple
-    strokeWidth: 4,
+    stroke: '#961B7E',
+    strokeWidth: 3,
     dash: [6, 3],
     opacity: 0,
   });
+  overlay.add(ring);
 
-  overlayLayer.add(ring);
-
-  // Pulse animation & opacity flash
   const anim = new Konva.Animation((frame) => {
     const s = 0.8 + Math.sin(frame.time / 300) * 0.2;
-    ring.scaleX(s);
-    ring.scaleY(s);
-    ring.opacity(0.6 + Math.sin(frame.time / 150) * 0.4); // Faster blink
-  }, overlayLayer);
-
+    ring.scaleX(s); ring.scaleY(s);
+    ring.opacity(0.5 + Math.sin(frame.time / 200) * 0.5);
+  }, overlay);
   anim.start();
 
-  // Flash the target opacity too
-  const targetTween = new Konva.Tween({
-    node: target,
-    duration: 0.3,
-    opacity: 0.2,
-    yoyo: true,
+  setTimeout(() => { anim.stop(); ring.destroy(); overlay.batchDraw(); }, 3500);
+
+  selectNodeById(target.id());
+}
+
+function bindFurnitureModal() {
+  const modal = document.getElementById('furniture-modal');
+  if (!modal) return;
+
+  // Close on backdrop click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.classList.remove('visible');
   });
-  targetTween.play();
 
-  // Stop after 4 seconds
-  setTimeout(() => {
-    anim.stop();
-    ring.destroy();
-    targetTween.destroy(); // Fixes the eternal blinking
-    target.opacity(1);
-    overlayLayer.batchDraw();
-  }, 4000);
+  // Card clicks
+  modal.querySelectorAll('.fp-furniture-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const type = card.dataset.type;
+      modal.classList.remove('visible');
+      startFurniturePlacement(type);
+      notify(`Click on the canvas to place ${FURNITURE_TYPES[type]?.label || type}.`, 'success');
+    });
+  });
 }
 
-// ════════════════════════════════════════════════════════════════════
-// Sidebar Updates
-// ════════════════════════════════════════════════════════════════════
-
-function mockNavigate(type, id) {
-  console.log(`[floorplan] Simulating navigation: ${type} = ${id}`);
-  notify(`Navigating to ${type} ${id}...`, 'warning');
-  fitStage(); // Reset as a mock action
+function bindAssetsDragDrop() {
+  // IT Assets are listed in the explorer as draggable items
+  // For now, we rely on the assets being placed from mock data
 }
 
-function updateSidebar() {
-  const { building, floor, room, assets } = roomData;
-
-  $breadcrumb().innerHTML = '';
-  
-  const b1 = document.createElement('a');
-  b1.href = '#';
-  b1.textContent = building.name;
-  b1.addEventListener('click', (e) => { e.preventDefault(); mockNavigate('Building', building.id); });
-  
-  const sep1 = document.createElement('span'); sep1.innerHTML = ' › ';
-  
-  const b2 = document.createElement('a');
-  b2.href = '#';
-  b2.textContent = floor.name;
-  b2.addEventListener('click', (e) => { e.preventDefault(); mockNavigate('Floor', floor.id); });
-
-  const sep2 = document.createElement('span'); sep2.innerHTML = ' › ';
-  
-  const b3 = document.createElement('span');
-  b3.textContent = room.name;
-
-  $breadcrumb().append(b1, sep1, b2, sep2, b3);
-
-  // Room info
-  $roomInfo().innerHTML = `
-    <strong>Room:</strong> ${room.name}<br/>
-    <strong>Size:</strong> ${room.width} × ${room.height}px<br/>
-    <strong>Grid:</strong> ${room.grid_size}px<br/>
-    <strong>Assets:</strong> ${assets.length}
+function bindBreadcrumb() {
+  const bc = document.getElementById('breadcrumb');
+  if (!bc || !roomData) return;
+  bc.innerHTML = `
+    <a href="#">${roomData.building.name}</a>
+    <span> › </span>
+    <a href="#">${roomData.floor.name}</a>
+    <span> › </span>
+    <span>${roomData.room.name}</span>
   `;
 }
 
@@ -828,56 +356,10 @@ function updateSidebar() {
 
 function notify(message, type = 'success') {
   const $n = document.getElementById('notification');
+  if (!$n) return;
   $n.textContent = message;
   $n.className = `fp-notification fp-notification--${type} visible`;
   setTimeout(() => $n.classList.remove('visible'), 3000);
-}
-
-// ════════════════════════════════════════════════════════════════════
-// Event Bindings
-// ════════════════════════════════════════════════════════════════════
-
-function bindEvents() {
-  // Tools
-  $btnEdit().addEventListener('click', toggleEditMode);
-  $btnDrawWall().addEventListener('click', toggleDrawWall);
-  $btnSave().addEventListener('click', batchSave);
-  $btnCancel().addEventListener('click', cancelEdit);
-
-  // Camera
-  $btnZoomIn().addEventListener('click', zoomIn);
-  $btnZoomOut().addEventListener('click', zoomOut);
-  $btnZoomReset().addEventListener('click', resetZoom);
-  $btnZoomFit().addEventListener('click', fitStage);
-
-  // Search
-  $searchBtn().addEventListener('click', handleSearch);
-  $searchInput().addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleSearch();
-  });
-
-  // Unassigned Assets Filter
-  $unassignedSearch().addEventListener('input', renderUnassignedAssets);
-
-  // Canvas Drop
-  const wrapper = $wrapper();
-  wrapper.addEventListener('dragover', (e) => {
-    e.preventDefault(); // Necessary to allow dropping
-  });
-  wrapper.addEventListener('drop', handleDropOnCanvas);
-
-  // Close search results on outside click
-  document.addEventListener('click', (e) => {
-    const $results = $searchResults();
-    if (
-      $results.classList.contains('visible') &&
-      !$results.contains(e.target) &&
-      e.target !== $searchInput() &&
-      e.target !== $searchBtn()
-    ) {
-      $results.classList.remove('visible');
-    }
-  });
 }
 
 // ════════════════════════════════════════════════════════════════════
