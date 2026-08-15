@@ -1,193 +1,148 @@
-/**
- * engine.js — Konva CAD Engine
- *
- * Manages the Stage, 4 strict Z-ordered layers, grid rendering,
- * camera controls (pan/zoom), snap-to-grid, and the shared Transformer.
- */
 import Konva from 'konva';
 
-// ── Constants ──────────────────────────────────────────────────────
-export const GRID_SIZE = 20;
-const SCALE_BY = 1.08;
-const MIN_SCALE = 0.15;
-const MAX_SCALE = 4;
+let stage;
+let backgroundLayer;
+let zonesLayer;
+let wallsLayer;
+let assetsLayer;
 
-// ── Singleton State ────────────────────────────────────────────────
-let stage = null;
-let layerFloor = null;
-let layerArchitecture = null;
-let layerFurniture = null;
-let layerAssets = null;
-let overlayLayer = null;
-let transformer = null;
-let gridGroup = null;
-
-// ════════════════════════════════════════════════════════════════════
-// Init
-// ════════════════════════════════════════════════════════════════════
+// Constants
+const SCALE_BY = 1.15;
+const MIN_SCALE = 0.1;
+const MAX_SCALE = 10;
+const GRID_SIZE = 20;
 
 export function initEngine(containerId) {
   const container = document.getElementById(containerId);
-  const parent = container.parentElement;
+  if (!container) {
+    console.error(`Container #${containerId} not found`);
+    return;
+  }
 
+  // Initialize Stage
   stage = new Konva.Stage({
     container: containerId,
-    width: parent.clientWidth,
-    height: parent.clientHeight,
-    draggable: true,
+    width: container.clientWidth,
+    height: container.clientHeight,
+    draggable: true, // Enables Pan by default
   });
 
-  // ── Strict layer order (bottom → top) ────────────────────────
-  layerFloor        = new Konva.Layer({ name: 'layer_floor' });
-  layerArchitecture = new Konva.Layer({ name: 'layer_architecture' });
-  layerFurniture    = new Konva.Layer({ name: 'layer_furniture' });
-  layerAssets       = new Konva.Layer({ name: 'layer_it_assets' });
-  overlayLayer      = new Konva.Layer({ name: 'layer_overlay' });
+  // Create Layers
+  backgroundLayer = new Konva.Layer();
+  zonesLayer = new Konva.Layer();
+  wallsLayer = new Konva.Layer();
+  assetsLayer = new Konva.Layer();
 
-  stage.add(layerFloor, layerArchitecture, layerFurniture, layerAssets, overlayLayer);
+  stage.add(backgroundLayer);
+  stage.add(zonesLayer);
+  stage.add(wallsLayer);
+  stage.add(assetsLayer);
 
-  // ── Transformer (shared, lives on overlay) ───────────────────
-  transformer = new Konva.Transformer({
-    rotateEnabled: true,
-    rotationSnaps: [0, 45, 90, 135, 180, 225, 270, 315],
-    anchorSize: 8,
-    anchorCornerRadius: 2,
-    borderStroke: '#961B7E',
-    anchorStroke: '#961B7E',
-    anchorFill: '#fff',
-    padding: 2,
-    enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
+  // Resize event
+  window.addEventListener('resize', () => {
+    stage.width(container.clientWidth);
+    stage.height(container.clientHeight);
+    updateGrid();
   });
-  overlayLayer.add(transformer);
 
-  // ── Grid ─────────────────────────────────────────────────────
-  renderGrid();
-
-  // ── Mouse wheel zoom ─────────────────────────────────────────
+  // Wheel Zoom Mathematics
   stage.on('wheel', (e) => {
     e.evt.preventDefault();
     const oldScale = stage.scaleX();
     const pointer = stage.getPointerPosition();
 
+    if (!pointer) return;
+
+    // The logic is: calculate pointer position on the canvas's local coordinates
     const mousePointTo = {
       x: (pointer.x - stage.x()) / oldScale,
       y: (pointer.y - stage.y()) / oldScale,
     };
 
-    const direction = e.evt.deltaY > 0 ? -1 : 1;
+    // Determine direction
+    let direction = e.evt.deltaY > 0 ? -1 : 1;
+    if (e.evt.ctrlKey) {
+      direction = -direction;
+    }
+
     let newScale = direction > 0 ? oldScale * SCALE_BY : oldScale / SCALE_BY;
-    newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+    newScale = Math.max(MIN_SCALE, Math.min(newScale, MAX_SCALE));
 
     stage.scale({ x: newScale, y: newScale });
-    stage.position({
+
+    // Calculate new position of the stage to keep the pointer over the same local coordinate
+    const newPos = {
       x: pointer.x - mousePointTo.x * newScale,
       y: pointer.y - mousePointTo.y * newScale,
-    });
+    };
+    stage.position(newPos);
+    updateGrid();
   });
 
-  // ── Resize observer ──────────────────────────────────────────
-  const ro = new ResizeObserver(() => {
-    stage.width(parent.clientWidth);
-    stage.height(parent.clientHeight);
+  // Drag pan event
+  stage.on('dragmove', () => {
+    updateGrid();
   });
-  ro.observe(parent);
 
-  return stage;
+  // Initial Grid sync
+  updateGrid();
 }
 
-// ════════════════════════════════════════════════════════════════════
-// Grid
-// ════════════════════════════════════════════════════════════════════
-
-function renderGrid() {
-  if (gridGroup) gridGroup.destroy();
-
-  // Use a single Konva.Shape with sceneFunc to draw all dots efficiently
-  // instead of creating thousands of individual Konva.Circle nodes.
-  const gridW = 1600;
-  const gridH = 1200;
-
-  const gridShape = new Konva.Shape({
-    listening: false,
-    sceneFunc: (ctx) => {
-      ctx.fillStyle = '#c8c8c8';
-      for (let x = 0; x <= gridW; x += GRID_SIZE) {
-        for (let y = 0; y <= gridH; y += GRID_SIZE) {
-          ctx.beginPath();
-          ctx.arc(x, y, 1, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    },
-  });
-
-  overlayLayer.add(gridShape);
-  gridShape.moveToBottom();
+/**
+ * Synchronize the CSS background grid with Konva's Transform Matrix.
+ * This guarantees 60fps infinite grid without drawing thousands of lines.
+ */
+function updateGrid() {
+  const container = document.getElementById('canvas-area');
+  if (!container) return;
+  
+  const scale = stage.scaleX();
+  const x = stage.x();
+  const y = stage.y();
+  
+  const scaledGridSize = GRID_SIZE * scale;
+  
+  container.style.backgroundPosition = `${x}px ${y}px`;
+  container.style.backgroundSize = `${scaledGridSize}px ${scaledGridSize}px`;
 }
 
-// ════════════════════════════════════════════════════════════════════
-// Camera
-// ════════════════════════════════════════════════════════════════════
-
+// ── UI Camera Controls ────────────────────────────────────────────────
 export function zoomIn() {
-  const s = Math.min(stage.scaleX() * SCALE_BY, MAX_SCALE);
-  stage.scale({ x: s, y: s });
+  zoomBy(SCALE_BY);
 }
 
 export function zoomOut() {
-  const s = Math.max(stage.scaleX() / SCALE_BY, MIN_SCALE);
-  stage.scale({ x: s, y: s });
+  zoomBy(1 / SCALE_BY);
 }
 
-export function resetZoom() {
+export function zoomFit() {
   stage.scale({ x: 1, y: 1 });
+  stage.position({ x: 0, y: 0 });
+  updateGrid();
 }
 
-export function fitStage(roomW, roomH) {
-  const pad = 60;
-  const sX = stage.width() / (roomW + pad * 2);
-  const sY = stage.height() / (roomH + pad * 2);
-  const s = Math.min(sX, sY, 1.2);
+function zoomBy(factor) {
+  const oldScale = stage.scaleX();
+  let newScale = oldScale * factor;
+  newScale = Math.max(MIN_SCALE, Math.min(newScale, MAX_SCALE));
 
-  stage.scale({ x: s, y: s });
-  stage.position({
-    x: (stage.width() - roomW * s) / 2,
-    y: (stage.height() - roomH * s) / 2,
-  });
-}
+  // Zoom center is middle of screen if triggered by button
+  const center = {
+    x: stage.width() / 2,
+    y: stage.height() / 2,
+  };
 
-// ════════════════════════════════════════════════════════════════════
-// Snap
-// ════════════════════════════════════════════════════════════════════
+  const mousePointTo = {
+    x: (center.x - stage.x()) / oldScale,
+    y: (center.y - stage.y()) / oldScale,
+  };
 
-export function snapToGrid(val) {
-  return Math.round(val / GRID_SIZE) * GRID_SIZE;
-}
+  stage.scale({ x: newScale, y: newScale });
 
-export function applySnapOnDragEnd(node) {
-  node.on('dragend', () => {
-    node.position({
-      x: snapToGrid(node.x()),
-      y: snapToGrid(node.y()),
-    });
-    node.getLayer().batchDraw();
-  });
-}
-
-// ════════════════════════════════════════════════════════════════════
-// Getters
-// ════════════════════════════════════════════════════════════════════
-
-export function getStage()            { return stage; }
-export function getLayerFloor()       { return layerFloor; }
-export function getLayerArchitecture(){ return layerArchitecture; }
-export function getLayerFurniture()   { return layerFurniture; }
-export function getLayerAssets()      { return layerAssets; }
-export function getOverlayLayer()     { return overlayLayer; }
-export function getTransformer()      { return transformer; }
-
-export function getRelativePointerPosition() {
-  const transform = stage.getAbsoluteTransform().copy().invert();
-  const pos = stage.getPointerPosition();
-  return transform.point(pos);
+  const newPos = {
+    x: center.x - mousePointTo.x * newScale,
+    y: center.y - mousePointTo.y * newScale,
+  };
+  stage.position(newPos);
+  updateGrid();
 }

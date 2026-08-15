@@ -2,6 +2,7 @@
  * main.js — Phase 1.5: UI with Map Navigator & Unified Search
  */
 import { api } from './api.js';
+import { initEngine, zoomIn, zoomOut, zoomFit } from './engine.js';
 import './style.css';
 
 let currentMapTree = null;
@@ -14,6 +15,9 @@ async function init() {
   // Remove preload class to enable CSS transitions
   setTimeout(() => document.body.classList.remove('preload'), 50);
 
+  initEngine('floorplan-container');
+  bindCameraControls();
+  
   bindToolbar();
   bindSearch();
   bindFurnitureModal();
@@ -50,6 +54,13 @@ function updateBreadcrumb(building, floor, room) {
 // ════════════════════════════════════════════════════════════════════
 // Event Bindings
 // ════════════════════════════════════════════════════════════════════
+
+function bindCameraControls() {
+  document.getElementById('btn-zoom-in')?.addEventListener('click', zoomIn);
+  document.getElementById('btn-zoom-out')?.addEventListener('click', zoomOut);
+  document.getElementById('btn-zoom-reset')?.addEventListener('click', zoomFit);
+  document.getElementById('btn-zoom-fit')?.addEventListener('click', zoomFit);
+}
 
 function bindModeToggle() {
   const layout = document.getElementById('main-layout');

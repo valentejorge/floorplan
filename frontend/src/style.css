@@ -157,8 +157,11 @@ body {
   left: 0;
   height: 100%;
   width: 100%;
-  background: var(--fp-canvas-bg);
-  /* No more padding needed, canvas is full screen and panels float! */
+  background-color: var(--fp-canvas-bg);
+  /* CSS Dot Grid synchronized with Konva */
+  background-image: radial-gradient(var(--fp-border) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: 0 0;
 }
 .fp-canvas-area #floorplan-container {
   width: 100%;
