@@ -1,61 +1,67 @@
 /**
  * floorplan - API Interceptor
  *
- * Em modo de desenvolvimento (Vite dev server), intercepta chamadas fetch
- * para os endpoints PHP do OCS e redireciona para mocks JSON em /public/ajax/.
+ * In development mode (Vite dev server), intercepts fetch calls targeting
+ * OCS PHP endpoints and redirects them to local JSON mocks in /public/ajax/.
  *
- * Em produção (dentro do OCS), usa as rotas reais do backend PHP.
+ * In production (within OCS), uses live PHP backend routes.
  */
 
 const isDev = import.meta.env.DEV;
 
 /**
- * Mapeamento de rotas PHP para mocks JSON locais.
- * Chave: path relativo do endpoint real (ex: 'ajax/get_map.php')
- * Valor: path do mock JSON em public/ (ex: '/ajax/get_map_1.json')
+ * Route mapping for PHP endpoints to local static JSON mocks.
+ * Key: relative endpoint path (e.g. 'ajax/get_room.php')
+ * Value: public mock path (e.g. '/ajax/mock_room_1.json')
  */
 const MOCK_ROUTES = {
-  'ajax/get_map.php?id=1': '/ajax/get_map_1.json',
+  'ajax/get_room.php?id=1': '/ajax/mock_room_1.json',
+  'ajax/search_asset.php': '/ajax/mock_search.json',
 };
 
 /**
- * Resolve a URL de acordo com o ambiente.
+ * Resolves the URL based on the current environment.
  *
- * @param {string} endpoint - Caminho relativo do endpoint (ex: 'ajax/get_map.php?id=1')
- * @returns {string} URL final resolvida
+ * @param {string} endpoint - Relative endpoint path
+ * @returns {string} Resolved URL
  */
 function resolveUrl(endpoint) {
-  if (isDev && MOCK_ROUTES[endpoint]) {
+  if (!isDev) return endpoint;
+
+  // Exact match first
+  if (MOCK_ROUTES[endpoint]) {
     console.info(`[floorplan:api] DEV mock → ${MOCK_ROUTES[endpoint]}`);
     return MOCK_ROUTES[endpoint];
   }
-  // Em produção, o plugin vive dentro do OCS: /ocsreports/extensions/floorplan/
+
+  // Prefix match (e.g. 'ajax/search_asset.php?q=SRV' → 'ajax/search_asset.php')
+  const base = endpoint.split('?')[0];
+  if (MOCK_ROUTES[base]) {
+    console.info(`[floorplan:api] DEV mock → ${MOCK_ROUTES[base]}`);
+    return MOCK_ROUTES[base];
+  }
+
   return endpoint;
 }
 
 /**
- * Wrapper de fetch com interceptação de ambiente.
+ * Fetch wrapper with environment-aware interception.
  *
- * @param {string} endpoint - Caminho relativo do endpoint
- * @param {RequestInit} [options={}] - Opções do fetch (method, body, headers, etc.)
- * @returns {Promise<any>} Dados parseados como JSON
+ * @param {string} endpoint - Relative endpoint path
+ * @param {RequestInit} [options={}] - Fetch options
+ * @returns {Promise<any>} Parsed JSON response
  */
 export async function api(endpoint, options = {}) {
   const url = resolveUrl(endpoint);
 
   const defaults = {
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
   };
 
   const config = {
     ...defaults,
     ...options,
-    headers: {
-      ...defaults.headers,
-      ...options.headers,
-    },
+    headers: { ...defaults.headers, ...options.headers },
   };
 
   const response = await fetch(url, config);

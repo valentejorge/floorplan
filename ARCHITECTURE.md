@@ -1,48 +1,48 @@
-# floorplan - Arquitetura e Diretrizes
+# floorplan - Architecture and Guidelines
 
-## 1. Visão Geral
+## 1. Overview
 
-Plugin para OCS Inventory que adiciona uma camada de visualização espacial interativa (plantas baixas/floor plans) utilizando estruturas de dados JSON e renderização em HTML5 Canvas.
+OCS Inventory plugin that adds an interactive spatial visualization layer (floor plans) utilizing JSON data structures and HTML5 Canvas rendering.
 
-## 2. Identidade Visual (Integração Nativa OCS)
+## 2. Visual Identity (Native OCS Integration)
 
-O plugin **NÃO** deve parecer uma aplicação externa de terceiros. Ele deve se comportar e parecer um módulo nativo do OCS Inventory.
+The plugin **MUST NOT** look like a third-party external application. It must behave and feel like a native OCS Inventory module.
 
-A interface gráfica (modais, painéis e o canvas) deve utilizar as mesmas paletas de cores, fontes e classes CSS (Bootstrap) nativas do OCS. O Canvas deve herdar o tema do usuário (suportando perfeitamente o modo Claro padrão, e adaptando-se caso o OCS possua um modo Escuro ativado), garantindo uma adoção fluida e sem atrito visual.
+The GUI (modals, panels, and canvas) must use native OCS color palettes, fonts, and CSS classes (Bootstrap). The Canvas must inherit the user's active theme (supporting standard Light mode and adapting seamlessly if Dark mode is enabled in OCS), ensuring smooth adoption without visual friction.
 
-## 3. Metodologia de Desenvolvimento (Desacoplamento Tático / Método F1)
+## 3. Development Methodology (Tactical Decoupling / F1 Method)
 
-Adotaremos uma separação rigorosa durante o desenvolvimento:
+We adopt a strict separation during development:
 
-*   **Pista 1 (Frontend):** Desenvolvimento isolado utilizando Vite. A API do OCS será "mockada" através de arquivos estáticos JSON na pasta `public/` e um wrapper de fetch que intercepta as chamadas locais, permitindo iteração de UI em milissegundos sem depender do backend. O Vite atuará apenas como bundler para gerar o asset final.
-*   **Pista 2 (Backend):** Desenvolvimento guiado por testes (TDD). Toda a lógica PHP e SQL deve ser validada por testes unitários via PHPUnit, utilizando banco de dados SQLite em memória para simular o MariaDB e as tabelas nativas do OCS antes de escrever a lógica real.
+*   **Track 1 (Frontend):** Isolated development using Vite. The OCS API is mocked via static JSON files in `public/` and a fetch wrapper intercepting local requests, enabling millisecond UI iteration without backend dependencies. Vite serves purely as a bundler to generate the final distribution asset.
+*   **Track 2 (Backend):** Test-Driven Development (TDD). All PHP and SQL logic must be validated by unit tests via PHPUnit, using an in-memory SQLite database to emulate MariaDB and native OCS tables before writing production queries.
 
-## 4. Estrutura de Diretórios do Plugin (Padrão OCS)
+## 4. Plugin Directory Structure (OCS Standard)
 
-O pacote final gerado deve possuir a seguinte árvore:
+The final distribution package must follow this tree:
 
 ```
 /
-├── setup.php                   # Registro do plugin, versão e injeção no menu
-├── install.sql                 # Criação das tabelas (plugin_maps, plugin_map_assets, plugin_map_revisions)
-├── uninstall.sql               # Limpeza
-├── /require/MapEngine.php      # Lógica de negócio e queries PDO
-├── /ajax/                      # Endpoints da API interna (get_map.php, batch_update_assets.php, etc)
+├── setup.php                   # Plugin registration, versioning, and menu injection
+├── install.sql                 # Table definitions (plugin_maps, plugin_map_assets, plugin_map_revisions)
+├── uninstall.sql               # Cleanup queries
+├── /require/MapEngine.php      # Business logic and PDO queries
+├── /ajax/                      # Internal API endpoints (get_map.php, batch_update_assets.php, etc.)
 └── /assets/
-    ├── /css/floorplan.css      # Estilização que herda e complementa o CSS do OCS
-    └── /js/map-bundle.js       # Build compilado do Vite (Konva.js)
+    ├── /css/floorplan.css      # Custom styling complementing native OCS CSS
+    └── /js/map-bundle.js       # Compiled Vite bundle (Konva.js)
 ```
 
-## 5. Regras de Ouro do Frontend (Konva.js)
+## 5. Frontend Golden Rules (Konva.js)
 
-1.  **Isolamento de Camadas:** Usar camadas separadas para objetos estáticos (paredes/portas com `listening: false` para performance), ativos (PCs, impressoras) e overlays (tooltips).
-2.  **Desempenho (60 FPS):** Atualizações visuais ocorrem na memória local do navegador instantaneamente.
-3.  **Snap to Grid e Salvamento Explícito (Batch Save):** Todo drag-and-drop de ativos deve alinhar a uma grade invisível (ex: 20px). Para garantir a integridade do inventário e evitar acidentes corporativos, a interface NÃO terá autosave. O mapa deve possuir um "Modo de Edição" (que ativa o draggable). As movimentações ocorrerão apenas no Canvas local. Para efetivar as mudanças, o usuário deverá clicar em um botão "Salvar", que disparará uma única requisição fetch enviando o payload em lote (batch) para a API.
-4.  **Agrupamento:** Elementos aninhados (ex: PC em cima de uma mesa) usam herança de `Konva.Group` para manter posições relativas.
+1.  **Layer Isolation:** Separate layers for static elements (walls/doors with `listening: false` for optimal performance), assets (PCs, printers), and overlays (tooltips, drag indicators).
+2.  **Performance Target (60 FPS):** Visual updates occur in browser local memory instantaneously.
+3.  **Snap to Grid & Explicit Saving (Batch Save):** Drag-and-drop actions snap to an invisible grid (e.g., 20px). To preserve inventory integrity and prevent accidental changes, there is NO autosave. The canvas features an "Edit Mode" enabling draggability. Position updates remain in local Canvas state until the user clicks "Save", triggering a single batch payload to the API.
+4.  **Grouping:** Nested elements (e.g., a PC on top of a desk) inherit positioning via `Konva.Group`.
 
-## 6. Auditoria e Versionamento (Time Travel)
+## 6. Auditing & Versioning (Time Travel)
 
-Para garantir a rastreabilidade (compliance) das operações de TI, o sistema deve manter um histórico imutável das alterações nas plantas baixas.
+To maintain compliance and traceability across IT operations, the system preserves an immutable change history for floor plans.
 
-*   **Tabela `plugin_map_revisions`:** O `install.sql` deve criar esta tabela contendo `id` (PK), `map_id` (FK), `user_id` (VARCHAR, usuário logado no OCS), `created_at` (DATETIME) e `map_snapshot` (JSON).
-*   **Gatilho de Snapshot:** Toda vez que o endpoint de salvamento em lote for chamado e efetivar as mudanças na tabela de ativos, ele deve obrigatoriamente pegar o estado final daquele mapa e inserir uma nova linha na tabela de revisões.
+*   **Table `plugin_map_revisions`:** Defined in `install.sql`, containing `id` (PK), `map_id` (FK), `user_id` (VARCHAR, logged-in OCS user), `created_at` (DATETIME), and `map_snapshot` (JSON).
+*   **Snapshot Trigger:** Whenever the batch save endpoint commits asset changes, it captures the updated map state and creates a new entry in the revisions table.

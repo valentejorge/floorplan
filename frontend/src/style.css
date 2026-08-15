@@ -1,0 +1,394 @@
+/* ================================================================
+   floorplan - OCS-Native UI Stylesheet
+   Bootstrap-compatible palette (light/gray) with clean buttons.
+   ================================================================ */
+
+/* ── Reset ──────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ── Tokens ─────────────────────────────────────────────────────── */
+:root {
+  --fp-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+
+  /* OCS-style grays */
+  --fp-bg:          #f4f6f9;
+  --fp-bg-sidebar:  #ffffff;
+  --fp-border:      #dee2e6;
+  --fp-text:        #212529;
+  --fp-text-muted:  #6c757d;
+
+  /* OCS accent blue */
+  --fp-primary:     #337ab7;
+  --fp-primary-hover: #286090;
+
+  /* Status */
+  --fp-success:     #5cb85c;
+  --fp-warning:     #f0ad4e;
+  --fp-danger:      #d9534f;
+
+  /* Sidebar */
+  --fp-sidebar-w:   220px;
+
+  /* Topbar */
+  --fp-topbar-h:    52px;
+}
+
+body {
+  font-family: var(--fp-font);
+  font-size: 13px;
+  color: var(--fp-text);
+  background: var(--fp-bg);
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* ── Topbar (Search) ────────────────────────────────────────────── */
+.fp-topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--fp-topbar-h);
+  padding: 0 16px;
+  background: #fff;
+  border-bottom: 1px solid var(--fp-border);
+}
+
+.fp-topbar__brand {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--fp-primary);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fp-topbar__brand svg {
+  width: 18px;
+  height: 18px;
+}
+
+.fp-topbar__search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  max-width: 420px;
+  width: 100%;
+}
+
+.fp-topbar__input {
+  flex: 1;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  border: 1px solid var(--fp-border);
+  border-radius: 4px;
+  outline: none;
+  transition: border-color .15s;
+}
+
+.fp-topbar__input:focus {
+  border-color: var(--fp-primary);
+  box-shadow: 0 0 0 2px rgba(51, 122, 183, .15);
+}
+
+.fp-topbar__input::placeholder {
+  color: #adb5bd;
+}
+
+/* ── Breadcrumb ─────────────────────────────────────────────────── */
+.fp-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--fp-text-muted);
+  padding: 0 16px;
+  height: 30px;
+  background: #fff;
+  border-bottom: 1px solid var(--fp-border);
+}
+
+.fp-breadcrumb span {
+  color: var(--fp-text);
+  font-weight: 500;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────── */
+.fp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--fp-border);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--fp-text);
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+
+.fp-btn:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.fp-btn--primary {
+  background: var(--fp-primary);
+  border-color: var(--fp-primary);
+  color: #fff;
+}
+
+.fp-btn--primary:hover {
+  background: var(--fp-primary-hover);
+  border-color: var(--fp-primary-hover);
+}
+
+.fp-btn--success {
+  background: var(--fp-success);
+  border-color: var(--fp-success);
+  color: #fff;
+}
+
+.fp-btn--success:hover {
+  background: #4cae4c;
+  border-color: #4cae4c;
+}
+
+.fp-btn--danger {
+  background: var(--fp-danger);
+  border-color: var(--fp-danger);
+  color: #fff;
+}
+
+.fp-btn--danger:hover {
+  background: #c9302c;
+  border-color: #c9302c;
+}
+
+.fp-btn--sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.fp-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* ── Layout Container ───────────────────────────────────────────── */
+.fp-layout {
+  display: flex;
+  height: calc(100vh - var(--fp-topbar-h) - 30px);
+}
+
+/* ── Sidebar ────────────────────────────────────────────────────── */
+.fp-sidebar {
+  width: var(--fp-sidebar-w);
+  min-width: var(--fp-sidebar-w);
+  background: var(--fp-bg-sidebar);
+  border-right: 1px solid var(--fp-border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.fp-sidebar__section {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--fp-border);
+}
+
+.fp-sidebar__title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--fp-text-muted);
+  margin-bottom: 10px;
+}
+
+.fp-sidebar__tools {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fp-sidebar__info {
+  font-size: 12px;
+  color: var(--fp-text-muted);
+  line-height: 1.5;
+}
+
+.fp-sidebar__info strong {
+  color: var(--fp-text);
+}
+
+/* Edit mode indicator */
+.fp-edit-badge {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  margin: 0 14px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #856404;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+}
+
+.fp-edit-badge.active {
+  display: flex;
+}
+
+/* ── Canvas Area ────────────────────────────────────────────────── */
+.fp-canvas-wrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--fp-bg);
+}
+
+#floorplan-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Tooltip ────────────────────────────────────────────────────── */
+.fp-tooltip {
+  position: absolute;
+  z-index: 1000;
+  display: none;
+  min-width: 180px;
+  max-width: 260px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--fp-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
+  pointer-events: none;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.fp-tooltip.visible {
+  display: block;
+}
+
+.fp-tooltip__hostname {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--fp-primary);
+  margin-bottom: 4px;
+}
+
+.fp-tooltip__row {
+  display: flex;
+  gap: 6px;
+  color: var(--fp-text-muted);
+}
+
+.fp-tooltip__row strong {
+  color: var(--fp-text);
+  min-width: 30px;
+}
+
+/* ── Search Results Overlay ─────────────────────────────────────── */
+.fp-search-results {
+  position: absolute;
+  top: var(--fp-topbar-h);
+  right: 16px;
+  z-index: 900;
+  display: none;
+  width: 380px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--fp-border);
+  border-radius: 6px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .12);
+}
+
+.fp-search-results.visible {
+  display: block;
+}
+
+.fp-search-results__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #f1f3f5;
+  cursor: pointer;
+  transition: background .1s;
+}
+
+.fp-search-results__item:hover {
+  background: #f8f9fa;
+}
+
+.fp-search-results__item:last-child {
+  border-bottom: none;
+}
+
+.fp-search-results__name {
+  font-weight: 600;
+  color: var(--fp-text);
+}
+
+.fp-search-results__location {
+  font-size: 11px;
+  color: var(--fp-text-muted);
+}
+
+.fp-search-results__empty {
+  padding: 20px 14px;
+  text-align: center;
+  color: var(--fp-text-muted);
+}
+
+/* ── Notification bar ───────────────────────────────────────────── */
+.fp-notification {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  display: none;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+  color: #fff;
+}
+
+.fp-notification.visible {
+  display: block;
+  animation: fp-slide-up .3s ease-out;
+}
+
+.fp-notification--success { background: var(--fp-success); }
+.fp-notification--warning { background: var(--fp-warning); color: #212529; }
+.fp-notification--danger  { background: var(--fp-danger); }
+
+@keyframes fp-slide-up {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

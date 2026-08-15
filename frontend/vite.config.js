@@ -1,16 +1,18 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
+const root = import.meta.dirname;
+
 export default defineConfig({
   build: {
-    // Gera o bundle final para ser copiado em /assets/js/map-bundle.js
-    outDir: resolve(__dirname, '../backend/assets/js'),
+    // Output compiled bundle to backend/assets/js/map-bundle.js
+    outDir: resolve(root, '../backend/assets/js'),
     emptyOutDir: false,
     rollupOptions: {
-      input: resolve(__dirname, 'src/main.js'),
+      input: resolve(root, 'src/main.js'),
       output: {
         entryFileNames: 'map-bundle.js',
-        // Inline tudo em um único arquivo para simplificar deploy no OCS
+        // Inline everything into a single file for OCS deployment
         manualChunks: undefined,
       },
     },
