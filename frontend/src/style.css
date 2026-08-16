@@ -608,6 +608,15 @@ body {
   border-color: var(--fp-primary);
   background: var(--fp-primary-soft);
 }
+.fp-furniture-card:active {
+  cursor: grabbing;
+}
+.fp-furniture-card[draggable="true"] {
+  cursor: grab;
+}
+.fp-furniture-card[draggable="true"]:active {
+  cursor: grabbing;
+}
 .fp-furniture-card svg {
   width: 48px;
   height: 48px;

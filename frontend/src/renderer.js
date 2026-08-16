@@ -156,6 +156,7 @@ export function loadMapData(data, isInitial = true) {
           const mac = asset.mac || `00:1A:2B:3C:4D:${asset.hardware_id.toString().substring(0,2)}`;
           const user = asset.user || (asset.type === 'desktop' ? 'jorge.silva' : 'system');
           const desc = asset.description || `Equipamento ${asset.type} padrão`;
+          const dotColor = asset.status === 'offline' ? '#e53e3e' : asset.status === 'warning' ? '#d69e2e' : '#5cb85c';
           
           tooltip.innerHTML = `
             <div class="fp-tooltip__header">
@@ -530,5 +531,5 @@ export function forceRenderLabels() {
       }
     }
   });
-  assetsLayer.batchDraw();
+  assetsLayer.getLayer().batchDraw();
 }

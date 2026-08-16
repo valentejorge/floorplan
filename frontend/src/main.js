@@ -113,6 +113,7 @@ async function init() {
   bindFurnitureModal();
   bindMapNavigator();
   bindModeToggle();
+  populateFurnitureCatalog();
   
   // Initial Mock State
   setTimeout(async () => {
@@ -216,6 +217,13 @@ function bindModeToggle() {
       btnCancel.style.display = 'none';
       btnSave.style.display = 'none';
       
+      const furniturePanel = document.getElementById('furniture-catalog-panel');
+      if (furniturePanel) furniturePanel.style.display = 'none';
+      
+      document.querySelectorAll('.fp-tool-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.fp-tool-btn[data-tool="select"]')?.classList.add('active');
+      
+      import('./tools.js').then(({ setActiveTool }) => setActiveTool('select'));
       import('./renderer.js').then(({ repopulateAssetsExplorer }) => {
         repopulateAssetsExplorer();
       });
@@ -301,6 +309,15 @@ function bindViewFilters() {
 
 function bindToolbar() {
   const buttons = document.querySelectorAll('.fp-tool-btn[data-tool]');
+  const furniturePanel = document.getElementById('furniture-catalog-panel');
+  const btnCloseFurniture = document.getElementById('btn-close-furniture');
+
+  btnCloseFurniture?.addEventListener('click', () => {
+    if(furniturePanel) furniturePanel.style.display = 'none';
+    // Remove active state from button
+    document.querySelector('.fp-tool-btn[data-tool="furniture"]')?.classList.remove('active');
+  });
+
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
       const tool = btn.dataset.tool;
@@ -308,14 +325,20 @@ function bindToolbar() {
       buttons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
-      if (tool === 'furniture') {
-        document.getElementById('furniture-modal')?.classList.add('visible');
+      if (furniturePanel) {
+        if (tool === 'furniture') {
+          furniturePanel.style.display = 'flex';
+        } else {
+          furniturePanel.style.display = 'none';
+        }
       }
       
       document.getElementById('floor-color-picker')?.classList.toggle('visible', tool === 'floor');
       document.getElementById('wall-type-picker')?.classList.toggle('visible', tool === 'wall');
       
-      setActiveTool(tool);
+      import('./tools.js').then(({ setActiveTool }) => {
+        setActiveTool(tool);
+      });
     });
   });
 
@@ -753,6 +776,96 @@ function notify(message, type = 'success') {
   $n.textContent = message;
   $n.className = `fp-notification fp-notification--${type} visible`;
   setTimeout(() => $n.classList.remove('visible'), 3000);
+}
+
+async function populateFurnitureCatalog() {
+  const panel = document.getElementById('furniture-catalog-body');
+  if (!panel) return;
+  
+  const { SVG_TABLES, SVG_CHAIRS } = await import('./skins.js');
+  
+  const items = [
+    { type: 'desk_straight', label: 'Mesa Reta', svg: SVG_TABLES.desk_straight },
+    { type: 'desk_small', label: 'Mesa Pequena', svg: SVG_TABLES.desk_small },
+    { type: 'desk_l', label: 'Mesa L', svg: SVG_TABLES.desk_l },
+    { type: 'desk_round', label: 'Mesa Reunião', svg: SVG_TABLES.desk_round },
+    { type: 'rack_cabinet', label: 'Rack Servidor', svg: SVG_TABLES.rack_cabinet },
+    { type: 'office_partition_80', label: 'Divisória 80', svg: SVG_TABLES.office_partition_80 },
+    { type: 'office_partition_160', label: 'Divisória 160', svg: SVG_TABLES.office_partition_160 },
+    { type: 'sofa', label: 'Sofá', svg: SVG_TABLES.sofa },
+    { type: 'office_chair', label: 'Cadeira', svg: SVG_TABLES.office_chair },
+    { type: 'executive_chair', label: 'Cadeira Exec.', svg: SVG_TABLES.executive_chair },
+    { type: 'meeting_chairs_4', label: 'Cadeiras (x4)', svg: SVG_CHAIRS.meeting_chairs_4 },
+    { type: 'water_cooler', label: 'Bebedouro', svg: SVG_TABLES.water_cooler },
+    { type: 'plant', label: 'Planta', svg: SVG_TABLES.plant }
+  ];
+
+  panel.innerHTML = items.map(it => `
+    <div class="fp-furniture-card" draggable="true" data-type="${it.type}">
+      ${it.svg}
+      <div class="fp-furniture-card__label">${it.label}</div>
+    </div>
+  `).join('');
+
+  panel.querySelectorAll('.fp-furniture-card').forEach(card => {
+    card.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('furniture-type', card.dataset.type);
+      e.dataTransfer.effectAllowed = 'copy';
+    });
+  });
+
+  const container = document.getElementById('floorplan-container');
+  container.addEventListener('dragover', (e) => {
+    // Only allow drop if we are in Edit Mode and Furniture tool is selected
+    const layout = document.getElementById('main-layout');
+    if (!layout?.classList.contains('is-editing')) return;
+    
+    const activeTool = document.querySelector('.fp-tool-btn.active')?.dataset.tool;
+    if (activeTool !== 'furniture') return;
+    
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  });
+
+  container.addEventListener('drop', async (e) => {
+    const layout = document.getElementById('main-layout');
+    if (!layout?.classList.contains('is-editing')) return;
+    
+    const activeTool = document.querySelector('.fp-tool-btn.active')?.dataset.tool;
+    if (activeTool !== 'furniture') return;
+    
+    const type = e.dataTransfer.getData('furniture-type');
+    if (!type) return;
+    e.preventDefault();
+
+    const { stage, getRelativePointerPosition, applySnapOnDragEnd, getLayerFurniture } = await import('./engine.js');
+    stage.setPointersPositions(e);
+    let pos = getRelativePointerPosition();
+    
+    const { GRID_SIZE } = await import('./engine.js');
+    pos.x = Math.round(pos.x / GRID_SIZE) * GRID_SIZE;
+    pos.y = Math.round(pos.y / GRID_SIZE) * GRID_SIZE;
+    
+    const { buildFurnitureNode } = await import('./furniture.js');
+    const node = buildFurnitureNode({
+      id: 'fur_' + Date.now(),
+      type: type,
+      x: pos.x,
+      y: pos.y,
+      rotation: 0
+    });
+    
+    if (node) {
+      const furnitureLayer = getLayerFurniture();
+      furnitureLayer.add(node);
+      node.draggable(true);
+      applySnapOnDragEnd(node);
+      furnitureLayer.getLayer().batchDraw();
+      
+      const { commitHistory } = await import('./history.js');
+      commitHistory();
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════════

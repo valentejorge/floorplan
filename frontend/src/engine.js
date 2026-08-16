@@ -75,8 +75,8 @@ export function initEngine(containerId) {
   
   zonesLayer = new Konva.Group({ listening: false, name: 'zonesLayer' }); 
   wallsLayer = new Konva.Group({ listening: false, name: 'wallsLayer' });
-  furnitureLayer = new Konva.Group({ listening: false, name: 'furnitureLayer' });
-  assetsLayer = new Konva.Group({ listening: false, name: 'assetsLayer' }); 
+  furnitureLayer = new Konva.Group({ listening: true, name: 'furnitureLayer' });
+  assetsLayer = new Konva.Group({ listening: true, name: 'assetsLayer' }); 
   
   architectureLayer.add(zonesLayer);
   architectureLayer.add(wallsLayer);
@@ -520,10 +520,24 @@ export function setEngineEditMode(isEditing) {
   }).play();
   
   // Enable interaction with architectural nodes
-  [zonesLayer, wallsLayer, getLayerFurniture(), getLayerAssets()].forEach(layer => {
+  [zonesLayer, wallsLayer].forEach(layer => {
     layer.listening(isEditing);
     layer.getChildren().forEach(node => {
       node.listening(isEditing);
+      node.draggable(isEditing);
+    });
+  });
+
+  // Assets and Furniture should always be listening for tooltips
+  [getLayerFurniture(), getLayerAssets()].forEach(layer => {
+    layer.listening(true);
+    layer.getChildren().forEach(node => {
+      // If it's an IT asset with a tooltip, it should always listen
+      if (node.name() === 'it-asset' || node.name() === 'furniture') {
+        node.listening(true);
+      } else {
+        node.listening(isEditing);
+      }
       node.draggable(isEditing);
       
       // Manage live snap listener

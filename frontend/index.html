@@ -99,6 +99,18 @@
 
       <!-- Right/Left Explorer Panel -->
       <aside class="fp-explorer" id="explorer-panel">
+        
+        <!-- ── Furniture Catalog Panel ─────────────────────────────────────── -->
+        <div id="furniture-catalog-panel" style="display:none;background:var(--fp-bg-sidebar);border-bottom:1px solid var(--fp-border);flex-direction:column;max-height:100%;z-index:100;pointer-events:auto;">
+          <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--fp-border);">
+            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Catálogo de Mobília</h3>
+            <button id="btn-close-furniture" style="background:none;border:none;color:var(--fp-text-muted);cursor:pointer;font-size:16px;line-height:1;">&times;</button>
+          </div>
+          <div id="furniture-catalog-body" style="flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start;">
+            <!-- SVGs will be injected here via JS -->
+          </div>
+        </div>
+
         <div class="fp-explorer__header">Object Explorer</div>
         <div id="explorer-body" class="fp-explorer__body">
           <div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">
@@ -248,38 +260,6 @@
       <!-- Canvas Area and Explorer were moved above -->
     </div>
 
-    <!-- ── Furniture Modal ─────────────────────────────────────── -->
-    <div id="furniture-modal" class="fp-modal">
-      <div class="fp-modal__content fp-furniture-catalog">
-        <div class="fp-furniture-catalog__title">Furniture Catalog</div>
-        <div class="fp-furniture-grid">
-          <div class="fp-furniture-card" data-type="desk_straight">
-            <svg viewBox="0 0 48 48" fill="none"><rect x="4" y="14" width="40" height="20" rx="2" fill="#c4a882" stroke="#7a5c30" stroke-width="1.5"/><rect x="6" y="28" width="36" height="4" rx="1" fill="#8b6914" opacity=".5"/></svg>
-            <div class="fp-furniture-card__label">Straight Desk</div>
-          </div>
-          <div class="fp-furniture-card" data-type="desk_l">
-            <svg viewBox="0 0 48 48" fill="none"><rect x="4" y="8" width="40" height="16" rx="2" fill="#c4a882" stroke="#7a5c30" stroke-width="1.5"/><rect x="28" y="8" width="16" height="32" rx="2" fill="#c4a882" stroke="#7a5c30" stroke-width="1.5"/></svg>
-            <div class="fp-furniture-card__label">L-Desk</div>
-          </div>
-          <div class="fp-furniture-card" data-type="desk_round">
-            <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="18" fill="#c4a882" stroke="#7a5c30" stroke-width="1.5"/><circle cx="24" cy="24" r="4" fill="#8b6914" opacity=".3"/></svg>
-            <div class="fp-furniture-card__label">Round Table</div>
-          </div>
-          <div class="fp-furniture-card" data-type="chair">
-            <svg viewBox="0 0 48 48" fill="none"><rect x="10" y="14" width="28" height="24" rx="4" fill="#555566"/><rect x="14" y="8" width="20" height="6" rx="3" fill="#444455"/></svg>
-            <div class="fp-furniture-card__label">Chair</div>
-          </div>
-          <div class="fp-furniture-card" data-type="plant">
-            <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="14" fill="#5a9e4b" opacity=".8"/><circle cx="24" cy="24" r="6" fill="#8b6914"/></svg>
-            <div class="fp-furniture-card__label">Plant</div>
-          </div>
-          <div class="fp-furniture-card" data-type="partition">
-            <svg viewBox="0 0 48 48" fill="none"><rect x="22" y="4" width="4" height="40" rx="1" fill="#9e9eb0" stroke="#7a7a8c" stroke-width="1"/></svg>
-            <div class="fp-furniture-card__label">Partition</div>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- ── Map Navigator Modal (Habbo Style) ─────────────────────── -->
     <div id="map-navigator-modal" class="fp-modal">

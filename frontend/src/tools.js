@@ -10,7 +10,7 @@ import {
   getLayerAssets, getOverlayLayer, getTransformer,
   getRelativePointerPosition, snapToGrid, applySnapOnDragEnd, GRID_SIZE,
 } from './engine.js';
-import { SHADOW_LIGHT, SHADOW_HEAVY, buildFurnitureNode, FURNITURE_TYPES } from './furniture.js';
+import { buildFurnitureNode } from './furniture.js';
 import { skinManager } from './skins.js';
 import { commitHistory } from './history.js';
 import { refreshExplorer, selectNodeById, clearSelection } from './explorer.js';
@@ -438,43 +438,7 @@ function cancelDraw() {
 // FURNITURE placement (from modal)
 // ════════════════════════════════════════════════════════════════════
 
-let pendingFurnitureType = null;
-
-export function startFurniturePlacement(type) {
-  pendingFurnitureType = type;
-  setActiveTool(TOOLS.SELECT);
-  getStage().container().style.cursor = 'copy';
-
-  // One-shot click to place
-  const handler = () => {
-    const pos = getRelativePointerPosition();
-    const reg = FURNITURE_TYPES[type];
-    if (!reg) return;
-
-    const id = 'f-' + Date.now();
-    const data = {
-      id, name: reg.label, type,
-      x: snapToGrid(pos.x), y: snapToGrid(pos.y),
-      width: reg.defaultW, height: reg.defaultH,
-      rotation: 0,
-    };
-
-    const node = buildFurnitureNode(data);
-    if (node) {
-      node.draggable(true);
-      applySnapOnDragEnd(node);
-      getLayerFurniture().add(node);
-      getLayerFurniture().getLayer().batchDraw();
-      refreshExplorer();
-    }
-
-    getStage().off('click.placeFurniture');
-    getStage().container().style.cursor = 'default';
-    pendingFurnitureType = null;
-  };
-
-  getStage().on('click.placeFurniture', handler);
-}
+// startFurniturePlacement was replaced by HTML5 drag-and-drop
 
 // ════════════════════════════════════════════════════════════════════
 // IT ASSET placement (drag from panel)
