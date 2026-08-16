@@ -1,0 +1,12 @@
+{
+  "name": "floorplan",
+  "displayName": "Floorplan CAD",
+  "version": "1.0",
+  "description": {
+    "en": "Interactive CAD Floorplan",
+    "fr": "Plan interactif",
+    "pt": "Planta Baixa CAD"
+  },
+  "licence": "GPLv2",
+  "author": ["Jorge Valente"]
+}

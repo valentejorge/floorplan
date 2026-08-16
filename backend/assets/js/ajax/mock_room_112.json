@@ -1,0 +1,48 @@
+{
+  "status": "success",
+  "data": {
+    "floor_zones": [
+      {
+        "id": "zone-112",
+        "name": "Meeting Room Alpha",
+        "x": 0, "y": 0,
+        "width": 400, "height": 400,
+        "fill": "#f0fff4",
+        "opacity": 1.0
+      }
+    ],
+    "walls": [
+      {
+        "id": "w1", "wallType": "interior", "points": [0,0, 400,0]
+      },
+      {
+        "id": "w2", "wallType": "glass", "points": [400,0, 400,400]
+      },
+      {
+        "id": "w3", "wallType": "interior", "points": [400,400, 0,400]
+      },
+      {
+        "id": "w4", "wallType": "glass", "points": [0,400, 0,0]
+      }
+    ],
+    "doors": [
+      { "id": "d1", "x": 0, "y": 300, "width": 8, "height": 80 }
+    ],
+    "assets": [
+      {
+        "id": "tv1", "type": "monitor", "pos_x": 380, "pos_y": 200,
+        "hardware_id": 501, "hardware_name": "MEET-TV-ALPHA", "status": "online", "ip": "10.0.2.50", "mac": "AA:BB:CC:DD:EE:50",
+        "layout": { "table": "none", "chair": "none", "device": "monitor_wall", "rotation": 270 }
+      },
+      {
+        "id": "phone1", "type": "phone", "pos_x": 200, "pos_y": 200,
+        "hardware_id": 502, "hardware_name": "MEET-PHONE", "status": "online", "ip": "10.0.2.51", "mac": "AA:BB:CC:DD:EE:51",
+        "layout": { "table": "desk_round", "chair": "meeting_chairs_4", "device": "conference_phone", "rotation": 0 }
+      },
+      {
+        "id": "plant1", "type": "furniture", "pos_x": 50, "pos_y": 50,
+        "layout": { "table": "plant", "chair": "none", "device": "none", "rotation": 0 }
+      }
+    ]
+  }
+}

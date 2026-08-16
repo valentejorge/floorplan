@@ -1,0 +1,724 @@
+{
+  "status": "success",
+  "data": {
+    "building": {
+      "id": 1,
+      "name": "Headquarters"
+    },
+    "floor": {
+      "id": 1,
+      "name": "Ground Floor"
+    },
+    "room": {
+      "id": 1,
+      "name": "Open Office A",
+      "width": 1200,
+      "height": 900,
+      "grid_size": 20
+    },
+    "floor_zones": [
+      {
+        "id": "fz-1",
+        "name": "Main Office Carpet",
+        "fill": "#9ab8a0",
+        "opacity": 0.4,
+        "layer": "floor",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "width": 1200,
+        "height": 900
+      },
+      {
+        "id": "fz-2",
+        "name": "Meeting Room Floor",
+        "fill": "#9ab8a0",
+        "opacity": 0.55,
+        "layer": "floor",
+        "x": 0,
+        "y": 540,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "width": 500,
+        "height": 360
+      },
+      {
+        "id": "fz-3",
+        "name": "Server Closet Tile",
+        "fill": "#d4cfc4",
+        "opacity": 0.5,
+        "layer": "floor",
+        "x": 800,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "width": 400,
+        "height": 300
+      }
+    ],
+    "walls": [
+      {
+        "id": "w-outer",
+        "name": "Outer Wall",
+        "wallType": "exterior",
+        "layer": "architecture",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "points": [
+          0,
+          0,
+          1200,
+          0,
+          1200,
+          900,
+          0,
+          900,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "w-meeting",
+        "name": "Meeting Room N",
+        "wallType": "exterior",
+        "layer": "architecture",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "points": [
+          0,
+          540,
+          500,
+          540
+        ]
+      },
+      {
+        "id": "w-meeting-e",
+        "name": "Meeting Room E",
+        "wallType": "exterior",
+        "layer": "architecture",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "points": [
+          500,
+          540,
+          500,
+          900
+        ]
+      },
+      {
+        "id": "w-server-s",
+        "name": "Server Room S",
+        "wallType": "exterior",
+        "layer": "architecture",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "points": [
+          800,
+          300,
+          1200,
+          300
+        ]
+      },
+      {
+        "id": "w-server-w",
+        "name": "Server Room W",
+        "wallType": "interior",
+        "layer": "architecture",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "points": [
+          800,
+          0,
+          800,
+          300
+        ]
+      },
+      {
+        "id": "w-glass-1",
+        "name": "Glass Partition",
+        "wallType": "glass",
+        "layer": "architecture",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "points": [
+          500,
+          200,
+          800,
+          200
+        ]
+      },
+      {
+        "name": "Wall",
+        "layer": "architecture",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "points": []
+      },
+      {
+        "name": "Wall",
+        "layer": "architecture",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "points": []
+      },
+      {
+        "name": "Wall",
+        "layer": "architecture",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "points": []
+      },
+      {
+        "name": "Wall",
+        "layer": "architecture",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "points": []
+      },
+      {
+        "name": "Wall",
+        "layer": "architecture",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "points": []
+      },
+      {
+        "name": "Wall",
+        "layer": "architecture",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "points": []
+      },
+      {
+        "name": "Wall",
+        "layer": "architecture",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "points": []
+      },
+      {
+        "name": "Wall",
+        "layer": "architecture",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "points": []
+      },
+      {
+        "name": "Wall",
+        "layer": "architecture",
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "points": []
+      }
+    ],
+    "doors": [
+      {
+        "id": "d-1",
+        "name": "Main Entrance",
+        "x": 0,
+        "y": 220,
+        "width": 8,
+        "height": 60
+      },
+      {
+        "id": "d-2",
+        "name": "Meeting Door",
+        "x": 200,
+        "y": 536,
+        "width": 60,
+        "height": 8
+      },
+      {
+        "id": "d-3",
+        "name": "Server Door",
+        "x": 796,
+        "y": 100,
+        "width": 8,
+        "height": 60
+      }
+    ],
+    "assets": [
+      {
+        "id": "srv1",
+        "hardware_id": 1,
+        "hardware_name": "SRV-DC-01",
+        "type": "server",
+        "pos_x": 880,
+        "pos_y": 60,
+        "ip": "192.168.10.5",
+        "mac": "AA:BB:CC:DD:EE:01",
+        "layout": {
+          "table": "rack_cabinet",
+          "chair": "none",
+          "device": "server_unit",
+          "rotation": 0
+        },
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "srv2",
+        "hardware_id": 2,
+        "hardware_name": "SRV-DC-02",
+        "type": "server",
+        "pos_x": 880,
+        "pos_y": 159.99999999999994,
+        "ip": "192.168.10.6",
+        "mac": "AA:BB:CC:DD:EE:02",
+        "layout": {
+          "table": "rack_cabinet",
+          "chair": "none",
+          "device": "server_unit",
+          "rotation": 0
+        },
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "pc1",
+        "hardware_id": 3,
+        "hardware_name": "PC-RH-003",
+        "type": "desktop",
+        "pos_x": 919.9999999999998,
+        "pos_y": 540,
+        "ip": "192.168.10.20",
+        "mac": "AA:BB:CC:DD:EE:03",
+        "layout": {
+          "table": "desk_l",
+          "chair": "office_chair",
+          "device": "desktop_single",
+          "rotation": 270
+        },
+        "scaleX": 0.9999999999999921,
+        "scaleY": 0.9999999999999925
+      },
+      {
+        "id": "pc2",
+        "hardware_id": 4,
+        "hardware_name": "PC-RH-004",
+        "type": "desktop",
+        "pos_x": 920,
+        "pos_y": 700,
+        "ip": "192.168.10.21",
+        "mac": "AA:BB:CC:DD:EE:04",
+        "layout": {
+          "table": "desk_l",
+          "chair": "office_chair",
+          "device": "desktop_single",
+          "rotation": 0
+        },
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "pc3",
+        "hardware_id": 5,
+        "hardware_name": "PC-FIN-001",
+        "type": "desktop",
+        "pos_x": 760,
+        "pos_y": 540,
+        "ip": "192.168.10.45",
+        "mac": "AA:BB:CC:DD:EE:05",
+        "layout": {
+          "table": "desk_l",
+          "chair": "executive_chair",
+          "device": "desktop_dual",
+          "rotation": 180
+        },
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "prn1",
+        "hardware_id": 6,
+        "hardware_name": "IMP-FINANCEIRO",
+        "type": "printer",
+        "pos_x": 760,
+        "pos_y": 699.9999999999999,
+        "ip": "192.168.10.80",
+        "mac": "AA:BB:CC:DD:EE:06",
+        "layout": {
+          "table": "desk_l",
+          "chair": "none",
+          "device": "desktop_dual",
+          "rotation": 90
+        },
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "sw1",
+        "hardware_id": 7,
+        "hardware_name": "SW-CORE-01",
+        "type": "switch",
+        "pos_x": 1000,
+        "pos_y": 60,
+        "ip": "192.168.10.1",
+        "mac": "AA:BB:CC:DD:EE:07",
+        "layout": {
+          "table": "rack_cabinet",
+          "chair": "none",
+          "device": "switch_unit",
+          "rotation": 0
+        },
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "ap1",
+        "hardware_id": 8,
+        "hardware_name": "AP-WIFI-SALA",
+        "type": "desktop",
+        "pos_x": 440,
+        "pos_y": 160.0000000000001,
+        "ip": "192.168.10.2",
+        "mac": "AA:BB:CC:DD:EE:08",
+        "layout": {
+          "table": "desk_l",
+          "chair": "executive_chair",
+          "device": "laptop",
+          "rotation": 270
+        },
+        "scaleX": 1,
+        "scaleY": 1
+      }
+    ],
+    "furniture": [
+      {
+        "id": "mt1",
+        "type": "desk_round",
+        "x": 320,
+        "y": 740,
+        "rotation": 0,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "p1",
+        "type": "plant",
+        "x": 30,
+        "y": 30,
+        "rotation": 0,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "p2",
+        "type": "plant",
+        "x": 840,
+        "y": 840.0000000000002,
+        "rotation": 0,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786853679689",
+        "type": "water_cooler",
+        "x": 1140,
+        "y": 360.00000000000006,
+        "rotation": 0,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786853688169",
+        "type": "water_cooler",
+        "x": 60,
+        "y": 760,
+        "rotation": 0,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786853694807",
+        "type": "rack_cabinet",
+        "x": 1000.0000000000002,
+        "y": 160,
+        "rotation": 0,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786853702445",
+        "type": "desk_l",
+        "x": 439.99999999999994,
+        "y": 320,
+        "rotation": 0,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786853710467",
+        "type": "desk_l",
+        "x": 280.0000000000002,
+        "y": 320.00000000000006,
+        "rotation": 90.00000000000007,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786853718377",
+        "type": "desk_straight",
+        "x": 280.0000000000002,
+        "y": 200,
+        "rotation": 0,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854342049",
+        "type": "office_partition_160",
+        "x": 439.9999999999999,
+        "y": 240,
+        "rotation": 0,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854353039",
+        "type": "office_partition_160",
+        "x": 280.0000000000002,
+        "y": 240,
+        "rotation": 0,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854357920",
+        "type": "office_partition_160",
+        "x": 760.0000000000002,
+        "y": 620,
+        "rotation": 0,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854362679",
+        "type": "office_partition_160",
+        "x": 919.9999999999995,
+        "y": 620,
+        "rotation": 0,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854365130",
+        "type": "office_partition_160",
+        "x": 840,
+        "y": 539.9999999999999,
+        "rotation": 89.9999999999999,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854367401",
+        "type": "office_partition_160",
+        "x": 840,
+        "y": 700.0000000000001,
+        "rotation": 89.99999999999994,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854369712",
+        "type": "office_partition_160",
+        "x": 359.99999999999983,
+        "y": 320.00000000000006,
+        "rotation": 89.99999999999996,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854373260",
+        "type": "office_partition_160",
+        "x": 359.9999999999999,
+        "y": 160,
+        "rotation": 89.99999999999991,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854377606",
+        "type": "sofa",
+        "x": 419.9999999999999,
+        "y": 580,
+        "rotation": 0,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854386916",
+        "type": "executive_chair",
+        "x": 319.9999999999999,
+        "y": 640,
+        "rotation": 0,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854394940",
+        "type": "office_chair",
+        "x": 240,
+        "y": 660,
+        "rotation": -38.34361621917758,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854397837",
+        "type": "office_chair",
+        "x": 400,
+        "y": 659.9999999999987,
+        "rotation": 44.999999999999986,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854400645",
+        "type": "office_chair",
+        "x": 219.9999999999988,
+        "y": 739.9999999999957,
+        "rotation": -90.0000000000001,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854403548",
+        "type": "office_chair",
+        "x": 419.9999999999999,
+        "y": 740,
+        "rotation": 90,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854406131",
+        "type": "office_chair",
+        "x": 319.9999999999988,
+        "y": 839.9999999999922,
+        "rotation": 180,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854543031",
+        "type": "office_chair",
+        "x": 240.00000000000088,
+        "y": 819.999999999991,
+        "rotation": -135.0000000000002,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      {
+        "id": "fur_1786854545375",
+        "type": "office_chair",
+        "x": 399.9999999999977,
+        "y": 819.9999999999902,
+        "rotation": 135,
+        "name": "Furniture",
+        "layer": "furniture",
+        "scaleX": 1,
+        "scaleY": 1
+      }
+    ]
+  }
+}

@@ -41,7 +41,7 @@ function resolveUrl(endpoint) {
     return MOCK_ROUTES[base];
   }
 
-  return endpoint;
+  return isDev ? endpoint : (window.apiBaseUrl = 'extensions/floorplan/ms_floorplan/ajax') + endpoint;
 }
 
 /**

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hookstore>
+    <hook type="submenu">
+        <mainmenuidentifier>ms_extension</mainmenuidentifier>
+        <identifier>ms_floorplan</identifier>
+        <translation>77700</translation>
+    </hook>
+</hookstore>
