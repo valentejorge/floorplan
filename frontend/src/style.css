@@ -312,6 +312,7 @@ body {
   width: var(--fp-explorer-w);
   display: flex;
   flex-direction: column;
+  position: relative; /* Add position relative for absolutely positioned children */
   /* View Mode: sitting on the left */
   transform: translateX(0); 
 }
@@ -641,8 +642,49 @@ body {
 }
 .fp-confirm-dialog__actions {
   display: flex;
-  gap: 12px;
-  justify-content: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ── Asset Micro-Edit Modal ───────────────────────────────────────── */
+.fp-asset-edit-panel {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #fff;
+  z-index: 10;
+  padding: 20px 16px;
+  display: none;
+  flex-direction: column;
+  border-radius: inherit;
+  overflow-y: auto;
+}
+.fp-asset-edit-panel.visible {
+  display: flex;
+  animation: slideInLeft 0.3s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+.fp-form-group {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+}
+.fp-form-group label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fp-text-muted);
+  margin-bottom: 4px;
+}
+.fp-select {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid var(--fp-border);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--fp-text);
+  outline: none;
+}
+.fp-select:focus {
+  border-color: var(--fp-primary);
 }
 
 /* ── Map Navigator (Habbo Style) ─────────────────────────────────── */

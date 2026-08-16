@@ -93,10 +93,10 @@ export function bindToolsToStage() {
     handleStageMouseUp();
   });
   
-  stage.on('dblclick dbltap', () => {
+  stage.on('dblclick dbltap', (e) => {
     const layout = document.getElementById('main-layout');
     if (!layout || !layout.classList.contains('is-editing')) return;
-    handleStageDblClick();
+    handleStageDblClick(e);
   });
 
   // Global key listener
@@ -164,8 +164,27 @@ export function handleStageMouseUp() {
   }
 }
 
-export function handleStageDblClick() {
-  if (activeTool === TOOLS.WALL) handleWallDblClick();
+export function handleStageDblClick(e) {
+  if (activeTool === TOOLS.WALL) {
+    handleWallDblClick();
+  } else if (activeTool === TOOLS.SELECT) {
+    // If double clicking a node
+    const target = e?.target;
+    if (!target) return;
+    
+    // Bubble up to the nearest Group
+    let node = target;
+    while (node && node.nodeType !== 'Group' && node.nodeType !== 'Stage') {
+      node = node.getParent();
+    }
+    
+    if (node && node.nodeType === 'Group') {
+      const isEditable = !!node.getAttr('assetData');
+      if (isEditable && window.openAssetMicroEdit) {
+        window.openAssetMicroEdit(node);
+      }
+    }
+  }
 }
 
 let activeFurnitureType = null;

@@ -215,5 +215,167 @@ function updateProperties(node) {
   if (data.mac) rows += `<div class="fp-properties__row"><span>MAC</span><span>${data.mac}</span></div>`;
   if (data.type) rows += `<div class="fp-properties__row"><span>Type</span><span>${data.type}</span></div>`;
 
+  const isEditable = !!node.getAttr('assetData');
+  if (isEditable && document.getElementById('main-layout')?.classList.contains('is-editing')) {
+    rows += `
+      <div style="margin-top:16px;">
+        <button class="fp-btn fp-btn--outline" id="btn-edit-asset-layout" style="width:100%; font-size:11px;">
+          Configurar Layout
+        </button>
+      </div>
+    `;
+  }
+
   panel.innerHTML = rows;
+
+  if (isEditable) {
+    const btn = document.getElementById('btn-edit-asset-layout');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        if (window.openAssetMicroEdit) window.openAssetMicroEdit(node);
+      });
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Asset Micro-Edit Mode
+// ════════════════════════════════════════════════════════════════════
+
+let currentMicroEditNode = null;
+let microEditBackupState = null;
+
+window.openAssetMicroEdit = async function(node) {
+  const modal = document.getElementById('asset-edit-modal');
+  if (!modal) return;
+  
+  currentMicroEditNode = node;
+  const isAsset = !!node.getAttr('assetData');
+  
+  // Backup state
+  const data = isAsset ? node.getAttr('assetData') : node.getAttr('entityData');
+  microEditBackupState = JSON.parse(JSON.stringify(data));
+  
+  // Populate UI
+  const layout = data.layout || {};
+  document.getElementById('asset-edit-table').value = layout.table || 'none';
+  document.getElementById('asset-edit-device').value = layout.device || 'none';
+  document.getElementById('asset-edit-chair').value = layout.chair || 'none';
+  document.getElementById('asset-edit-rotation').value = (layout.rotation || 0).toString();
+  
+  // Disable selection globally so we don't misclick during edit
+  import('./tools.js').then(({ setActiveTool, TOOLS }) => {
+    setActiveTool(TOOLS.SELECT);
+  });
+
+  // Zoom camera
+  const { zoomToNode } = await import('./engine.js');
+  zoomToNode(node);
+  
+  modal.classList.add('visible');
+};
+
+async function liveUpdateNode() {
+  if (!currentMicroEditNode) return;
+  
+  const isAsset = !!currentMicroEditNode.getAttr('assetData');
+  let data = isAsset ? currentMicroEditNode.getAttr('assetData') : currentMicroEditNode.getAttr('entityData');
+  
+  if (!data.layout) data.layout = {};
+  data.layout.table = document.getElementById('asset-edit-table').value;
+  data.layout.device = document.getElementById('asset-edit-device').value;
+  data.layout.chair = document.getElementById('asset-edit-chair').value;
+  data.layout.rotation = parseInt(document.getElementById('asset-edit-rotation').value, 10);
+  
+  // Update node rotation
+  currentMicroEditNode.rotation(data.layout.rotation);
+  
+  // Clear cache for visual update
+  currentMicroEditNode.clearCache();
+
+  const { renderAssetContent } = await import('./renderer.js');
+  const { skinManager } = await import('./skins.js');
+  
+  renderAssetContent(currentMicroEditNode, data, skinManager);
+
+  // If in edit mode, re-draw the bounding box
+  let bbox = currentMicroEditNode.findOne('.edit-bbox');
+  if (bbox) bbox.destroy();
+  
+  const rect = currentMicroEditNode.getClientRect({ skipTransform: true });
+  bbox = new Konva.Rect({
+    x: rect.x - 2,
+    y: rect.y - 2,
+    width: rect.width + 4,
+    height: rect.height + 4,
+    stroke: '#63b3ed', // Blue
+    strokeWidth: 1.5,
+    dash: [4, 4],
+    name: 'edit-bbox',
+    listening: false
+  });
+  currentMicroEditNode.add(bbox);
+
+  currentMicroEditNode.cache();
+  currentMicroEditNode.getLayer().batchDraw();
+}
+
+// Bind live update to selects
+document.addEventListener('DOMContentLoaded', () => {
+  ['asset-edit-table', 'asset-edit-device', 'asset-edit-chair', 'asset-edit-rotation'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', liveUpdateNode);
+  });
+  
+  // Cancel
+  document.getElementById('asset-edit-cancel')?.addEventListener('click', async () => {
+    if (!currentMicroEditNode) return;
+    const isAsset = !!currentMicroEditNode.getAttr('assetData');
+    if (isAsset) currentMicroEditNode.setAttr('assetData', microEditBackupState);
+    else currentMicroEditNode.setAttr('entityData', microEditBackupState);
+    
+    currentMicroEditNode.rotation(microEditBackupState.layout?.rotation || 0);
+    currentMicroEditNode.clearCache();
+    
+    const { renderAssetContent } = await import('./renderer.js');
+    const { skinManager } = await import('./skins.js');
+    renderAssetContent(currentMicroEditNode, microEditBackupState, skinManager);
+
+    let bbox = currentMicroEditNode.findOne('.edit-bbox');
+    if (bbox) bbox.destroy();
+    
+    const rect = currentMicroEditNode.getClientRect({ skipTransform: true });
+    bbox = new Konva.Rect({
+      x: rect.x - 2,
+      y: rect.y - 2,
+      width: rect.width + 4,
+      height: rect.height + 4,
+      stroke: '#63b3ed',
+      strokeWidth: 1.5,
+      dash: [4, 4],
+      name: 'edit-bbox',
+      listening: false
+    });
+    currentMicroEditNode.add(bbox);
+    currentMicroEditNode.cache();
+    currentMicroEditNode.getLayer().batchDraw();
+    
+    closeAssetMicroEdit();
+  });
+  
+  // Save
+  document.getElementById('asset-edit-save')?.addEventListener('click', async () => {
+    import('./history.js').then(({ commitHistory }) => {
+      commitHistory();
+    });
+    closeAssetMicroEdit();
+  });
+});
+
+async function closeAssetMicroEdit() {
+  document.getElementById('asset-edit-modal')?.classList.remove('visible');
+  currentMicroEditNode = null;
+  microEditBackupState = null;
+  const { zoomOutToSafe } = await import('./engine.js');
+  zoomOutToSafe();
 }

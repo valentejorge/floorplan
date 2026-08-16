@@ -143,126 +143,10 @@ export function loadMapData(data, isInitial = true) {
       });
       group.setAttr('assetData', asset);
 
-      let tw = 40, th = 40; // Default bounding box for labels
+      renderAssetContent(group, asset, skinManager);
 
-      if (asset.layout) {
-        // Render Table Layer
-        if (asset.layout.table && asset.layout.table !== 'none') {
-          const imgObj = skinManager.getImage(asset.layout.table);
-          if (imgObj) {
-            tw = Math.max(tw, imgObj.width);
-            th = Math.max(th, imgObj.height);
-            const tableNode = new Konva.Image({
-              image: imgObj,
-              width: imgObj.width,
-              height: imgObj.height,
-              x: -imgObj.width / 2,
-              y: -imgObj.height / 2,
-              perfectDrawEnabled: false,
-              shadowColor: 'rgba(0,0,0,0.15)', shadowBlur: 10, shadowOffsetX: 0, shadowOffsetY: 4
-            });
-            group.add(tableNode);
-          }
-        }
-
-        // Render Chair Layer (offset to the edge of the table)
-        if (asset.layout.chair && asset.layout.chair !== 'none') {
-          const imgObj = skinManager.getImage(asset.layout.chair);
-          if (imgObj) {
-            let cx = asset.layout.chair_x !== undefined ? asset.layout.chair_x : 0;
-            let cy = asset.layout.chair_y !== undefined ? asset.layout.chair_y : (th > 40 ? th / 2 + 5 : 0);
-            if (asset.layout.table === 'desk_round' || asset.layout.table === 'none') {
-              if (asset.layout.chair_y === undefined) cy = 0; // Don't offset for round tables by default
-            }
-            let cr = asset.layout.chair_r !== undefined ? asset.layout.chair_r : 0;
-
-            const chairNode = new Konva.Image({
-              image: imgObj,
-              width: imgObj.width,
-              height: imgObj.height,
-              perfectDrawEnabled: false
-            });
-
-            // Group to handle rotation around center
-            const chairGroup = new Konva.Group({
-              x: cx, y: cy, rotation: cr
-            });
-            chairNode.position({ x: -imgObj.width / 2, y: -imgObj.height / 2 });
-            chairGroup.add(chairNode);
-            group.add(chairGroup);
-          }
-        }
-
-        // Render Device Layer (offset slightly to the "top" of the desk)
-        if (asset.layout.device && asset.layout.device !== 'none') {
-          const imgObj = skinManager.getImage(asset.layout.device);
-          if (imgObj) {
-            let dx = asset.layout.device_x !== undefined ? asset.layout.device_x : 0;
-            let dy = asset.layout.device_y !== undefined ? asset.layout.device_y : (th > 40 && asset.layout.table !== 'none' ? -15 : 0);
-            let dr = asset.layout.device_r !== undefined ? asset.layout.device_r : 0;
-
-            const deviceNode = new Konva.Image({
-              image: imgObj,
-              width: imgObj.width,
-              height: imgObj.height,
-              perfectDrawEnabled: false
-            });
-
-            const deviceGroup = new Konva.Group({
-              x: dx, y: dy, rotation: dr
-            });
-            deviceNode.position({ x: -imgObj.width / 2, y: -imgObj.height / 2 });
-            deviceGroup.add(deviceNode);
-            group.add(deviceGroup);
-          }
-        }
-      }
-
-      // Fallback
-      if (group.getChildren().length === 0) {
-        const fallback = new Konva.Circle({
-          radius: 20, fill: '#e2e8f0', stroke: '#a0aec0', strokeWidth: 2, perfectDrawEnabled: false
-        });
-        group.add(fallback);
-      }
-
-      // Only add labels and tooltips if it is an actual IT hardware (has hardware_id)
+      // Hover Insights (Tooltip)
       if (asset.hardware_id) {
-        // Hardware Name Label Background
-        const labelBg = new Konva.Rect({
-          x: -tw / 2 + 10,
-          y: th / 2 + 10,
-          width: tw - 20,
-          height: 14,
-          fill: 'rgba(255, 255, 255, 0.85)',
-          cornerRadius: 3,
-          perfectDrawEnabled: false
-        });
-        group.add(labelBg);
-
-        // Hardware Name Label Text
-        const label = new Konva.Text({
-          text: asset.hardware_name,
-          fontSize: 9, fontStyle: 'bold', fontFamily: 'sans-serif', fill: '#4a5568',
-          y: th / 2 + 12, align: 'center', width: tw, x: -tw / 2,
-          perfectDrawEnabled: false
-        });
-        group.add(label);
-
-        const dotColor = asset.status === 'offline' ? '#e53e3e' : 
-                        asset.status === 'warning' ? '#d69e2e' : '#5cb85c';
-        
-        // Outer glow/stroke for the dot
-        const dotBg = new Konva.Circle({
-          radius: 5, fill: '#fff', x: tw / 2 - 10, y: -th / 2 + 10, perfectDrawEnabled: false
-        });
-        const dot = new Konva.Circle({
-          radius: 3.5, fill: dotColor, x: tw / 2 - 10, y: -th / 2 + 10, perfectDrawEnabled: false
-        });
-        group.add(dotBg);
-        group.add(dot);
-
-        // Hover Insights (Tooltip)
         group.listening(true);
         group.on('mouseenter', (e) => {
           document.body.style.cursor = 'pointer';
@@ -444,4 +328,140 @@ export function toggleAssetEditMode(isEditing) {
   });
   
   requestRender();
+}
+
+export function renderAssetContent(group, asset, skinManager) {
+  group.destroyChildren();
+
+  let tw = 40, th = 40; // Default bounding box for labels
+
+  if (asset.layout) {
+    // Render Table Layer
+    if (asset.layout.table && asset.layout.table !== 'none') {
+      const imgObj = skinManager.getImage(asset.layout.table);
+      if (imgObj) {
+        tw = Math.max(tw, imgObj.width);
+        th = Math.max(th, imgObj.height);
+        const tableNode = new Konva.Image({
+          image: imgObj,
+          width: imgObj.width,
+          height: imgObj.height,
+          x: -imgObj.width / 2,
+          y: -imgObj.height / 2,
+          perfectDrawEnabled: false,
+          shadowColor: 'rgba(0,0,0,0.15)', shadowBlur: 10, shadowOffsetX: 0, shadowOffsetY: 4
+        });
+        group.add(tableNode);
+      }
+    }
+
+    // Determine offsets based on table type
+    let cx = 0, cy = 0, cr = 0;
+    let dx = 0, dy = 0, dr = 0;
+
+    if (asset.layout.table === 'desk_straight' || asset.layout.table === 'desk_small') {
+      cy = th / 2 + 5; 
+      dy = -15;
+    } else if (asset.layout.table === 'desk_l') {
+      // Inner corner of L-desk is top-left, so we place the chair there
+      cx = 10; 
+      cy = 10; 
+      dx = -25; 
+      dy = -25;
+    } else if (asset.layout.table === 'desk_round') {
+      cy = 45; // chair pulled out
+      dy = -15;
+    } else if (asset.layout.table === 'rack_cabinet') {
+      cy = th / 2 + 10;
+      dy = 0;
+    }
+
+    // Override with explicit coordinates if present
+    if (asset.layout.chair_x !== undefined) cx = asset.layout.chair_x;
+    if (asset.layout.chair_y !== undefined) cy = asset.layout.chair_y;
+    if (asset.layout.chair_r !== undefined) cr = asset.layout.chair_r;
+    
+    if (asset.layout.device_x !== undefined) dx = asset.layout.device_x;
+    if (asset.layout.device_y !== undefined) dy = asset.layout.device_y;
+    if (asset.layout.device_r !== undefined) dr = asset.layout.device_r;
+
+    // Render Chair Layer
+    if (asset.layout.chair && asset.layout.chair !== 'none') {
+      const imgObj = skinManager.getImage(asset.layout.chair);
+      if (imgObj) {
+        const chairNode = new Konva.Image({
+          image: imgObj,
+          width: imgObj.width,
+          height: imgObj.height,
+          perfectDrawEnabled: false
+        });
+        const chairGroup = new Konva.Group({ x: cx, y: cy, rotation: cr });
+        chairNode.position({ x: -imgObj.width / 2, y: -imgObj.height / 2 });
+        chairGroup.add(chairNode);
+        group.add(chairGroup);
+      }
+    }
+
+    // Render Device Layer
+    if (asset.layout.device && asset.layout.device !== 'none') {
+      const imgObj = skinManager.getImage(asset.layout.device);
+      if (imgObj) {
+        const deviceNode = new Konva.Image({
+          image: imgObj,
+          width: imgObj.width,
+          height: imgObj.height,
+          perfectDrawEnabled: false
+        });
+        const deviceGroup = new Konva.Group({ x: dx, y: dy, rotation: dr });
+        deviceNode.position({ x: -imgObj.width / 2, y: -imgObj.height / 2 });
+        deviceGroup.add(deviceNode);
+        group.add(deviceGroup);
+      }
+    }
+  }
+
+  // Fallback
+  if (group.getChildren().length === 0) {
+    const fallback = new Konva.Circle({
+      radius: 20, fill: '#e2e8f0', stroke: '#a0aec0', strokeWidth: 2, perfectDrawEnabled: false
+    });
+    group.add(fallback);
+  }
+
+  // Only add labels and tooltips if it is an actual IT hardware (has hardware_id)
+  if (asset.hardware_id) {
+    // Hardware Name Label Background
+    const labelBg = new Konva.Rect({
+      x: -tw / 2 + 10,
+      y: th / 2 + 10,
+      width: tw - 20,
+      height: 14,
+      fill: 'rgba(255, 255, 255, 0.85)',
+      cornerRadius: 3,
+      perfectDrawEnabled: false
+    });
+    group.add(labelBg);
+
+    // Hardware Name Label Text
+    const label = new Konva.Text({
+      text: asset.hardware_name,
+      fontSize: 9, fontStyle: 'bold', fontFamily: 'sans-serif', fill: '#4a5568',
+      y: th / 2 + 12, align: 'center', width: tw, x: -tw / 2,
+      perfectDrawEnabled: false
+    });
+    group.add(label);
+
+    const dotColor = asset.status === 'offline' ? '#e53e3e' : 
+                    asset.status === 'warning' ? '#d69e2e' : '#5cb85c';
+    
+    // Outer glow/stroke for the dot
+    const dotBg = new Konva.Circle({
+      radius: 5, fill: '#fff', x: tw / 2 - 10, y: -th / 2 + 10, perfectDrawEnabled: false
+    });
+    const dot = new Konva.Circle({
+      radius: 3.5, fill: dotColor, x: tw / 2 - 10, y: -th / 2 + 10, perfectDrawEnabled: false
+    });
+    group.add(dotBg);
+    group.add(dot);
+  }
 }

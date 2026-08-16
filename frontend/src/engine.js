@@ -419,6 +419,57 @@ export function animateMapEntrance() {
   }).play();
 }
 
+let preZoomState = null;
+
+export function zoomToNode(node) {
+  preZoomState = {
+    x: stage.x(),
+    y: stage.y(),
+    scaleX: stage.scaleX(),
+    scaleY: stage.scaleY()
+  };
+
+  const nodeAbsPos = node.getAbsolutePosition();
+  const safe = getSafeArea();
+  const zoomScale = 3.0;
+
+  const centerX = safe.x + safe.width / 2;
+  const centerY = safe.y + safe.height / 2;
+
+  const nodeLocalX = (nodeAbsPos.x - stage.x()) / stage.scaleX();
+  const nodeLocalY = (nodeAbsPos.y - stage.y()) / stage.scaleY();
+
+  const newX = centerX - nodeLocalX * zoomScale;
+  const newY = centerY - nodeLocalY * zoomScale;
+
+  new Konva.Tween({
+    node: stage,
+    duration: 0.5,
+    scaleX: zoomScale,
+    scaleY: zoomScale,
+    x: newX,
+    y: newY,
+    easing: Konva.Easings.StrongEaseOut,
+    onUpdate: () => stage.batchDraw()
+  }).play();
+}
+
+export function zoomOutToSafe() {
+  if (preZoomState) {
+    new Konva.Tween({
+      node: stage,
+      duration: 0.5,
+      scaleX: preZoomState.scaleX,
+      scaleY: preZoomState.scaleY,
+      x: preZoomState.x,
+      y: preZoomState.y,
+      easing: Konva.Easings.StrongEaseOut,
+      onUpdate: () => stage.batchDraw()
+    }).play();
+    preZoomState = null;
+  }
+}
+
 export function setEngineEditMode(isEditing) {
   // Fade grid in/out
   new Konva.Tween({

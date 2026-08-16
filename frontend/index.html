@@ -80,6 +80,63 @@
           <div class="fp-properties__title">Properties</div>
           <div style="color:var(--fp-text-muted);font-size:11px;">No selection</div>
         </div>
+
+        <!-- Asset Micro-Edit Panel (Overlays the explorer) -->
+        <div id="asset-edit-modal" class="fp-asset-edit-panel">
+          <div class="fp-asset-edit__title" style="font-weight:600;font-size:14px;margin-bottom:16px;">Configuração do Layout</div>
+          
+          <div class="fp-form-group">
+            <label>Mesa (Table)</label>
+            <select id="asset-edit-table" class="fp-select">
+              <option value="none">Nenhuma</option>
+              <option value="desk_small">Mesa Pequena</option>
+              <option value="desk_straight">Mesa Reta</option>
+              <option value="desk_l">Mesa em L</option>
+              <option value="desk_round">Mesa Redonda</option>
+              <option value="rack_cabinet">Rack de Servidor</option>
+            </select>
+          </div>
+          
+          <div class="fp-form-group">
+            <label>Dispositivo (Device)</label>
+            <select id="asset-edit-device" class="fp-select">
+              <option value="none">Nenhum</option>
+              <option value="desktop_single">Desktop (1 Monitor)</option>
+              <option value="desktop_dual">Desktop (2 Monitores)</option>
+              <option value="laptop">Notebook</option>
+              <option value="server_unit">Servidor 1U</option>
+              <option value="switch_unit">Switch</option>
+              <option value="printer_unit">Impressora</option>
+              <option value="monitor_wall">Monitor de Parede</option>
+              <option value="conference_phone">Telefone de Conferência</option>
+            </select>
+          </div>
+          
+          <div class="fp-form-group">
+            <label>Cadeira (Chair)</label>
+            <select id="asset-edit-chair" class="fp-select">
+              <option value="none">Nenhuma</option>
+              <option value="office_chair">Cadeira de Escritório</option>
+              <option value="executive_chair">Cadeira Executiva</option>
+              <option value="meeting_chairs_4">Cadeiras de Reunião (x4)</option>
+            </select>
+          </div>
+
+          <div class="fp-form-group">
+            <label>Rotação Interna</label>
+            <select id="asset-edit-rotation" class="fp-select">
+              <option value="0">0º (Cima)</option>
+              <option value="90">90º (Direita)</option>
+              <option value="180">180º (Baixo)</option>
+              <option value="270">270º (Esquerda)</option>
+            </select>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:24px;">
+            <button class="fp-btn fp-btn--outline" id="asset-edit-cancel" style="flex:1;">Cancelar</button>
+            <button class="fp-btn fp-btn--primary" id="asset-edit-save" style="flex:1;">Salvar</button>
+          </div>
+        </div>
       </aside>
 
       <!-- Right Toolbar Panel (Hidden initially) -->
