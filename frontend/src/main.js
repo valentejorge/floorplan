@@ -108,6 +108,7 @@ async function init() {
   bindCameraControls();
   
   bindToolbar();
+  bindViewFilters();
   bindSearch();
   bindFurnitureModal();
   bindMapNavigator();
@@ -236,6 +237,66 @@ function bindModeToggle() {
   btnEdit.addEventListener('click', () => setMode('edit'));
   btnCancel.addEventListener('click', () => setMode('cancel'));
   btnSave.addEventListener('click', () => setMode('save'));
+}
+
+function bindViewFilters() {
+  const btn = document.getElementById('btn-view-filters');
+  const dropdown = document.getElementById('view-filters-dropdown');
+  const filterIds = ['filter-hostname', 'filter-ip', 'filter-mac', 'filter-user'];
+  
+  // Load from localStorage or default to false
+  window.viewFilters = {};
+  const saved = localStorage.getItem('fpViewFilters');
+  if (saved) {
+    window.viewFilters = JSON.parse(saved);
+  } else {
+    filterIds.forEach(id => window.viewFilters[id] = false);
+  }
+  
+  // Sync UI with state
+  filterIds.forEach(id => {
+    const cb = document.getElementById(id);
+    if (cb) {
+      cb.checked = !!window.viewFilters[id];
+      cb.addEventListener('change', (e) => {
+        window.viewFilters[id] = e.target.checked;
+        localStorage.setItem('fpViewFilters', JSON.stringify(window.viewFilters));
+        
+        // Trigger a re-render of labels
+        import('./renderer.js').then(({ forceRenderLabels }) => {
+          forceRenderLabels();
+        });
+      });
+    }
+  });
+
+  // Toggle dropdown
+  btn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+  });
+
+  // Clear filters
+  const btnClear = document.getElementById('btn-clear-filters');
+  btnClear?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    filterIds.forEach(id => {
+      window.viewFilters[id] = false;
+      const cb = document.getElementById(id);
+      if (cb) cb.checked = false;
+    });
+    localStorage.setItem('fpViewFilters', JSON.stringify(window.viewFilters));
+    import('./renderer.js').then(({ forceRenderLabels }) => {
+      forceRenderLabels();
+    });
+  });
+  
+  // Close when clicking outside
+  document.addEventListener('click', (e) => {
+    if (dropdown && dropdown.style.display === 'block' && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
 }
 
 function bindToolbar() {

@@ -170,6 +170,17 @@ export function initEngine(containerId) {
     };
     stage.position(newPos);
     
+    // Dynamic LOD: hide labels if zoomed out too far
+    if (assetsLayer) {
+      const isZoomedOut = newScale < 0.65;
+      assetsLayer.getChildren().forEach(group => {
+        const labelGroup = group.findOne('.asset-label-group');
+        if (labelGroup) {
+          labelGroup.visible(!isZoomedOut);
+        }
+      });
+    }
+
     stage.batchDraw();
   });
 
@@ -337,6 +348,18 @@ function animateStage(newScale, newX, newY, onFinish) {
     stage.scale({ x: newScale, y: newScale });
     stage.position({ x: newX, y: newY });
     stage.batchDraw();
+    
+    // Dynamic LOD
+    if (assetsLayer) {
+      const isZoomedOut = newScale < 0.65;
+      assetsLayer.getChildren().forEach(group => {
+        const labelGroup = group.findOne('.asset-label-group');
+        if (labelGroup) {
+          labelGroup.visible(!isZoomedOut);
+        }
+      });
+    }
+
     if (onFinish) onFinish();
     return;
   }
@@ -353,6 +376,18 @@ function animateStage(newScale, newX, newY, onFinish) {
   // Snap Konva instantly (no CPU rendering during animation)
   stage.scale({ x: newScale, y: newScale });
   stage.position({ x: newX, y: newY });
+  
+  // Dynamic LOD
+  if (assetsLayer) {
+    const isZoomedOut = newScale < 0.65;
+    assetsLayer.getChildren().forEach(group => {
+      const labelGroup = group.findOne('.asset-label-group');
+      if (labelGroup) {
+        labelGroup.visible(!isZoomedOut);
+      }
+    });
+  }
+
   stage.batchDraw();
 
   // If no change, return immediately

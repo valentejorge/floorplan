@@ -356,23 +356,26 @@ export function renderAssetContent(group, asset, skinManager) {
     }
 
     // Determine offsets based on table type
-    let cx = 0, cy = 0, cr = 0;
+    let cx = 0, cy = 0, cr = 180; // Chairs face UP by being rotated 180 (backrest is at the top of SVG)
     let dx = 0, dy = 0, dr = 0;
 
     if (asset.layout.table === 'desk_straight' || asset.layout.table === 'desk_small') {
-      cy = th / 2 + 5; 
+      cy = th / 2 + 15; // pushed further down
       dy = -15;
     } else if (asset.layout.table === 'desk_l') {
-      // Inner corner of L-desk is top-left, so we place the chair there
-      cx = 10; 
-      cy = 10; 
+      // Inner corner of L-desk is top-left
+      // Person sits South-East of inner corner, facing North-West
+      cx = 35; 
+      cy = 35; 
+      cr = 135; // 180 - 45 = 135 (faces North-West)
       dx = -25; 
       dy = -25;
+      dr = -45; // Device faces South-East
     } else if (asset.layout.table === 'desk_round') {
-      cy = 45; // chair pulled out
+      cy = 55; // chair pulled further out
       dy = -15;
     } else if (asset.layout.table === 'rack_cabinet') {
-      cy = th / 2 + 10;
+      cy = th / 2 + 15;
       dy = 0;
     }
 
@@ -430,38 +433,102 @@ export function renderAssetContent(group, asset, skinManager) {
 
   // Only add labels and tooltips if it is an actual IT hardware (has hardware_id)
   if (asset.hardware_id) {
-    // Hardware Name Label Background
-    const labelBg = new Konva.Rect({
-      x: -tw / 2 + 10,
-      y: th / 2 + 10,
-      width: tw - 20,
-      height: 14,
-      fill: 'rgba(255, 255, 255, 0.85)',
-      cornerRadius: 3,
-      perfectDrawEnabled: false
-    });
-    group.add(labelBg);
-
-    // Hardware Name Label Text
-    const label = new Konva.Text({
-      text: asset.hardware_name,
-      fontSize: 9, fontStyle: 'bold', fontFamily: 'sans-serif', fill: '#4a5568',
-      y: th / 2 + 12, align: 'center', width: tw, x: -tw / 2,
-      perfectDrawEnabled: false
-    });
-    group.add(label);
-
-    const dotColor = asset.status === 'offline' ? '#e53e3e' : 
-                    asset.status === 'warning' ? '#d69e2e' : '#5cb85c';
+    // Check view filters
+    const filters = window.viewFilters || {};
+    const showHostname = filters['filter-hostname'];
+    const showIp = filters['filter-ip'];
+    const showMac = filters['filter-mac'];
+    const showUser = filters['filter-user'];
     
-    // Outer glow/stroke for the dot
-    const dotBg = new Konva.Circle({
-      radius: 5, fill: '#fff', x: tw / 2 - 10, y: -th / 2 + 10, perfectDrawEnabled: false
-    });
-    const dot = new Konva.Circle({
-      radius: 3.5, fill: dotColor, x: tw / 2 - 10, y: -th / 2 + 10, perfectDrawEnabled: false
-    });
-    group.add(dotBg);
-    group.add(dot);
+    const showAny = showHostname || showIp || showMac || showUser;
+
+    if (showAny) {
+      // Build multiline text
+      let textLines = [];
+      if (showHostname) textLines.push(asset.hardware_name || 'Unknown');
+      if (showIp) textLines.push(asset.ip || 'No IP');
+      if (showMac) textLines.push(asset.mac || 'No MAC');
+      if (showUser) textLines.push(asset.assignee || 'No User');
+      
+      const textContent = textLines.join('\n');
+
+      // We want the label to always be readable (horizontal) and rendered ON TOP of the desk (center)
+      const parentRot = group.rotation() || 0;
+      
+      // Create a counter-rotated group so its local coordinate system matches the screen's coordinate system
+      const labelGroup = new Konva.Group({
+        rotation: -parentRot,
+        name: 'asset-label-group'
+      });
+      
+      const labelY = 0; // Render directly in the middle of the desk
+
+      // Hardware Name Label Text (create first to measure it)
+      const label = new Konva.Text({
+        text: textContent,
+        fontSize: 10, fontStyle: 'bold', fontFamily: 'sans-serif', fill: '#334155',
+        y: labelY - 5, align: 'center', lineHeight: 1.3,
+        perfectDrawEnabled: false
+      });
+      
+      const labelWidth = Math.max(80, label.width() + 24);
+      const labelHeight = label.height() + 8;
+      
+      label.width(labelWidth);
+      label.x(-labelWidth / 2);
+      // Adjust y so the whole block is vertically centered
+      label.y(labelY - labelHeight / 2 + 4);
+
+      // Hardware Name Label Background
+      const labelBg = new Konva.Rect({
+        x: -labelWidth / 2,
+        y: labelY - labelHeight / 2,
+        width: labelWidth,
+        height: labelHeight,
+        fill: 'rgba(255, 255, 255, 0.9)',
+        cornerRadius: 4,
+        shadowColor: '#000',
+        shadowBlur: 2,
+        shadowOpacity: 0.1,
+        shadowOffsetY: 1,
+        perfectDrawEnabled: false
+      });
+      labelGroup.add(labelBg);
+      labelGroup.add(label);
+
+      // Status Dot
+      const dotColor = asset.status === 'offline' ? '#e53e3e' : 
+                       asset.status === 'warning' ? '#d69e2e' : '#10b981'; // Emerald green
+      
+      const dotBg = new Konva.Circle({
+        radius: 5, fill: '#fff', x: -labelWidth / 2 + 10, y: labelY, perfectDrawEnabled: false
+      });
+      const dot = new Konva.Circle({
+        radius: 3.5, fill: dotColor, x: -labelWidth / 2 + 10, y: labelY, perfectDrawEnabled: false
+      });
+      labelGroup.add(dotBg);
+      labelGroup.add(dot);
+
+      group.add(labelGroup);
+    }
   }
+}
+
+export function forceRenderLabels() {
+  if (!assetsLayer) return;
+  
+  // Re-render only the contents of all assets without moving them
+  assetsLayer.getChildren().forEach(group => {
+    const asset = group.getAttr('assetData');
+    if (asset) {
+      group.clearCache();
+      renderAssetContent(group, asset, skinManager);
+      // Re-add cache if in edit mode
+      const layout = document.getElementById('main-layout');
+      if (layout && layout.classList.contains('is-editing')) {
+        group.cache();
+      }
+    }
+  });
+  assetsLayer.batchDraw();
 }
