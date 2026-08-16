@@ -38,7 +38,12 @@ export function redo() {
   }
 }
 
-function serializeMapState() {
+export function resetHistory(state) {
+  historyStack = [state];
+  historyIndex = 0;
+}
+
+export function serializeMapState() {
   const getNodesData = (layer) => {
     return layer.getChildren().map(node => {
       let data;

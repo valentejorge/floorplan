@@ -183,8 +183,14 @@ function bindModeToggle() {
 
   if (!btnEdit || !btnCancel || !btnSave) return;
 
+  let preEditState = null;
+
   async function setMode(mode) {
     if (mode === 'edit') {
+      import('./history.js').then(({ serializeMapState }) => {
+        preEditState = serializeMapState();
+      });
+      
       layout.classList.add('is-editing');
       btnEdit.style.display = 'none';
       btnCancel.style.display = 'block';
@@ -193,6 +199,17 @@ function bindModeToggle() {
       refreshExplorer();
       notify('Modo de Edição ativado.', 'warning');
     } else {
+      if (mode === 'cancel' && preEditState) {
+        // Restore map to exactly how it was before clicking Edit
+        const { loadMapData } = await import('./renderer.js');
+        loadMapData(preEditState, false);
+        
+        // Reset history to only contain this state
+        import('./history.js').then(({ resetHistory }) => {
+          resetHistory(preEditState);
+        });
+      }
+
       layout.classList.remove('is-editing');
       btnEdit.style.display = 'flex';
       btnCancel.style.display = 'none';

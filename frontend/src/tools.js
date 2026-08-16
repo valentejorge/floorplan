@@ -146,11 +146,12 @@ export function handleStageMouseMove() {
 export function handleStageMouseUp() {
   switch (activeTool) {
     case TOOLS.FLOOR: handleFloorUp(); break;
+    case TOOLS.WALL:  handleWallUp(); break;
   }
 }
 
 export function handleStageDblClick() {
-  if (activeTool === TOOLS.WALL) handleWallDblClick();
+  // Unused now
 }
 
 let activeFurnitureType = null;
@@ -272,9 +273,10 @@ function handleFloorUp() {
 // WALL Tool
 // ════════════════════════════════════════════════════════════════════
 
+let wallStartPos = null;
+
 function handleWallDown(e) {
   if (e.target !== getStage() && !e.target.getAttr('gridDot')) {
-    // Clicked on an object, not blank canvas
     if (!drawState) return;
   }
   if (e.evt.button !== 0) return;
@@ -282,56 +284,72 @@ function handleWallDown(e) {
   const pos = getRelativePointerPosition();
   const sx = snapToGrid(pos.x);
   const sy = snapToGrid(pos.y);
+  
+  wallStartPos = { x: sx, y: sy };
 
   const style = WALL_STYLES[wallType] || WALL_STYLES.exterior;
 
-  if (!drawState) {
-    const id = 'w-' + Date.now();
-    const line = new Konva.Line({
-      points: [sx, sy, sx, sy],
-      stroke: style.stroke,
-      strokeWidth: style.strokeWidth,
-      dash: style.dash,
-      lineCap: 'round',
-      lineJoin: 'round',
-      id: id,
-      ...SHADOW_HEAVY,
-    });
-    line.setAttr('entityData', { id, name: 'New Wall', wallType, layer: 'architecture' });
-    getLayerArchitecture().add(line);
-    drawState = { node: line };
-  } else {
-    const pts = drawState.node.points();
-    pts.push(sx, sy);
-    drawState.node.points(pts);
-    getLayerArchitecture().getLayer().batchDraw();
-  }
+  const id = 'w-' + Date.now();
+  const line = new Konva.Line({
+    points: [sx, sy, sx, sy],
+    stroke: style.stroke,
+    strokeWidth: style.strokeWidth,
+    dash: style.dash,
+    lineCap: 'round',
+    lineJoin: 'round',
+    id: id,
+    ...SHADOW_HEAVY,
+  });
+  line.setAttr('entityData', { id, name: 'New Wall', wallType, layer: 'architecture' });
+  getLayerArchitecture().add(line);
+  drawState = { node: line };
 }
 
 function handleWallMove() {
-  if (!drawState) return;
+  if (!drawState || !wallStartPos) return;
   const pos = getRelativePointerPosition();
-  const sx = snapToGrid(pos.x);
-  const sy = snapToGrid(pos.y);
+  let sx = snapToGrid(pos.x);
+  let sy = snapToGrid(pos.y);
+
+  // Orthogonal lock (The Sims style: force straight horizontal or vertical walls)
+  // Check which axis has the larger delta and lock the other axis to the start point
+  const dx = Math.abs(sx - wallStartPos.x);
+  const dy = Math.abs(sy - wallStartPos.y);
+  
+  if (dx > dy) {
+    sy = wallStartPos.y; // Lock to horizontal
+  } else {
+    sx = wallStartPos.x; // Lock to vertical
+  }
 
   const pts = drawState.node.points().slice();
-  pts[pts.length - 2] = sx;
-  pts[pts.length - 1] = sy;
+  pts[2] = sx;
+  pts[3] = sy;
   drawState.node.points(pts);
   getLayerArchitecture().getLayer().batchDraw();
 }
 
-function handleWallDblClick() {
-  if (!drawState) return;
-  // Remove trailing temp point
+function handleWallUp() {
+  if (!drawState || !wallStartPos) return;
+  
+  // If the wall is a single point (length 0), remove it
   const pts = drawState.node.points();
-  pts.splice(-2, 2);
-  drawState.node.points(pts);
+  if (pts[0] === pts[2] && pts[1] === pts[3]) {
+    drawState.node.destroy();
+    drawState = null;
+    wallStartPos = null;
+    getLayerArchitecture().getLayer().batchDraw();
+    return;
+  }
 
   drawState.node.draggable(true);
-  applySnapOnDragEnd(drawState.node);
+  
+  import('./engine.js').then(({ applySnapOnDragEnd }) => {
+    applySnapOnDragEnd(drawState.node);
+  });
 
   drawState = null;
+  wallStartPos = null;
   getLayerArchitecture().getLayer().batchDraw();
   refreshExplorer();
   commitHistory();

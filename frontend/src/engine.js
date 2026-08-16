@@ -37,12 +37,11 @@ export function snapToGrid(val) {
 }
 
 export function applySnapOnDragEnd(node) {
-  node.on('dragend', () => {
-    node.position({
-      x: snapToGrid(node.x()),
-      y: snapToGrid(node.y()),
-    });
-    node.getLayer().batchDraw();
+  node.dragBoundFunc(function(pos) {
+    return {
+      x: snapToGrid(pos.x),
+      y: snapToGrid(pos.y)
+    };
   });
 }
 
@@ -436,17 +435,20 @@ export function setEngineEditMode(isEditing) {
       node.listening(isEditing);
       node.draggable(isEditing);
       
-      // Manage snap listener
+      // Manage live snap listener
       node.off('dragend.snap');
+      node.off('dragend.history');
+      
       if (isEditing) {
-        node.on('dragend.snap', () => {
-          const GRID_SIZE = 20; // Hardcoded fallback or use imported
-          node.position({
-            x: Math.round(node.x() / GRID_SIZE) * GRID_SIZE,
-            y: Math.round(node.y() / GRID_SIZE) * GRID_SIZE,
-          });
-          node.getLayer().batchDraw();
-          
+        node.dragBoundFunc(function(pos) {
+          const GRID_SIZE = 20;
+          return {
+            x: Math.round(pos.x / GRID_SIZE) * GRID_SIZE,
+            y: Math.round(pos.y / GRID_SIZE) * GRID_SIZE
+          };
+        });
+        
+        node.on('dragend.history', () => {
           // Refresh properties panel if this node is selected
           import('./explorer.js').then(({ getSelectedNodeId, selectNodeById }) => {
             if (getSelectedNodeId() === node.id()) {
@@ -456,6 +458,8 @@ export function setEngineEditMode(isEditing) {
           
           import('./history.js').then(({ commitHistory }) => commitHistory());
         });
+      } else {
+        node.dragBoundFunc(null);
       }
     });
   });

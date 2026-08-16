@@ -147,8 +147,18 @@ export function selectNodeById(nodeId) {
   }
 
   if (node) {
-    getTransformer().nodes([node]);
-    getTransformer().getLayer().batchDraw();
+    const data = node.getAttr('entityData') || {};
+    const tr = getTransformer();
+    
+    // Disable resizing and hide anchors for furniture, IT assets, and walls
+    if (data.layer === 'furniture' || data.layer === 'assets' || data.wallType) {
+      tr.enabledAnchors([]);
+    } else {
+      tr.enabledAnchors(['top-left', 'top-center', 'top-right', 'middle-right', 'bottom-right', 'bottom-center', 'bottom-left', 'middle-left']);
+    }
+
+    tr.nodes([node]);
+    tr.getLayer().batchDraw();
     updateProperties(node);
     if (onSelectCallback) onSelectCallback(node);
   }
