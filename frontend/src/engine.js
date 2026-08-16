@@ -90,6 +90,7 @@ export function initEngine(containerId) {
     anchorFill: '#fff',
     anchorSize: 8,
     borderDash: [5, 5],
+    rotationSnaps: [0, 45, 90, 135, 180, 225, 270, 315],
   });
   overlayLayer.add(globalTransformer);
 

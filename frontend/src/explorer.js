@@ -147,14 +147,21 @@ export function selectNodeById(nodeId) {
   }
 
   if (node) {
-    const data = node.getAttr('entityData') || {};
+    const entityData = node.getAttr('entityData') || {};
+    const assetData = node.getAttr('assetData');
     const tr = getTransformer();
     
     // Disable resizing and hide anchors for furniture, IT assets, and walls
-    if (data.layer === 'furniture' || data.layer === 'assets' || data.wallType) {
+    const isFurniture = entityData.layer === 'furniture';
+    const isAsset = !!assetData || entityData.layer === 'assets';
+    const isWall = !!entityData.wallType || entityData.name === 'Wall' || entityData.name === 'New Wall';
+
+    if (isFurniture || isAsset || isWall) {
       tr.enabledAnchors([]);
+      tr.resizeEnabled(false);
     } else {
       tr.enabledAnchors(['top-left', 'top-center', 'top-right', 'middle-right', 'bottom-right', 'bottom-center', 'bottom-left', 'middle-left']);
+      tr.resizeEnabled(true);
     }
 
     tr.nodes([node]);

@@ -31,9 +31,9 @@ let wallType = 'exterior';
 
 // Wall style registry
 const WALL_STYLES = {
-  exterior: { stroke: '#6b7a88', strokeWidth: 12, dash: [] },
-  interior: { stroke: '#8a9aaa', strokeWidth: 6,  dash: [] },
-  glass:    { stroke: '#5b9ecf', strokeWidth: 4,  dash: [8, 6] },
+  exterior: { stroke: '#2d3748', strokeWidth: 8, dash: [], opacity: 1 },
+  interior: { stroke: '#a0aec0', strokeWidth: 4,  dash: [], opacity: 1 },
+  glass:    { stroke: '#63b3ed', strokeWidth: 3,  dash: [8, 6], opacity: 0.7 },
 };
 
 // ════════════════════════════════════════════════════════════════════
@@ -99,10 +99,24 @@ export function bindToolsToStage() {
     handleStageDblClick();
   });
 
-  // Global key listener for deletion
+  // Global key listener
   document.addEventListener('keydown', (e) => {
     const layout = document.getElementById('main-layout');
     if (!layout || !layout.classList.contains('is-editing')) return;
+
+    if (e.key === 'Enter') {
+      if (activeTool === TOOLS.WALL) {
+        handleWallDblClick();
+      }
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      cancelDraw();
+      clearSelection();
+      setActiveTool(TOOLS.SELECT);
+      return;
+    }
 
     if (e.key === 'Delete' || e.key === 'Backspace') {
       // Don't delete if user is typing in an input
@@ -151,7 +165,7 @@ export function handleStageMouseUp() {
 }
 
 export function handleStageDblClick() {
-  // Unused now
+  if (activeTool === TOOLS.WALL) handleWallDblClick();
 }
 
 let activeFurnitureType = null;
@@ -284,25 +298,34 @@ function handleWallDown(e) {
   const pos = getRelativePointerPosition();
   const sx = snapToGrid(pos.x);
   const sy = snapToGrid(pos.y);
-  
-  wallStartPos = { x: sx, y: sy };
 
-  const style = WALL_STYLES[wallType] || WALL_STYLES.exterior;
+  if (!drawState) {
+    wallStartPos = { x: sx, y: sy };
+    const style = WALL_STYLES[wallType] || WALL_STYLES.exterior;
 
-  const id = 'w-' + Date.now();
-  const line = new Konva.Line({
-    points: [sx, sy, sx, sy],
-    stroke: style.stroke,
-    strokeWidth: style.strokeWidth,
-    dash: style.dash,
-    lineCap: 'round',
-    lineJoin: 'round',
-    id: id,
-    ...SHADOW_HEAVY,
-  });
-  line.setAttr('entityData', { id, name: 'New Wall', wallType, layer: 'architecture' });
-  getLayerArchitecture().add(line);
-  drawState = { node: line };
+    const id = 'w-' + Date.now();
+    const line = new Konva.Line({
+      points: [sx, sy, sx, sy],
+      stroke: style.stroke,
+      strokeWidth: style.strokeWidth,
+      dash: style.dash,
+      lineCap: 'round',
+      lineJoin: 'round',
+      opacity: style.opacity,
+      id: id,
+      ...SHADOW_HEAVY,
+    });
+    line.setAttr('entityData', { id, name: 'New Wall', wallType, layer: 'architecture' });
+    getLayerArchitecture().add(line);
+    drawState = { node: line };
+  } else {
+    // Continue drawing the polyline
+    const pts = drawState.node.points();
+    pts.push(pts[pts.length - 2], pts[pts.length - 1]); // Dupe the last point as the new temp point
+    wallStartPos = { x: pts[pts.length - 4], y: pts[pts.length - 3] }; // Update start pos to the last fixed point
+    drawState.node.points(pts);
+    getLayerArchitecture().getLayer().batchDraw();
+  }
 }
 
 function handleWallMove() {
@@ -311,30 +334,44 @@ function handleWallMove() {
   let sx = snapToGrid(pos.x);
   let sy = snapToGrid(pos.y);
 
-  // Orthogonal lock (The Sims style: force straight horizontal or vertical walls)
-  // Check which axis has the larger delta and lock the other axis to the start point
-  const dx = Math.abs(sx - wallStartPos.x);
-  const dy = Math.abs(sy - wallStartPos.y);
+  // Mario Maker Angle Lock: 0, 45, 90 degrees
+  let dx = sx - wallStartPos.x;
+  let dy = sy - wallStartPos.y;
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
   
-  if (dx > dy) {
-    sy = wallStartPos.y; // Lock to horizontal
+  if (absDx > absDy * 2) {
+    dy = 0; // Lock Horizontal
+  } else if (absDy > absDx * 2) {
+    dx = 0; // Lock Vertical
   } else {
-    sx = wallStartPos.x; // Lock to vertical
+    // Lock Diagonal 45 deg
+    const max = Math.max(absDx, absDy);
+    dx = Math.sign(dx) * max;
+    dy = Math.sign(dy) * max;
   }
+  
+  sx = snapToGrid(wallStartPos.x + dx);
+  sy = snapToGrid(wallStartPos.y + dy);
 
   const pts = drawState.node.points().slice();
-  pts[2] = sx;
-  pts[3] = sy;
+  pts[pts.length - 2] = sx;
+  pts[pts.length - 1] = sy;
   drawState.node.points(pts);
   getLayerArchitecture().getLayer().batchDraw();
 }
 
-function handleWallUp() {
-  if (!drawState || !wallStartPos) return;
+export function handleWallDblClick() {
+  if (!drawState) return;
   
-  // If the wall is a single point (length 0), remove it
+  // Finish the polyline
   const pts = drawState.node.points();
-  if (pts[0] === pts[2] && pts[1] === pts[3]) {
+  if (pts.length > 4) {
+    // Remove the trailing temp point
+    pts.splice(-2, 2);
+    drawState.node.points(pts);
+  } else if (pts[0] === pts[2] && pts[1] === pts[3]) {
+    // It's just a single dot, destroy it
     drawState.node.destroy();
     drawState = null;
     wallStartPos = null;
@@ -469,25 +506,4 @@ export function createAssetNode(asset) {
   return group;
 }
 
-// ════════════════════════════════════════════════════════════════════
-// Key handler
-// ════════════════════════════════════════════════════════════════════
-
-export function handleKeyDown(e) {
-  if (e.key === 'Escape') {
-    cancelDraw();
-    clearSelection();
-    setActiveTool(TOOLS.SELECT);
-  }
-
-  if (e.key === 'Delete' || e.key === 'Backspace') {
-    const tr = getTransformer();
-    const nodes = tr.nodes();
-    if (nodes.length > 0) {
-      nodes.forEach(n => n.destroy());
-      tr.nodes([]);
-      clearSelection();
-      refreshExplorer();
-    }
-  }
-}
+// End of file
