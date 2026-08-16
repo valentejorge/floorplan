@@ -4,9 +4,9 @@
  */
 
 const SVG_TABLES = {
-  desk_small: `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="60" viewBox="0 0 100 60"><rect width="100" height="60" rx="4" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/></svg>`,
-  desk_straight: `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="70" viewBox="0 0 140 70"><rect width="140" height="70" rx="4" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/></svg>`,
-  desk_l: `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140"><path d="M0,4C0,1.8,1.8,0,4,0H136C138.2,0,140,1.8,140,4V70C140,72.2,138.2,74,136,74H74V136C74,138.2,72.2,140,70,140H4C1.8,140,0,138.2,0,136V4Z" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/></svg>`,
+  desk_small: `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80"><rect width="120" height="80" rx="4" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/></svg>`,
+  desk_straight: `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="80" viewBox="0 0 160 80"><rect width="160" height="80" rx="4" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/></svg>`,
+  desk_l: `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><path d="M0,4C0,1.8,1.8,0,4,0H156C158.2,0,160,1.8,160,4V80C160,82.2,158.2,84,156,84H84V156C84,158.2,82.2,160,80,160H4C1.8,160,0,158.2,0,156V4Z" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/></svg>`,
   desk_round: `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><circle cx="80" cy="80" r="78" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/><circle cx="80" cy="80" r="15" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/></svg>`,
   rack_cabinet: `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="120" viewBox="0 0 80 120"><rect width="80" height="120" rx="2" fill="#1e293b" stroke="#0f172a" stroke-width="2"/><rect x="10" y="10" width="60" height="100" fill="#334155"/></svg>`,
   sofa: `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60" viewBox="0 0 120 60"><rect width="120" height="60" rx="10" fill="#94a3b8"/><rect x="10" y="10" width="100" height="40" rx="4" fill="#cbd5e1"/></svg>`,

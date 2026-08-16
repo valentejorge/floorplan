@@ -38,9 +38,13 @@ export function snapToGrid(val) {
 
 export function applySnapOnDragEnd(node) {
   node.dragBoundFunc(function(pos) {
+    const scale = stage.scaleX();
+    const logicalX = (pos.x - stage.x()) / scale;
+    const logicalY = (pos.y - stage.y()) / scale;
+    
     return {
-      x: snapToGrid(pos.x),
-      y: snapToGrid(pos.y)
+      x: Math.round(logicalX / GRID_SIZE) * GRID_SIZE * scale + stage.x(),
+      y: Math.round(logicalY / GRID_SIZE) * GRID_SIZE * scale + stage.y()
     };
   });
 }
@@ -528,10 +532,12 @@ export function setEngineEditMode(isEditing) {
       
       if (isEditing) {
         node.dragBoundFunc(function(pos) {
-          const GRID_SIZE = 20;
+          const scale = stage.scaleX();
+          const logicalX = (pos.x - stage.x()) / scale;
+          const logicalY = (pos.y - stage.y()) / scale;
           return {
-            x: Math.round(pos.x / GRID_SIZE) * GRID_SIZE,
-            y: Math.round(pos.y / GRID_SIZE) * GRID_SIZE
+            x: Math.round(logicalX / GRID_SIZE) * GRID_SIZE * scale + stage.x(),
+            y: Math.round(logicalY / GRID_SIZE) * GRID_SIZE * scale + stage.y()
           };
         });
         
