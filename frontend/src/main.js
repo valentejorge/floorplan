@@ -201,7 +201,25 @@ function bindModeToggle() {
       refreshExplorer();
       notify('Modo de Edição ativado.', 'warning');
     } else {
-      if (mode === 'cancel' && preEditState) {
+      if (mode === 'save') {
+        try {
+          const { serializeMapState } = await import('./history.js');
+          const state = serializeMapState();
+          const apiModule = await import('./api.js');
+          // Using default export if api is exported as default, or named export. 
+          // Wait, api.js exports both `export async function api` and `export default api`.
+          const api = apiModule.api || apiModule.default;
+          
+          await api('/ajax/save_room.php', {
+            method: 'POST',
+            body: JSON.stringify(state)
+          });
+          notify('Alterações salvas com sucesso!', 'success');
+        } catch (e) {
+          console.error(e);
+          notify('Erro ao salvar as alterações.', 'error');
+        }
+      } else if (mode === 'cancel' && preEditState) {
         // Restore map to exactly how it was before clicking Edit
         const { loadMapData } = await import('./renderer.js');
         loadMapData(preEditState, false);
@@ -210,6 +228,7 @@ function bindModeToggle() {
         import('./history.js').then(({ resetHistory }) => {
           resetHistory(preEditState);
         });
+        notify('Edição cancelada.', 'success');
       }
 
       layout.classList.remove('is-editing');
@@ -227,7 +246,6 @@ function bindModeToggle() {
       import('./renderer.js').then(({ repopulateAssetsExplorer }) => {
         repopulateAssetsExplorer();
       });
-      notify(mode === 'save' ? 'Alterações salvas com sucesso!' : 'Edição cancelada.', 'success');
     }
     
     // Animate stage to safe area first

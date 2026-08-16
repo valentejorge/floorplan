@@ -81,8 +81,8 @@ export function initEngine(containerId) {
   architectureLayer.add(zonesLayer);
   architectureLayer.add(wallsLayer);
   
-  contentLayer.add(furnitureLayer);
   contentLayer.add(assetsLayer);
+  contentLayer.add(furnitureLayer);
   
   overlayLayer = new Konva.Layer();
   
