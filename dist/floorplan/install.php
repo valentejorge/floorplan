@@ -13,9 +13,19 @@ function extension_install_floorplan() {
     $commonObject->sqlQuery($query);
 
     $query = "
-    CREATE TABLE IF NOT EXISTS `plugin_floorplan_rooms` (
+    CREATE TABLE IF NOT EXISTS `plugin_floorplan_floors` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `building_id` int(11) NOT NULL,
+      `name` varchar(255) NOT NULL,
+      PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+    ";
+    $commonObject->sqlQuery($query);
+
+    $query = "
+    CREATE TABLE IF NOT EXISTS `plugin_floorplan_rooms` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `floor_id` int(11) NOT NULL,
       `name` varchar(255) NOT NULL,
       `width` float NOT NULL DEFAULT '10',
       `height` float NOT NULL DEFAULT '10',
@@ -42,6 +52,15 @@ function extension_install_floorplan() {
       `device_id` int(11) DEFAULT NULL,
       PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+    ";
+    $commonObject->sqlQuery($query);
+
+    // Seed initial data for testing if not exists
+    $query = "
+    INSERT IGNORE INTO `plugin_floorplan_buildings` (`id`, `name`) VALUES (1, 'Headquarters');
+    INSERT IGNORE INTO `plugin_floorplan_floors` (`id`, `building_id`, `name`) VALUES (1, 1, 'Ground Floor');
+    INSERT IGNORE INTO `plugin_floorplan_rooms` (`id`, `floor_id`, `name`, `width`, `height`, `wall_color`, `floor_color`, `grid_size`) 
+    VALUES (1, 1, 'Open Office A', 800, 600, '#333333', '#f0f0f0', 20);
     ";
     $commonObject->sqlQuery($query);
 
@@ -82,6 +101,7 @@ function extension_delete_floorplan() {
     $commonObject = new ExtensionCommon;
     $commonObject->sqlQuery("DROP TABLE IF EXISTS `plugin_floorplan_objects`");
     $commonObject->sqlQuery("DROP TABLE IF EXISTS `plugin_floorplan_rooms`");
+    $commonObject->sqlQuery("DROP TABLE IF EXISTS `plugin_floorplan_floors`");
     $commonObject->sqlQuery("DROP TABLE IF EXISTS `plugin_floorplan_buildings`");
     
     // Cleanup files

@@ -26,7 +26,7 @@ const MOCK_ROUTES = {
  * @returns {string} Resolved URL
  */
 function resolveUrl(endpoint) {
-  if (!isDev) return endpoint;
+  if (!isDev) return (window.apiBaseUrl = 'extensions/floorplan/ms_floorplan/ajax/') + endpoint;
 
   // Exact match first
   if (MOCK_ROUTES[endpoint]) {
@@ -41,7 +41,7 @@ function resolveUrl(endpoint) {
     return MOCK_ROUTES[base];
   }
 
-  return isDev ? endpoint : (window.apiBaseUrl = 'extensions/floorplan/ms_floorplan/ajax') + endpoint;
+  return endpoint;
 }
 
 /**

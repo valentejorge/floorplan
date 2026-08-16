@@ -6,15 +6,15 @@ const root = import.meta.dirname;
 
 export default defineConfig({
   build: {
-    // Output compiled bundle to backend/assets/js/map-bundle.js
-    outDir: resolve(root, '../backend/assets/js'),
+    // Output compiled bundle directly to the extension dist folder
+    outDir: resolve(root, '../dist/floorplan/ms_floorplan/assets'),
     emptyOutDir: false,
     rollupOptions: {
       input: resolve(root, 'src/main.js'),
       output: {
         entryFileNames: 'map-bundle.js',
         // Inline everything into a single file for OCS deployment
-        manualChunks: undefined,
+        inlineDynamicImports: true,
       },
     },
   },

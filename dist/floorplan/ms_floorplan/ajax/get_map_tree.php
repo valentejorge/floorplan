@@ -10,17 +10,8 @@ header('Content-Type: application/json');
 try {
     $pdo = get_floorplan_pdo();
     $engine = new \Floorplan\MapEngine($pdo);
-    
-    $json = file_get_contents('php://input');
-    $data = json_decode($json, true);
-    
-    if (!$data || !isset($data['id'])) {
-        throw new Exception("Invalid JSON payload or missing room id.");
-    }
-    
-    $engine->saveRoom((int)$data['id'], $data);
-    
-    echo json_encode(['status' => 'success']);
+    $tree = $engine->getMapTree();
+    echo json_encode(['status' => 'success', 'data' => $tree]);
 } catch (Exception $e) {
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }

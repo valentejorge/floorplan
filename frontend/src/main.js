@@ -5,6 +5,7 @@ import { api } from './api.js';
 import { initEngine, zoomIn, zoomOut, zoomFit } from './engine.js';
 import { loadMapData } from './renderer.js';
 import { bindToolsToStage, setActiveTool, setFloorColor, setWallType, setActiveFurnitureType } from './tools.js';
+import { initAssetsCatalog } from './assets-catalog.js';
 import { refreshExplorer } from './explorer.js';
 import './style.css';
 
@@ -114,6 +115,7 @@ async function init() {
   bindMapNavigator();
   bindModeToggle();
   populateFurnitureCatalog();
+  initAssetsCatalog();
   
   // Initial Mock State
   setTimeout(async () => {
@@ -121,8 +123,7 @@ async function init() {
       const { skinManager } = await import('./skins.js');
       await skinManager.load();
       
-      const res = await fetch('/ajax/mock_room_100.json');
-      const json = await res.json();
+      const json = await api('get_room.php?id=1');
       
       if (json.status === 'success') {
         loadMapData(json.data);
@@ -428,12 +429,7 @@ function bindSearch() {
               updateBreadcrumb(el.dataset.b, el.dataset.f, roomName);
               notify(`Switched to map: ${roomName}`);
               
-              const fetchId = el.dataset.roomId; 
-              fetch(`/ajax/mock_room_${fetchId}.json`)
-                .then(r => {
-                  if (!r.ok) throw new Error('Not found');
-                  return r.json();
-                })
+              api(`get_room.php?id=${fetchId}`)
                 .then(json => {
                   if (json.status === 'success') {
                     import('./renderer.js').then(({ loadMapData }) => loadMapData(json.data));
@@ -454,11 +450,7 @@ function bindSearch() {
               updateBreadcrumb(el.dataset.b, el.dataset.f, roomName);
               notify(`Carregando mapa e focando: ${el.dataset.hwId}`);
               
-              fetch(`/ajax/mock_room_${roomId}.json`)
-                .then(r => {
-                  if (!r.ok) throw new Error('Not found');
-                  return r.json();
-                })
+              api(`get_room.php?id=${roomId}`)
                 .then(json => {
                   if (json.status === 'success') {
                     import('./renderer.js').then(({ loadMapData }) => {
@@ -642,8 +634,8 @@ window.openMapNavigator = async function(preselect = '') {
 
   if (!currentMapTree) {
     try {
-      const res = await fetch('/ajax/mock_map_tree.json');
-      currentMapTree = await res.json();
+      const json = await api('get_map_tree.php');
+      currentMapTree = json.data;
       window.renderNavigatorSidebar('', preselect);
     } catch (e) {
       console.error("Failed to load map tree", e);
@@ -754,11 +746,7 @@ function bindMapNavigator() {
         
         notify(`Carregando mapa: ${roomName}...`);
         
-        fetch(`/ajax/mock_room_${roomId}.json`)
-          .then(r => {
-            if (!r.ok) throw new Error('Not found');
-            return r.json();
-          })
+        api(`get_room.php?id=${roomId}`)
           .then(json => {
             if (json.status === 'success') {
               import('./renderer.js').then(({ loadMapData }) => {

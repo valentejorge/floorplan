@@ -1,9 +1,9 @@
 <?php
 $query = "
-DROP TABLE IF EXISTS `plugin_floorplan_buildings`;
-DROP TABLE IF EXISTS `plugin_floorplan_floors`;
+DROP TABLE IF EXISTS `plugin_floorplan_objects`;
 DROP TABLE IF EXISTS `plugin_floorplan_rooms`;
-DROP TABLE IF EXISTS `plugin_floorplan_assets`;
+DROP TABLE IF EXISTS `plugin_floorplan_floors`;
+DROP TABLE IF EXISTS `plugin_floorplan_buildings`;
 ";
 
 mysqli_multi_query($_SESSION['APP_DB_LINK'], $query);

@@ -107,6 +107,21 @@ $css_file = count($css_files) > 0 ? basename($css_files[0]) : '';
           </div>
         </div>
 
+        <!-- ── IT Assets Catalog Panel ─────────────────────────────────────── -->
+        <div id="assets-catalog-panel" style="display:none;background:var(--fp-bg-sidebar);border-bottom:1px solid var(--fp-border);flex-direction:column;max-height:100%;z-index:101;pointer-events:auto;position:absolute;top:0;left:0;right:0;bottom:0;">
+          <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--fp-border);">
+            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Equipamentos (Sem Mapa)</h3>
+            <button id="btn-close-assets" style="background:none;border:none;color:var(--fp-text-muted);cursor:pointer;font-size:16px;line-height:1;">&times;</button>
+          </div>
+          <div style="padding:8px 12px;border-bottom:1px solid var(--fp-border);background:#f8fafc;">
+             <input type="text" id="assets-catalog-search" placeholder="Filtrar equipamentos..." style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px;">
+          </div>
+          <div id="assets-catalog-body" style="flex:1;overflow-y:auto;padding:0;">
+            <!-- Fetched from API -->
+            <div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">Carregando...</div>
+          </div>
+        </div>
+
         <div class="fp-explorer__header">Object Explorer</div>
         <div id="explorer-body" class="fp-explorer__body">
           <div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">
@@ -306,10 +321,19 @@ $css_file = count($css_files) > 0 ? basename($css_files[0]) : '';
 
 </div>
 
-<?php if ($css_file): ?>
-<link rel="stylesheet" href="<?php echo $assets_dir; ?>/assets/<?php echo $css_file; ?>">
+<?php 
+if ($css_file): 
+    $css_path = __DIR__ . '/assets/assets/' . $css_file;
+    $css_v = file_exists($css_path) ? filemtime($css_path) : time();
+?>
+<link rel="stylesheet" href="<?php echo $assets_dir; ?>/assets/<?php echo $css_file; ?>?v=<?php echo $css_v; ?>">
 <?php endif; ?>
-<script type="module" src="<?php echo $assets_dir; ?>/map-bundle.js"></script>
+
+<?php
+$js_path = __DIR__ . '/assets/map-bundle.js';
+$js_v = file_exists($js_path) ? filemtime($js_path) : time();
+?>
+<script type="module" src="<?php echo $assets_dir; ?>/map-bundle.js?v=<?php echo $js_v; ?>"></script>
 
 <?php
 require_once('footer.php');
