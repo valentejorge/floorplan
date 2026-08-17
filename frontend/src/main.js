@@ -118,21 +118,35 @@ async function init() {
   initAssetsCatalog();
   bindCreateMap();
   
-  // Initial Mock State
+  // Auto-Load first map
   setTimeout(async () => {
     try {
       const { skinManager } = await import('./skins.js');
       await skinManager.load();
       
-      const json = await api('get_room.php?id=1');
-      
-      if (json.status === 'success') {
-        loadMapData(json.data);
-        updateBreadcrumb(json.data.building_name, json.data.floor_name, json.data.name);
-        import('./history.js').then(({ initHistory }) => initHistory());
+      const jsonTree = await api('get_map_tree.php');
+      if (jsonTree.status === 'success') {
+        currentMapTree = jsonTree.data;
+        let firstRoomId = null;
+        if (currentMapTree.buildings.length > 0 && 
+            currentMapTree.buildings[0].floors.length > 0 && 
+            currentMapTree.buildings[0].floors[0].rooms.length > 0) {
+            firstRoomId = currentMapTree.buildings[0].floors[0].rooms[0].id;
+        }
+        
+        if (firstRoomId) {
+            const roomJson = await api(`get_room.php?id=${firstRoomId}`);
+            if (roomJson.status === 'success') {
+              loadMapData(roomJson.data);
+              updateBreadcrumb(roomJson.data.building_name, roomJson.data.floor_name, roomJson.data.name);
+              import('./history.js').then(({ initHistory }) => initHistory());
+            }
+        } else {
+            notify("No maps found. Click 'All Maps' to create one.", "warning");
+        }
       }
     } catch (e) {
-      console.warn("Error loading mock data", e);
+      console.warn("Error loading initial map data", e);
     }
   }, 100);
 
@@ -674,10 +688,88 @@ function bindMapNavigator() {
 
   if (!modal) return;
 
+  let isEditMapMode = false;
+  let mapOrderUpdates = []; // stores {type, id, order}
+
   closeBtn?.addEventListener('click', () => window.closeModal(modal));
   modal.addEventListener('click', (e) => {
     if (e.target === modal) window.closeModal(modal);
   });
+  
+  const btnEditOrder = document.getElementById('btn-edit-order');
+  const btnSaveOrder = document.getElementById('btn-save-order');
+  
+  btnEditOrder?.addEventListener('click', () => {
+    isEditMapMode = true;
+    mapOrderUpdates = [];
+    btnEditOrder.style.display = 'none';
+    btnSaveOrder.style.display = 'inline-block';
+    
+    // Refresh with edit UI
+    const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
+    window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
+  });
+  
+  btnSaveOrder?.addEventListener('click', async () => {
+    btnSaveOrder.innerText = 'Saving...';
+    try {
+      if (mapOrderUpdates.length > 0) {
+        await api('manage_tree.php', { method: 'POST', body: JSON.stringify({ action: 'reorder', updates: mapOrderUpdates }) });
+      }
+      notify("Order saved successfully", "success");
+      // Reload tree
+      const json = await api('get_map_tree.php');
+      currentMapTree = json.data;
+    } catch (e) {
+      notify("Error saving order: " + e.message, "error");
+    }
+    
+    isEditMapMode = false;
+    btnSaveOrder.innerText = '✔ Save Order';
+    btnSaveOrder.style.display = 'none';
+    btnEditOrder.style.display = 'inline-block';
+    
+    const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
+    window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
+  });
+
+  async function handleDelete(type, id) {
+    if (!confirm(`Are you sure you want to delete this ${type}?`)) return;
+    try {
+      const res = await api('manage_tree.php', { method: 'POST', body: JSON.stringify({ action: 'delete', type, id }) });
+      if (res.status === 'success') {
+        notify(`${type} deleted successfully.`, "success");
+        const json = await api('get_map_tree.php');
+        currentMapTree = json.data;
+        window.renderNavigatorSidebar();
+      } else {
+        notify("Error deleting: " + res.message, "error");
+      }
+    } catch (e) {
+      notify("Failed to delete: " + e.message, "error");
+    }
+  }
+
+  function moveItemInArray(arr, index, dir) {
+    if (dir === 'up' && index > 0) {
+      const temp = arr[index];
+      arr[index] = arr[index - 1];
+      arr[index - 1] = temp;
+      return true;
+    } else if (dir === 'down' && index < arr.length - 1) {
+      const temp = arr[index];
+      arr[index] = arr[index + 1];
+      arr[index + 1] = temp;
+      return true;
+    }
+    return false;
+  }
+
+  function registerOrderUpdate(type, id, newOrder) {
+    const existing = mapOrderUpdates.find(u => u.type === type && u.id == id);
+    if (existing) existing.sort_order = newOrder;
+    else mapOrderUpdates.push({ type, id, sort_order: newOrder });
+  }
 
   window.renderNavigatorSidebar = function(filter = '', preselect = '') {
     if (!currentMapTree) return;
@@ -692,16 +784,32 @@ function bindMapNavigator() {
       
       const floorsToRender = filter && !bMatch ? matchedFloors : b.floors;
 
-      html += `<div class="fp-nav-building">${b.name}</div>`;
+      html += `<div class="fp-nav-building" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>${b.name}</span>
+        ${isEditMapMode ? `<div style="display:flex;gap:4px;">
+            <button class="fp-btn fp-btn--icon fp-btn-up" data-type="building" data-id="${b.id}" data-idx="${currentMapTree.buildings.indexOf(b)}">⬆</button>
+            <button class="fp-btn fp-btn--icon fp-btn-down" data-type="building" data-id="${b.id}" data-idx="${currentMapTree.buildings.indexOf(b)}">⬇</button>
+            <button class="fp-btn fp-btn--icon fp-btn-del" style="color:red;" data-type="building" data-id="${b.id}">✖</button>
+        </div>` : ''}
+      </div>`;
+      
       floorsToRender.forEach(f => {
-        html += `<div class="fp-nav-floor" data-bid="${b.id}" data-fid="${f.id}">${f.name}</div>`;
+        html += `<div class="fp-nav-floor" data-bid="${b.id}" data-fid="${f.id}" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>${f.name}</span>
+          ${isEditMapMode ? `<div style="display:flex;gap:4px;">
+              <button class="fp-btn fp-btn--icon fp-btn-up" data-type="floor" data-bid="${b.id}" data-id="${f.id}" data-idx="${b.floors.indexOf(f)}">⬆</button>
+              <button class="fp-btn fp-btn--icon fp-btn-down" data-type="floor" data-bid="${b.id}" data-id="${f.id}" data-idx="${b.floors.indexOf(f)}">⬇</button>
+              <button class="fp-btn fp-btn--icon fp-btn-del" style="color:red;" data-type="floor" data-id="${f.id}">✖</button>
+          </div>` : ''}
+        </div>`;
       });
     });
     
     sidebar.innerHTML = html || '<div style="padding:10px;color:var(--fp-text-muted);font-size:11px;">No matches</div>';
 
     sidebar.querySelectorAll('.fp-nav-floor').forEach(el => {
-      el.addEventListener('click', () => {
+      el.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') return; // let buttons handle themselves
         sidebar.querySelectorAll('.fp-nav-floor').forEach(x => x.classList.remove('active'));
         el.classList.add('active');
         
@@ -710,6 +818,34 @@ function bindMapNavigator() {
         renderNavigatorGrid(b, f);
       });
     });
+
+    if (isEditMapMode) {
+      sidebar.querySelectorAll('.fp-btn-up, .fp-btn-down').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const type = btn.dataset.type;
+          const dir = btn.classList.contains('fp-btn-up') ? 'up' : 'down';
+          const idx = parseInt(btn.dataset.idx);
+          let arr = [];
+          if (type === 'building') arr = currentMapTree.buildings;
+          if (type === 'floor') {
+             const b = currentMapTree.buildings.find(x => x.id == btn.dataset.bid);
+             arr = b.floors;
+          }
+          if (moveItemInArray(arr, idx, dir)) {
+             arr.forEach((item, i) => registerOrderUpdate(type, item.id, i));
+             const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
+             window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
+          }
+        });
+      });
+      sidebar.querySelectorAll('.fp-btn-del').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleDelete(btn.dataset.type, btn.dataset.id);
+        });
+      });
+    }
     
     // Auto-select floor
     let targetFloor = null;
@@ -740,21 +876,50 @@ function bindMapNavigator() {
       return;
     }
 
-    grid.innerHTML = floor.rooms.map(r => `
-      <div class="fp-room-card" data-bname="${building.name}" data-fname="${floor.name}" data-rname="${r.name}" data-room-id="${r.id}">
+    grid.innerHTML = floor.rooms.map((r, idx) => `
+      <div class="fp-room-card" data-bname="${building.name}" data-fname="${floor.name}" data-rname="${r.name}" data-room-id="${r.id}" style="${isEditMapMode ? 'border:1px solid var(--fp-primary);' : ''}">
         <div class="fp-room-thumb" style="background:${r.color};">${r.icon}</div>
-        <div class="fp-room-info">
+        <div class="fp-room-info" style="flex:1;">
           <div class="fp-room-name" title="${r.name}">${r.name}</div>
           <div class="fp-room-meta">
             <svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor"><rect x="3" y="2" width="14" height="16" rx="2"/></svg>
             ${r.assetCount} assets
           </div>
         </div>
+        ${isEditMapMode ? `
+        <div style="display:flex;flex-direction:column;gap:4px;">
+            <button class="fp-btn fp-btn--icon fp-grid-up" data-idx="${idx}" data-fid="${floor.id}" data-bid="${building.id}">⬆</button>
+            <button class="fp-btn fp-btn--icon fp-grid-down" data-idx="${idx}" data-fid="${floor.id}" data-bid="${building.id}">⬇</button>
+            <button class="fp-btn fp-btn--icon fp-grid-del" style="color:red;" data-id="${r.id}">✖</button>
+        </div>` : ''}
       </div>
     `).join('');
 
+    if (isEditMapMode) {
+      grid.querySelectorAll('.fp-grid-up, .fp-grid-down').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const dir = btn.classList.contains('fp-grid-up') ? 'up' : 'down';
+          const idx = parseInt(btn.dataset.idx);
+          if (moveItemInArray(floor.rooms, idx, dir)) {
+             floor.rooms.forEach((r, i) => registerOrderUpdate('room', r.id, i));
+             renderNavigatorGrid(building, floor);
+          }
+        });
+      });
+      grid.querySelectorAll('.fp-grid-del').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleDelete('room', btn.dataset.id);
+        });
+      });
+    }
+
     grid.querySelectorAll('.fp-room-card').forEach(card => {
-      card.addEventListener('click', async () => {
+      card.addEventListener('click', async (e) => {
+        if (isEditMapMode) return; // Disable loading maps while in edit mode
+        if (e.target.tagName === 'BUTTON') return;
+
         if (!(await window.checkEditMode())) return;
         
         const roomName = card.dataset.rname;

@@ -77,6 +77,56 @@ class MapEngineTest extends TestCase {
         $this->assertEquals(800, $room['height']);
     }
 
+    public function testMoveAndReorder() {
+        $bid = $this->engine->createBuilding("Building A");
+        $fid1 = $this->engine->createFloor($bid, "Floor 1");
+        $fid2 = $this->engine->createFloor($bid, "Floor 2");
+        $rid = $this->engine->createRoom($fid1, "Room X");
+
+        // Move room to floor 2
+        $this->engine->moveRoom($rid, $fid2);
+        
+        // Verify move
+        $room = $this->engine->getRoom($rid);
+        $this->assertEquals("Floor 2", $room['floor_name']);
+
+        // Update order
+        $this->engine->updateSortOrder('room', $rid, 5);
+        $stmt = $this->db->query("SELECT sort_order FROM plugin_floorplan_rooms WHERE id = $rid");
+        $this->assertEquals(5, (int)$stmt->fetchColumn());
+    }
+
+    public function testDeleteHierarchy() {
+        $bid = $this->engine->createBuilding("Building To Delete");
+        $fid = $this->engine->createFloor($bid, "Floor To Delete");
+        $rid = $this->engine->createRoom($fid, "Room To Delete");
+
+        // Try deleting floor with rooms (should throw)
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage("Cannot delete floor");
+        $this->engine->deleteFloor($fid);
+    }
+
+    public function testSuccessfulDelete() {
+        $bid = $this->engine->createBuilding("Building Del 2");
+        $fid = $this->engine->createFloor($bid, "Floor Del 2");
+        $rid = $this->engine->createRoom($fid, "Room Del 2");
+
+        // Delete room first
+        $this->engine->deleteRoom($rid);
+        
+        // Now delete floor
+        $this->engine->deleteFloor($fid);
+        
+        // Now delete building
+        $this->engine->deleteBuilding($bid);
+
+        // Verify all are gone
+        $this->assertEquals(0, $this->db->query("SELECT count(*) FROM plugin_floorplan_rooms WHERE id=$rid")->fetchColumn());
+        $this->assertEquals(0, $this->db->query("SELECT count(*) FROM plugin_floorplan_floors WHERE id=$fid")->fetchColumn());
+        $this->assertEquals(0, $this->db->query("SELECT count(*) FROM plugin_floorplan_buildings WHERE id=$bid")->fetchColumn());
+    }
+
     public function testGetUnmappedAssets() {
         $assets = $this->engine->getUnmappedAssets();
         

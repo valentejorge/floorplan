@@ -25,7 +25,7 @@ class MapEngine
         $buildings = [];
         
         // Get buildings
-        $b_stmt = $this->pdo->query('SELECT id, name FROM plugin_floorplan_buildings ORDER BY name');
+        $b_stmt = $this->pdo->query('SELECT id, name FROM plugin_floorplan_buildings ORDER BY sort_order ASC, name ASC');
         while ($b = $b_stmt->fetch()) {
             $b['floors'] = [];
             $buildings[$b['id']] = $b;
@@ -34,7 +34,7 @@ class MapEngine
         if (empty($buildings)) return ['buildings' => []];
 
         // Get floors
-        $f_stmt = $this->pdo->query('SELECT id, building_id, name FROM plugin_floorplan_floors ORDER BY name');
+        $f_stmt = $this->pdo->query('SELECT id, building_id, name FROM plugin_floorplan_floors ORDER BY sort_order ASC, name ASC');
         $floors = [];
         while ($f = $f_stmt->fetch()) {
             $f['rooms'] = [];
@@ -48,7 +48,7 @@ class MapEngine
             FROM plugin_floorplan_rooms r
             LEFT JOIN plugin_floorplan_objects o ON o.room_id = r.id AND o.device_id IS NOT NULL
             GROUP BY r.id, r.floor_id, r.name
-            ORDER BY r.name
+            ORDER BY r.sort_order ASC, r.name ASC
         ');
         while ($r = $r_stmt->fetch()) {
             if (isset($floors[$r['floor_id']])) {
@@ -94,10 +94,10 @@ class MapEngine
         // Fetch objects
         $stmt = $this->pdo->prepare('
             SELECT o.*, 
-                   h.NAME as hardware_name, 
-                   h.USERID as user,
-                   n.IPADDRESS as ip, 
-                   n.MACADDR as mac
+                   ANY_VALUE(h.NAME) as hardware_name, 
+                   ANY_VALUE(h.USERID) as user,
+                   ANY_VALUE(n.IPADDRESS) as ip, 
+                   ANY_VALUE(n.MACADDR) as mac
             FROM plugin_floorplan_objects o
             LEFT JOIN hardware h ON o.device_id = h.ID
             LEFT JOIN networks n ON n.HARDWARE_ID = h.ID
@@ -327,5 +327,55 @@ class MapEngine
         $stmt = $this->pdo->prepare('INSERT INTO plugin_floorplan_rooms (floor_id, name, width, height) VALUES (?, ?, ?, ?)');
         $stmt->execute([$fid, $name, $width, $height]);
         return (int) $this->pdo->lastInsertId();
+    }
+
+    public function deleteRoom(int $id): void {
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare('DELETE FROM plugin_floorplan_objects WHERE room_id = ?');
+            $stmt->execute([$id]);
+            $stmt = $this->pdo->prepare('DELETE FROM plugin_floorplan_rooms WHERE id = ?');
+            $stmt->execute([$id]);
+            $this->pdo->commit();
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    public function deleteFloor(int $id): void {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM plugin_floorplan_rooms WHERE floor_id = ?');
+        $stmt->execute([$id]);
+        if ($stmt->fetchColumn() > 0) {
+            throw new Exception("Cannot delete floor. It contains maps.");
+        }
+        $stmt = $this->pdo->prepare('DELETE FROM plugin_floorplan_floors WHERE id = ?');
+        $stmt->execute([$id]);
+    }
+
+    public function deleteBuilding(int $id): void {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM plugin_floorplan_floors WHERE building_id = ?');
+        $stmt->execute([$id]);
+        if ($stmt->fetchColumn() > 0) {
+            throw new Exception("Cannot delete building. It contains floors.");
+        }
+        $stmt = $this->pdo->prepare('DELETE FROM plugin_floorplan_buildings WHERE id = ?');
+        $stmt->execute([$id]);
+    }
+
+    public function moveRoom(int $id, int $newFloorId): void {
+        $stmt = $this->pdo->prepare('UPDATE plugin_floorplan_rooms SET floor_id = ? WHERE id = ?');
+        $stmt->execute([$newFloorId, $id]);
+    }
+
+    public function updateSortOrder(string $type, int $id, int $newOrder): void {
+        $table = '';
+        if ($type === 'building') $table = 'plugin_floorplan_buildings';
+        elseif ($type === 'floor') $table = 'plugin_floorplan_floors';
+        elseif ($type === 'room') $table = 'plugin_floorplan_rooms';
+        else throw new Exception("Invalid type for sort order update.");
+
+        $stmt = $this->pdo->prepare("UPDATE {$table} SET sort_order = ? WHERE id = ?");
+        $stmt->execute([$newOrder, $id]);
     }
 }

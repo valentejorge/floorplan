@@ -7,6 +7,7 @@ function extension_install_floorplan() {
     CREATE TABLE IF NOT EXISTS `plugin_floorplan_buildings` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `name` varchar(255) NOT NULL,
+      `sort_order` int(11) NOT NULL DEFAULT '0',
       PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
     ";
@@ -17,6 +18,7 @@ function extension_install_floorplan() {
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `building_id` int(11) NOT NULL,
       `name` varchar(255) NOT NULL,
+      `sort_order` int(11) NOT NULL DEFAULT '0',
       PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
     ";
@@ -32,6 +34,7 @@ function extension_install_floorplan() {
       `wall_color` varchar(50) DEFAULT '#333333',
       `floor_color` varchar(50) DEFAULT '#f0f0f0',
       `grid_size` float NOT NULL DEFAULT '0.5',
+      `sort_order` int(11) NOT NULL DEFAULT '0',
       PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
     ";

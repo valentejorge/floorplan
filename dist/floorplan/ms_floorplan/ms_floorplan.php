@@ -278,6 +278,8 @@ $css_file = count($css_files) > 0 ? basename($css_files[0]) : '';
         <div class="fp-navigator__header">
           <div class="fp-navigator__title">Map Navigator</div>
           <div style="flex:1;"></div>
+          <button class="fp-btn fp-btn--secondary" id="btn-edit-order" style="padding:4px 12px;font-size:11px;margin-right:8px;">↕ Edit Order</button>
+          <button class="fp-btn fp-btn--primary" id="btn-save-order" style="padding:4px 12px;font-size:11px;margin-right:8px;display:none;background:#28a745;border-color:#28a745;">✔ Save Order</button>
           <button class="fp-btn fp-btn--primary" id="btn-new-map" style="padding:4px 12px;font-size:11px;margin-right:12px;">+ New Map</button>
           <button class="fp-navigator__close">×</button>
         </div>
