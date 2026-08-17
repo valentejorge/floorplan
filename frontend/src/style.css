@@ -293,7 +293,7 @@ body {
   left: 16px;
   /* View Mode: Explorer is on the LEFT (width + 16px gap) */
   transform: translateX(calc(var(--fp-explorer-w) + 16px));
-  transition: transform 0.75s cubic-bezier(0.8, 0, 0.2, 1);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   background: rgba(255, 255, 255, 0.90);
   backdrop-filter: blur(8px);
   padding: 8px 12px;
@@ -320,7 +320,7 @@ body {
   right: 16px;
   /* View Mode: nothing on the right */
   transform: translateX(0);
-  transition: transform 0.75s cubic-bezier(0.8, 0, 0.2, 1);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   background: rgba(255, 255, 255, 0.90);
@@ -351,7 +351,7 @@ body {
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  transition: transform 0.75s cubic-bezier(0.8, 0, 0.2, 1);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 50;
   overflow: hidden;
   width: var(--fp-explorer-w);
@@ -387,7 +387,8 @@ body {
   transform: translate(-50%, 80px);
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.75s cubic-bezier(0.8, 0, 0.2, 1), opacity 0.75s ease;
+  /* Exit: FAST and sharp so it gets out of the way before the sidebar sweeps across */
+  transition: transform 0.3s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s ease;
   z-index: 100;
 }
 
@@ -396,6 +397,8 @@ body {
   transform: translate(-50%, 0);
   opacity: 1;
   pointer-events: auto;
+  /* Entrance: slow and bouncy/snappy */
+  transition: transform 0.75s cubic-bezier(0.8, 0, 0.2, 1), opacity 0.75s ease;
 }
 
 .fp-tool-btn {
