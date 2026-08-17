@@ -160,7 +160,7 @@ export function handleStageMouseMove() {
 export function handleStageMouseUp() {
   switch (activeTool) {
     case TOOLS.FLOOR: handleFloorUp(); break;
-    case TOOLS.WALL:  handleWallUp(); break;
+    case TOOLS.WALL:  break; // Walls are click-to-point, no drag-up behavior needed
   }
 }
 
@@ -332,7 +332,9 @@ function handleWallDown(e) {
       lineJoin: 'round',
       opacity: style.opacity,
       id: id,
-      ...SHADOW_HEAVY,
+      shadowColor: 'rgba(0,0,0,0.3)',
+      shadowBlur: 8,
+      shadowOffset: { x: 0, y: 4 }
     });
     line.setAttr('entityData', { id, name: 'New Wall', wallType, layer: 'architecture' });
     getLayerArchitecture().add(line);

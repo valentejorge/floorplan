@@ -4,13 +4,23 @@ import { skinManager } from './skins.js';
 import { buildFurnitureNode } from './furniture.js';
 
 export let currentAssets = [];
+export let currentRoomData = null;
 
 export function repopulateAssetsExplorer() {
   populateObjectExplorer(currentAssets);
 }
 
 export function loadMapData(data, isInitial = true) {
-  if (!data) return;
+  const emptyStateOverlay = document.getElementById('empty-state-overlay');
+  
+  if (!data || !data.id) {
+    if (emptyStateOverlay) emptyStateOverlay.style.display = 'block';
+    if (!data) return;
+  } else {
+    if (emptyStateOverlay) emptyStateOverlay.style.display = 'none';
+  }
+
+  currentRoomData = data;
   currentAssets = data.assets || [];
 
   // Clear existing objects

@@ -42,10 +42,23 @@ class MapEngine
         }
 
         // Get rooms
-        $r_stmt = $this->pdo->query('SELECT id, floor_id, name FROM plugin_floorplan_rooms ORDER BY name');
+        $r_stmt = $this->pdo->query('
+            SELECT r.id, r.floor_id, r.name, 
+                   COUNT(o.id) as assetCount
+            FROM plugin_floorplan_rooms r
+            LEFT JOIN plugin_floorplan_objects o ON o.room_id = r.id AND o.device_id IS NOT NULL
+            GROUP BY r.id, r.floor_id, r.name
+            ORDER BY r.name
+        ');
         while ($r = $r_stmt->fetch()) {
             if (isset($floors[$r['floor_id']])) {
-                $floors[$r['floor_id']]['rooms'][] = ['id' => $r['id'], 'name' => $r['name']];
+                $floors[$r['floor_id']]['rooms'][] = [
+                    'id' => $r['id'], 
+                    'name' => $r['name'],
+                    'icon' => mb_substr($r['name'], 0, 1) ?: 'M',
+                    'color' => '#' . substr(md5($r['name']), 0, 6),
+                    'assetCount' => (int)$r['assetCount']
+                ];
             }
         }
 
@@ -64,7 +77,13 @@ class MapEngine
      */
     public function getRoom(int $roomId): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM plugin_floorplan_rooms WHERE id = :id');
+        $stmt = $this->pdo->prepare('
+            SELECT r.*, f.name AS floor_name, b.name AS building_name 
+            FROM plugin_floorplan_rooms r
+            LEFT JOIN plugin_floorplan_floors f ON r.floor_id = f.id
+            LEFT JOIN plugin_floorplan_buildings b ON f.building_id = b.id
+            WHERE r.id = :id
+        ');
         $stmt->execute(['id' => $roomId]);
         $room = $stmt->fetch();
 
@@ -126,6 +145,8 @@ class MapEngine
         return [
             'id' => (int)$room['id'],
             'name' => $room['name'],
+            'building_name' => $room['building_name'] ?: 'Unknown Building',
+            'floor_name' => $room['floor_name'] ?: 'Unknown Floor',
             'width' => (float)$room['width'],
             'height' => (float)$room['height'],
             'wall_color' => $room['wall_color'],
@@ -302,9 +323,9 @@ class MapEngine
         $stmt->execute([$bid, $name]);
         return (int) $this->pdo->lastInsertId();
     }
-    public function createRoom(int $fid, string $name): int {
-        $stmt = $this->pdo->prepare('INSERT INTO plugin_floorplan_rooms (floor_id, name) VALUES (?, ?)');
-        $stmt->execute([$fid, $name]);
+    public function createRoom(int $fid, string $name, float $width = 800, float $height = 600): int {
+        $stmt = $this->pdo->prepare('INSERT INTO plugin_floorplan_rooms (floor_id, name, width, height) VALUES (?, ?, ?, ?)');
+        $stmt->execute([$fid, $name, $width, $height]);
         return (int) $this->pdo->lastInsertId();
     }
 }

@@ -4,6 +4,13 @@
 
 OCS Inventory plugin that adds an interactive spatial visualization layer (floor plans) utilizing JSON data structures and HTML5 Canvas rendering.
 
+## Core Architecture Rules
+
+1. **Language:** All code, user interface text, variables, comments, and structure MUST be written in English. This ensures future compatibility with OCS Inventory's multi-language translation dictionaries.
+2. **Frameworks:** Vanilla JS (Frontend) + PHP (Backend).
+3. **Canvas:** Konva.js for rendering the 2D floorplan.
+4. **Integration:** Plugs directly into OCS Inventory as a standard extension.
+
 ## 2. Visual Identity (Native OCS Integration)
 
 The plugin **MUST NOT** look like a third-party external application. It must behave and feel like a native OCS Inventory module.

@@ -191,6 +191,7 @@ body {
   position: relative;
   height: calc(100vh - var(--fp-topbar-h));
   overflow: hidden; /* Hide offscreen panels */
+  container-type: inline-size;
 }
 
 /* ── Canvas Area (Infinite, 100% width) ──────────────────────────── */
@@ -252,8 +253,8 @@ body {
   animation-delay: 0.1s;
 }
 .fp-layout.is-editing .fp-canvas-breadcrumb {
-  /* Edit Mode: Toolbar is on the LEFT */
-  transform: translateX(calc(var(--fp-toolbar-w) + 16px));
+  /* Edit Mode: Toolbar is no longer on the left, so stay put */
+  transform: translateX(0);
 }
 
 .fp-camera-controls {
@@ -281,7 +282,7 @@ body {
 }
 
 /* ── Floating Panels Shared ──────────────────────────────────────── */
-.fp-explorer, .fp-toolbar {
+.fp-explorer {
   position: absolute;
   top: 16px;
   left: 16px;
@@ -294,10 +295,6 @@ body {
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 50;
   overflow: hidden;
-}
-
-/* ── Explorer Panel (Starts Left, Moves Right) ───────────────────── */
-.fp-explorer {
   width: var(--fp-explorer-w);
   display: flex;
   flex-direction: column;
@@ -306,38 +303,36 @@ body {
   animation: slideInLeft 0.5s cubic-bezier(0.2, 0, 0, 1) backwards;
   animation-delay: 0.2s;
 }
-
-/* ── Explorer Panel (Starts Left, Moves Right) ───────────────────── */
-.fp-explorer {
-  width: var(--fp-explorer-w);
-  display: flex;
-  flex-direction: column;
-  position: relative; /* Add position relative for absolutely positioned children */
-  /* View Mode: sitting on the left */
-  transform: translateX(0); 
-}
 .fp-layout.is-editing .fp-explorer {
-  /* Edit Mode: travels right. Total screen width minus its width, minus 32px (left margin + right margin) */
-  transform: translateX(calc(100vw - var(--fp-explorer-w) - 32px));
+  /* Edit Mode: travels right. Total container width minus its width, minus 32px (left margin + right margin) */
+  transform: translateX(calc(100cqw - var(--fp-explorer-w) - 32px));
 }
 
-/* ── Toolbar Panel (Starts offscreen Left, Moves into Left) ──────── */
+/* ── Toolbar Panel (Starts offscreen bottom, Moves into bottom center) ──────── */
 .fp-toolbar {
-  width: var(--fp-toolbar-w);
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--fp-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  padding: 8px 0;
-  gap: 2px;
-  /* View Mode: hidden completely offscreen to the left */
-  transform: translateX(calc(-100% - 32px));
+  padding: 6px 8px;
+  gap: 4px;
+  /* View Mode: hidden completely */
+  transform: translate(-50%, 80px);
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  z-index: 100;
 }
 .fp-layout.is-editing .fp-toolbar {
-  /* Edit Mode: slides into view on the left */
-  transform: translateX(0);
+  /* Edit Mode: slides into view on the bottom */
+  transform: translate(-50%, 0);
   opacity: 1;
   pointer-events: auto;
 }
@@ -368,9 +363,9 @@ body {
 .fp-tool-btn::after {
   content: attr(data-tooltip);
   position: absolute;
-  left: calc(100% + 8px);
-  top: 50%;
-  transform: translateY(-50%);
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
   background: #333;
   color: #fff;
   padding: 4px 8px;
@@ -385,10 +380,10 @@ body {
 .fp-tool-btn:hover::after { opacity: 1; }
 
 .fp-toolbar__sep {
-  width: 28px;
-  height: 1px;
+  width: 1px;
+  height: 24px;
   background: var(--fp-border);
-  margin: 6px 0;
+  margin: 0 4px;
 }
 
 /* ── Camera Controls (Internals) ──────────────────────────────────── */

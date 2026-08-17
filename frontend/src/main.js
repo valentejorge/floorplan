@@ -116,6 +116,7 @@ async function init() {
   bindModeToggle();
   populateFurnitureCatalog();
   initAssetsCatalog();
+  bindCreateMap();
   
   // Initial Mock State
   setTimeout(async () => {
@@ -127,14 +128,13 @@ async function init() {
       
       if (json.status === 'success') {
         loadMapData(json.data);
+        updateBreadcrumb(json.data.building_name, json.data.floor_name, json.data.name);
         import('./history.js').then(({ initHistory }) => initHistory());
       }
     } catch (e) {
       console.warn("Error loading mock data", e);
     }
   }, 100);
-
-  updateBreadcrumb('Headquarters', 'Ground Floor', 'Open Office A');
 
   console.info(`[floorplan] Phase 3: Data Layer & Konva Rendering loaded.`);
 }
@@ -143,7 +143,7 @@ function updateBreadcrumb(building, floor, room) {
   const bc = document.getElementById('breadcrumb');
   if (!bc) return;
   bc.innerHTML = `
-    <a href="#" data-nav="root" title="Open Navigator">🗺️ Todos os Mapas</a>
+    <a href="#" data-nav="root" title="Open Navigator">🗺️ All Maps</a>
     <span> › </span>
     <a href="#" data-nav="building" title="Open Navigator">${building}</a>
     <span> › </span>
@@ -200,25 +200,43 @@ function bindModeToggle() {
       btnSave.style.display = 'block';
       
       refreshExplorer();
-      notify('Modo de Edição ativado.', 'warning');
+      notify('Edit Mode activated.', 'warning');
     } else {
       if (mode === 'save') {
         try {
           const { serializeMapState } = await import('./history.js');
+          const { currentRoomData } = await import('./renderer.js');
+          
+          if (!currentRoomData || !currentRoomData.id) {
+            throw new Error("No active room loaded to save.");
+          }
+          
           const state = serializeMapState();
+          
+          // Inject room properties
+          state.id = currentRoomData.id;
+          state.width = currentRoomData.width || 800;
+          state.height = currentRoomData.height || 600;
+          state.wall_color = currentRoomData.wall_color || '#333333';
+          state.floor_color = currentRoomData.floor_color || '#f0f0f0';
+          state.grid_size = currentRoomData.grid_size || 0.5;
+
           const apiModule = await import('./api.js');
-          // Using default export if api is exported as default, or named export. 
-          // Wait, api.js exports both `export async function api` and `export default api`.
           const api = apiModule.api || apiModule.default;
           
-          await api('/ajax/save_room.php', {
+          const res = await api('save_room.php', {
             method: 'POST',
             body: JSON.stringify(state)
           });
-          notify('Alterações salvas com sucesso!', 'success');
+          
+          if (res.status === 'success') {
+            notify('Changes saved successfully!', 'success');
+          } else {
+            throw new Error(res.message || 'Unknown backend error');
+          }
         } catch (e) {
           console.error(e);
-          notify('Erro ao salvar as alterações.', 'error');
+          notify('Error saving changes: ' + e.message, 'error');
         }
       } else if (mode === 'cancel' && preEditState) {
         // Restore map to exactly how it was before clicking Edit
@@ -229,7 +247,7 @@ function bindModeToggle() {
         import('./history.js').then(({ resetHistory }) => {
           resetHistory(preEditState);
         });
-        notify('Edição cancelada.', 'success');
+        notify('Edit cancelled.', 'success');
       }
 
       layout.classList.remove('is-editing');
@@ -404,7 +422,7 @@ function bindSearch() {
           if (item.type === 'room') {
             return `
               <div class="fp-search-results__item" data-type="room" data-room-id="${item.room_id}" data-b="${item.building_name}" data-f="${item.floor_name}" data-r="${item.room_name}">
-                <span class="fp-search-results__name">🗺️ Mapa: ${item.room_name}</span>
+                <span class="fp-search-results__name">🗺️ Map: ${item.room_name}</span>
                 <span class="fp-search-results__location">📍 ${item.building_name} › ${item.floor_name}</span>
               </div>
             `;
@@ -436,7 +454,7 @@ function bindSearch() {
                   }
                 })
                 .catch(() => {
-                  notify(`Nenhum dado mockado para "${roomName}". Carregando mapa vazio.`, 'warning');
+                  notify(`No data found for "${roomName}". Loading empty map.`, 'warning');
                   import('./renderer.js').then(({ loadMapData }) => {
                     loadMapData({ floor_zones: [], walls: [], doors: [], furniture: [], assets: [] });
                   });
@@ -448,7 +466,7 @@ function bindSearch() {
               const assetId = el.dataset.assetId;
               
               updateBreadcrumb(el.dataset.b, el.dataset.f, roomName);
-              notify(`Carregando mapa e focando: ${el.dataset.hwId}`);
+              notify(`Loading map and focusing: ${el.dataset.hwId}`);
               
               api(`get_room.php?id=${roomId}`)
                 .then(json => {
@@ -487,7 +505,7 @@ function bindSearch() {
                   }
                 })
                 .catch(() => {
-                  notify(`Nenhum mapa encontrado para o equipamento "${el.dataset.hwId}".`, 'warning');
+                  notify(`No map found for asset "${el.dataset.hwId}".`, 'warning');
                   import('./renderer.js').then(({ loadMapData }) => {
                     loadMapData({ floor_zones: [], walls: [], doors: [], furniture: [], assets: [] });
                   });
@@ -744,18 +762,19 @@ function bindMapNavigator() {
         updateBreadcrumb(card.dataset.bname, card.dataset.fname, roomName);
         window.closeModal(modal);
         
-        notify(`Carregando mapa: ${roomName}...`);
+        notify(`Loading map: ${roomName}...`);
         
         api(`get_room.php?id=${roomId}`)
           .then(json => {
             if (json.status === 'success') {
               import('./renderer.js').then(({ loadMapData }) => {
                 loadMapData(json.data);
+                updateBreadcrumb(json.data.building_name, json.data.floor_name, json.data.name);
               });
             }
           })
           .catch(() => {
-            notify(`Nenhum dado mockado para "${roomName}". Carregando mapa vazio.`, 'warning');
+            notify(`No data found for "${roomName}". Loading empty map.`, 'warning');
             import('./renderer.js').then(({ loadMapData }) => {
               loadMapData({ floor_zones: [], walls: [], doors: [], furniture: [], assets: [] });
             });
@@ -765,11 +784,143 @@ function bindMapNavigator() {
   }
 
   const btnNewMap = document.getElementById('btn-new-map');
-  if (btnNewMap) {
+  const createModal = document.getElementById('create-map-modal');
+  if (btnNewMap && createModal) {
     btnNewMap.addEventListener('click', () => {
-      notify('A criação de mapas será implementada na Fase 6 (Integração com Backend OCS).', 'warning');
+      window.closeModal(modal); // Close navigator
+      openCreateMapModal();
     });
   }
+}
+
+function bindCreateMap() {
+  const modal = document.getElementById('create-map-modal');
+  const btnCancel = document.getElementById('btn-cancel-create');
+  const btnSubmit = document.getElementById('btn-submit-create');
+  
+  if (!modal) return;
+  
+  window.openCreateMapModal = async function() {
+    modal.classList.add('visible');
+    
+    // Ensure we have the tree
+    if (!currentMapTree) {
+      try {
+        const json = await api('get_map_tree.php');
+        currentMapTree = json.data;
+      } catch (e) {}
+    }
+    
+    const bSel = document.getElementById('create-map-building-sel');
+    const fSel = document.getElementById('create-map-floor-sel');
+    
+    // Populate Buildings
+    if (bSel && currentMapTree && currentMapTree.buildings) {
+      let bHtml = '<option value="">-- New Building --</option>';
+      currentMapTree.buildings.forEach(b => {
+        bHtml += `<option value="${b.id}">${b.name}</option>`;
+      });
+      bSel.innerHTML = bHtml;
+    }
+    
+    // Reset inputs
+    document.getElementById('create-map-building-txt').value = '';
+    document.getElementById('create-map-floor-txt').value = '';
+    document.getElementById('create-map-room-txt').value = '';
+    
+    if (fSel) fSel.innerHTML = '<option value="">-- New Floor --</option>';
+    
+    bSel.addEventListener('change', () => {
+      if (bSel.value === "") {
+        document.getElementById('create-map-building-txt').style.display = 'block';
+        fSel.innerHTML = '<option value="">-- New Floor --</option>';
+        document.getElementById('create-map-floor-txt').style.display = 'block';
+      } else {
+        document.getElementById('create-map-building-txt').style.display = 'none';
+        document.getElementById('create-map-floor-txt').style.display = 'block';
+        
+        const b = currentMapTree.buildings.find(x => x.id == bSel.value);
+        let fHtml = '<option value="">-- New Floor --</option>';
+        if (b && b.floors) {
+          b.floors.forEach(f => {
+            fHtml += `<option value="${f.id}">${f.name}</option>`;
+          });
+        }
+        fSel.innerHTML = fHtml;
+      }
+    });
+    
+    fSel.addEventListener('change', () => {
+      if (fSel.value === "") {
+        document.getElementById('create-map-floor-txt').style.display = 'block';
+      } else {
+        document.getElementById('create-map-floor-txt').style.display = 'none';
+      }
+    });
+  };
+
+  btnCancel.addEventListener('click', () => window.closeModal(modal));
+  
+  btnSubmit.addEventListener('click', async () => {
+    const bSel = document.getElementById('create-map-building-sel');
+    const bTxt = document.getElementById('create-map-building-txt');
+    const fSel = document.getElementById('create-map-floor-sel');
+    const fTxt = document.getElementById('create-map-floor-txt');
+    const rTxt = document.getElementById('create-map-room-txt');
+    const wTxt = document.getElementById('create-map-w');
+    const hTxt = document.getElementById('create-map-h');
+    
+    const payload = {
+      building_id: bSel.value,
+      building_name: bTxt.value.trim(),
+      floor_id: fSel.value,
+      floor_name: fTxt.value.trim(),
+      room_name: rTxt.value.trim(),
+      width: parseFloat(wTxt.value) || 800,
+      height: parseFloat(hTxt.value) || 600
+    };
+    
+    if (!payload.room_name) return notify('Map Name is required', 'warning');
+    if (!payload.building_id && !payload.building_name) return notify('Building is required', 'warning');
+    if (!payload.floor_id && !payload.floor_name) return notify('Floor is required', 'warning');
+    
+    btnSubmit.innerText = 'Creating...';
+    btnSubmit.disabled = true;
+    
+    try {
+      const res = await api('create_map.php', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      
+      if (res.status === 'success') {
+        notify('Map created! Loading...', 'success');
+        window.closeModal(modal);
+        
+        // Force refresh tree
+        currentMapTree = null;
+        
+        // Load the new map
+        const mapRes = await api(`get_room.php?id=${res.room_id}`);
+        if (mapRes.status === 'success') {
+          import('./renderer.js').then(({ loadMapData }) => {
+            loadMapData(mapRes.data);
+            updateBreadcrumb(mapRes.data.building_name, mapRes.data.floor_name, mapRes.data.name);
+            // Auto enter edit mode
+            document.getElementById('btn-edit-mode')?.click();
+          });
+        }
+      } else {
+        notify('Error: ' + res.message, 'error');
+      }
+    } catch (e) {
+      console.error(e);
+      notify('Failed to create map', 'error');
+    } finally {
+      btnSubmit.innerText = 'Create';
+      btnSubmit.disabled = false;
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════════

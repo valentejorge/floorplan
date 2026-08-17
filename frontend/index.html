@@ -41,26 +41,26 @@
         <div style="position:relative; margin-right:8px;">
           <button id="btn-view-filters" style="background:#fff;color:var(--fp-text);border:1px solid var(--fp-border);padding:5px 10px;border-radius:4px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:600;">
             <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 3C4.5 3 1.5 10 1.5 10C1.5 10 4.5 17 10 17C15.5 17 18.5 10 18.5 10C18.5 10 15.5 3 10 3Z"/><circle cx="10" cy="10" r="3"/></svg>
-            Visualização
+            View
           </button>
           
           <div id="view-filters-dropdown" style="display:none;position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border:1px solid var(--fp-border);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.1);padding:12px;width:180px;z-index:9999;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <div style="font-size:11px;font-weight:700;color:var(--fp-text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rótulos no Mapa</div>
-              <button id="btn-clear-filters" style="background:none;border:none;color:var(--fp-primary);font-size:10px;font-weight:600;cursor:pointer;padding:0;">Limpar</button>
+              <div style="font-size:11px;font-weight:700;color:var(--fp-text-muted);text-transform:uppercase;letter-spacing:0.5px;">Map Labels</div>
+              <button id="btn-clear-filters" style="background:none;border:none;color:var(--fp-primary);font-size:10px;font-weight:600;cursor:pointer;padding:0;">Clear</button>
             </div>
             
             <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px;cursor:pointer;">
               <input type="checkbox" id="filter-hostname" style="accent-color:var(--fp-primary);"> Hostname
             </label>
             <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px;cursor:pointer;">
-              <input type="checkbox" id="filter-ip" style="accent-color:var(--fp-primary);"> Endereço IP
+              <input type="checkbox" id="filter-ip" style="accent-color:var(--fp-primary);"> IP Address
             </label>
             <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px;cursor:pointer;">
-              <input type="checkbox" id="filter-mac" style="accent-color:var(--fp-primary);"> Endereço MAC
+              <input type="checkbox" id="filter-mac" style="accent-color:var(--fp-primary);"> MAC Address
             </label>
             <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px;cursor:pointer;">
-              <input type="checkbox" id="filter-user" style="accent-color:var(--fp-primary);"> Usuário
+              <input type="checkbox" id="filter-user" style="accent-color:var(--fp-primary);"> User
             </label>
           </div>
         </div>
@@ -86,8 +86,71 @@
         <div class="fp-grid-layer" id="grid-layer"></div>
         <div id="floorplan-container"></div>
         
+        <!-- Empty State Tutorial -->
+        <div id="empty-state-overlay" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center; pointer-events:none; z-index:40;">
+          <div style="background:rgba(255,255,255,0.9); padding:32px 48px; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.1); border:1px solid var(--fp-border);">
+            <svg viewBox="0 0 24 24" width="64" height="64" stroke="var(--fp-primary)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px;">
+              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+              <line x1="9" y1="3" x2="9" y2="18"></line>
+              <line x1="15" y1="6" x2="15" y2="21"></line>
+            </svg>
+            <h2 style="margin:0 0 8px 0; color:var(--fp-text); font-size:20px; font-weight:600;">No Map Loaded</h2>
+            <p style="margin:0 0 24px 0; color:var(--fp-text-muted); font-size:14px; max-width:300px;">Click on <strong style="color:var(--fp-text);">🗺️ All Maps</strong> in the top-left corner to navigate to an existing room or create a new one.</p>
+            <button onclick="if(window.openMapNavigator) window.openMapNavigator();" style="pointer-events:auto; background:var(--fp-primary); color:#fff; border:none; padding:10px 24px; border-radius:6px; font-size:14px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(150, 27, 126, 0.3); transition:all 0.2s;">Open Map Navigator</button>
+          </div>
+        </div>
+        
         <!-- Interactive Breadcrumb Overlay -->
-        <nav id="breadcrumb" class="fp-canvas-breadcrumb">Loading…</nav>
+        <nav id="breadcrumb" class="fp-canvas-breadcrumb"><a href="#" onclick="if(window.openMapNavigator) window.openMapNavigator(); return false;" title="Open Navigator">🗺️ All Maps</a></nav>
+        
+        <!-- Top Horizontal Toolbar (Hidden initially) -->
+        <div class="fp-toolbar" id="toolbar-panel">
+          <!-- Select -->
+          <button class="fp-tool-btn active" data-tool="select" data-tooltip="Select / Transform">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 2 L4 16 L8 12 L12 18 L14 17 L10 11 L15 10 Z"/>
+            </svg>
+          </button>
+  
+          <div class="fp-toolbar__sep"></div>
+  
+          <!-- Draw Floor Zone -->
+          <button class="fp-tool-btn" data-tool="floor" data-tooltip="Draw Floor Zone">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+              <rect x="2" y="2" width="16" height="16" rx="1" stroke-dasharray="3 2"/>
+            </svg>
+          </button>
+  
+          <!-- Draw Wall -->
+          <button class="fp-tool-btn" data-tool="wall" data-tooltip="Draw Wall">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <path d="M3 17 L10 4 L17 17"/>
+            </svg>
+          </button>
+  
+          <div class="fp-toolbar__sep"></div>
+  
+          <!-- Furniture Catalog -->
+          <button class="fp-tool-btn" data-tool="furniture" data-tooltip="Furniture Catalog">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="8" width="14" height="8" rx="1"/>
+              <rect x="5" y="4" width="10" height="4" rx="1"/>
+              <line x1="5" y1="16" x2="5" y2="19"/>
+              <line x1="15" y1="16" x2="15" y2="19"/>
+            </svg>
+          </button>
+  
+          <!-- IT Assets -->
+          <button class="fp-tool-btn" data-tool="assets" data-tooltip="IT Assets">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="2" width="14" height="16" rx="2"/>
+              <rect x="5" y="4" width="10" height="4" rx="1"/>
+              <circle cx="13" cy="6" r="1.2" fill="currentColor"/>
+              <rect x="5" y="10" width="10" height="4" rx="1"/>
+              <circle cx="13" cy="12" r="1.2" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
         
         <div class="fp-camera-controls">
           <button id="btn-zoom-in" title="Zoom In">+</button>
@@ -103,7 +166,7 @@
         <!-- ── Furniture Catalog Panel ─────────────────────────────────────── -->
         <div id="furniture-catalog-panel" style="display:none;background:var(--fp-bg-sidebar);border-bottom:1px solid var(--fp-border);flex-direction:column;max-height:100%;z-index:100;pointer-events:auto;">
           <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--fp-border);">
-            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Catálogo de Mobília</h3>
+            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Furniture Catalog</h3>
             <button id="btn-close-furniture" style="background:none;border:none;color:var(--fp-text-muted);cursor:pointer;font-size:16px;line-height:1;">&times;</button>
           </div>
           <div id="furniture-catalog-body" style="flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start;">
@@ -114,22 +177,22 @@
         <!-- ── IT Assets Catalog Panel ─────────────────────────────────────── -->
         <div id="assets-catalog-panel" style="display:none;background:var(--fp-bg-sidebar);border-bottom:1px solid var(--fp-border);flex-direction:column;max-height:100%;z-index:101;pointer-events:auto;position:absolute;top:0;left:0;right:0;bottom:0;">
           <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--fp-border);">
-            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Equipamentos (Sem Mapa)</h3>
+            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Unmapped Assets</h3>
             <button id="btn-close-assets" style="background:none;border:none;color:var(--fp-text-muted);cursor:pointer;font-size:16px;line-height:1;">&times;</button>
           </div>
           <div style="padding:8px 12px;border-bottom:1px solid var(--fp-border);background:#f8fafc;">
-             <input type="text" id="assets-catalog-search" placeholder="Filtrar equipamentos..." style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px;">
+             <input type="text" id="assets-catalog-search" placeholder="Filter assets..." style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px;">
           </div>
           <div id="assets-catalog-body" style="flex:1;overflow-y:auto;padding:0;">
             <!-- Fetched from API -->
-            <div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">Carregando...</div>
+            <div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">Loading...</div>
           </div>
         </div>
 
         <div class="fp-explorer__header">Object Explorer</div>
         <div id="explorer-body" class="fp-explorer__body">
           <div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">
-            Listando Equipamentos de TI...
+            Loading IT Assets...
           </div>
         </div>
         <div id="properties-panel" class="fp-properties">
@@ -139,110 +202,63 @@
 
         <!-- Asset Micro-Edit Panel (Overlays the explorer) -->
         <div id="asset-edit-modal" class="fp-asset-edit-panel">
-          <div class="fp-asset-edit__title" style="font-weight:600;font-size:14px;margin-bottom:16px;">Configuração do Layout</div>
+          <div class="fp-asset-edit__title" style="font-weight:600;font-size:14px;margin-bottom:16px;">Layout Configuration</div>
           
           <div class="fp-form-group">
-            <label>Mesa (Table)</label>
+            <label>Table</label>
             <select id="asset-edit-table" class="fp-select">
-              <option value="none">Nenhuma</option>
-              <option value="desk_small">Mesa Pequena</option>
-              <option value="desk_straight">Mesa Reta</option>
-              <option value="desk_l">Mesa em L</option>
-              <option value="desk_round">Mesa Redonda</option>
-              <option value="rack_cabinet">Rack de Servidor</option>
+              <option value="none">None</option>
+              <option value="desk_small">Small Desk</option>
+              <option value="desk_straight">Straight Desk</option>
+              <option value="desk_l">L-Desk</option>
+              <option value="desk_round">Round Table</option>
+              <option value="rack_cabinet">Server Rack</option>
             </select>
           </div>
           
           <div class="fp-form-group">
-            <label>Dispositivo (Device)</label>
+            <label>Device</label>
             <select id="asset-edit-device" class="fp-select">
-              <option value="none">Nenhum</option>
+              <option value="none">None</option>
               <option value="desktop_single">Desktop (1 Monitor)</option>
-              <option value="desktop_dual">Desktop (2 Monitores)</option>
-              <option value="laptop">Notebook</option>
-              <option value="server_unit">Servidor 1U</option>
+              <option value="desktop_dual">Desktop (2 Monitors)</option>
+              <option value="laptop">Laptop</option>
+              <option value="server_unit">Server 1U</option>
               <option value="switch_unit">Switch</option>
-              <option value="printer_unit">Impressora</option>
-              <option value="monitor_wall">Monitor de Parede</option>
-              <option value="conference_phone">Telefone de Conferência</option>
+              <option value="printer_unit">Printer</option>
+              <option value="monitor_wall">Wall Monitor</option>
+              <option value="conference_phone">Conference Phone</option>
             </select>
           </div>
           
           <div class="fp-form-group">
-            <label>Cadeira (Chair)</label>
+            <label>Chair</label>
             <select id="asset-edit-chair" class="fp-select">
-              <option value="none">Nenhuma</option>
-              <option value="office_chair">Cadeira de Escritório</option>
-              <option value="executive_chair">Cadeira Executiva</option>
-              <option value="meeting_chairs_4">Cadeiras de Reunião (x4)</option>
+              <option value="none">None</option>
+              <option value="office_chair">Office Chair</option>
+              <option value="executive_chair">Executive Chair</option>
+              <option value="meeting_chairs_4">Meeting Chairs (x4)</option>
             </select>
           </div>
 
           <div class="fp-form-group">
-            <label>Rotação Interna</label>
+            <label>Internal Rotation</label>
             <select id="asset-edit-rotation" class="fp-select">
-              <option value="0">0º (Cima)</option>
-              <option value="90">90º (Direita)</option>
-              <option value="180">180º (Baixo)</option>
-              <option value="270">270º (Esquerda)</option>
+              <option value="0">0º (Up)</option>
+              <option value="90">90º (Right)</option>
+              <option value="180">180º (Down)</option>
+              <option value="270">270º (Left)</option>
             </select>
           </div>
 
           <div style="display:flex;gap:8px;margin-top:24px;">
-            <button class="fp-btn fp-btn--outline" id="asset-edit-cancel" style="flex:1;">Cancelar</button>
-            <button class="fp-btn fp-btn--primary" id="asset-edit-save" style="flex:1;">Salvar</button>
+            <button class="fp-btn fp-btn--outline" id="asset-edit-cancel" style="flex:1;">Cancel</button>
+            <button class="fp-btn fp-btn--primary" id="asset-edit-save" style="flex:1;">Save</button>
           </div>
         </div>
       </aside>
 
-      <!-- Right Toolbar Panel (Hidden initially) -->
-      <aside class="fp-toolbar" id="toolbar-panel">
-        <!-- Select -->
-        <button class="fp-tool-btn active" data-tool="select" data-tooltip="Select / Transform">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 2 L4 16 L8 12 L12 18 L14 17 L10 11 L15 10 Z"/>
-          </svg>
-        </button>
 
-        <div class="fp-toolbar__sep"></div>
-
-        <!-- Draw Floor Zone -->
-        <button class="fp-tool-btn" data-tool="floor" data-tooltip="Draw Floor Zone">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
-            <rect x="2" y="2" width="16" height="16" rx="1" stroke-dasharray="3 2"/>
-          </svg>
-        </button>
-
-        <!-- Draw Wall -->
-        <button class="fp-tool-btn" data-tool="wall" data-tooltip="Draw Wall">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-            <path d="M3 17 L10 4 L17 17"/>
-          </svg>
-        </button>
-
-        <div class="fp-toolbar__sep"></div>
-
-        <!-- Furniture Catalog -->
-        <button class="fp-tool-btn" data-tool="furniture" data-tooltip="Furniture Catalog">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="8" width="14" height="8" rx="1"/>
-            <rect x="5" y="4" width="10" height="4" rx="1"/>
-            <line x1="5" y1="16" x2="5" y2="19"/>
-            <line x1="15" y1="16" x2="15" y2="19"/>
-          </svg>
-        </button>
-
-        <!-- IT Assets -->
-        <button class="fp-tool-btn" data-tool="assets" data-tooltip="IT Assets">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="2" width="14" height="16" rx="2"/>
-            <rect x="5" y="4" width="10" height="4" rx="1"/>
-            <circle cx="13" cy="6" r="1.2" fill="currentColor"/>
-            <rect x="5" y="10" width="10" height="4" rx="1"/>
-            <circle cx="13" cy="12" r="1.2" fill="currentColor"/>
-          </svg>
-        </button>
-      </aside>
 
       <!-- Floor Color Picker -->
       <div id="floor-color-picker" class="fp-color-picker">
@@ -304,15 +320,63 @@
       </div>
     </div>
 
+    <!-- ── Create Map Modal ─────────────────────────────────────── -->
+    <div id="create-map-modal" class="fp-modal">
+      <div class="fp-modal__content" style="max-width:400px;">
+        <h2 style="margin:0 0 16px;font-size:16px;">Create New Map</h2>
+        
+        <div class="fp-form-group">
+          <label>Building</label>
+          <div style="display:flex;gap:8px;">
+            <select id="create-map-building-sel" class="fp-select" style="flex:1;">
+              <option value="">-- New Building --</option>
+            </select>
+            <input type="text" id="create-map-building-txt" placeholder="Building name" style="flex:1;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+          </div>
+        </div>
+
+        <div class="fp-form-group">
+          <label>Floor</label>
+          <div style="display:flex;gap:8px;">
+            <select id="create-map-floor-sel" class="fp-select" style="flex:1;">
+              <option value="">-- New Floor --</option>
+            </select>
+            <input type="text" id="create-map-floor-txt" placeholder="Floor name" style="flex:1;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+          </div>
+        </div>
+
+        <div class="fp-form-group">
+          <label>Map / Room Name</label>
+          <input type="text" id="create-map-room-txt" placeholder="e.g. Open Office A" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+        </div>
+        
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <div class="fp-form-group" style="flex:1;">
+            <label>Width (px)</label>
+            <input type="number" id="create-map-w" value="800" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+          </div>
+          <div class="fp-form-group" style="flex:1;">
+            <label>Height (px)</label>
+            <input type="number" id="create-map-h" value="600" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;">
+          <button class="fp-btn fp-btn--outline" id="btn-cancel-create" style="flex:1;">Cancel</button>
+          <button class="fp-btn fp-btn--primary" id="btn-submit-create" style="flex:1;">Create</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Confirm Modal ───────────────────────────────────────── -->
     <div id="confirm-modal" class="fp-modal">
       <div class="fp-modal__content fp-confirm-dialog">
         <div class="fp-confirm-dialog__icon">⚠️</div>
-        <div class="fp-confirm-dialog__title">Atenção!</div>
-        <div class="fp-confirm-dialog__message" id="confirm-modal-message">Você está no modo de edição. Deseja descartar suas alterações e continuar?</div>
+        <div class="fp-confirm-dialog__title">Warning!</div>
+        <div class="fp-confirm-dialog__message" id="confirm-modal-message">You are in edit mode. Do you want to discard your changes and continue?</div>
         <div class="fp-confirm-dialog__actions">
-          <button class="fp-btn fp-btn--outline" id="confirm-modal-cancel">Cancelar</button>
-          <button class="fp-btn fp-btn--primary" id="confirm-modal-ok">Continuar</button>
+          <button class="fp-btn fp-btn--outline" id="confirm-modal-cancel">Cancel</button>
+          <button class="fp-btn fp-btn--primary" id="confirm-modal-ok">Continue</button>
         </div>
       </div>
     </div>

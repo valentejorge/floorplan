@@ -37,26 +37,26 @@ $css_file = count($css_files) > 0 ? basename($css_files[0]) : '';
         <div style="position:relative; margin-right:8px;">
           <button id="btn-view-filters" style="background:#fff;color:var(--fp-text);border:1px solid var(--fp-border);padding:5px 10px;border-radius:4px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:600;">
             <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 3C4.5 3 1.5 10 1.5 10C1.5 10 4.5 17 10 17C15.5 17 18.5 10 18.5 10C18.5 10 15.5 3 10 3Z"/><circle cx="10" cy="10" r="3"/></svg>
-            Visualização
+            View
           </button>
           
           <div id="view-filters-dropdown" style="display:none;position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border:1px solid var(--fp-border);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.1);padding:12px;width:180px;z-index:9999;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <div style="font-size:11px;font-weight:700;color:var(--fp-text-muted);text-transform:uppercase;letter-spacing:0.5px;">Rótulos no Mapa</div>
-              <button id="btn-clear-filters" style="background:none;border:none;color:var(--fp-primary);font-size:10px;font-weight:600;cursor:pointer;padding:0;">Limpar</button>
+              <div style="font-size:11px;font-weight:700;color:var(--fp-text-muted);text-transform:uppercase;letter-spacing:0.5px;">Map Labels</div>
+              <button id="btn-clear-filters" style="background:none;border:none;color:var(--fp-primary);font-size:10px;font-weight:600;cursor:pointer;padding:0;">Clear</button>
             </div>
             
             <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px;cursor:pointer;">
               <input type="checkbox" id="filter-hostname" style="accent-color:var(--fp-primary);"> Hostname
             </label>
             <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px;cursor:pointer;">
-              <input type="checkbox" id="filter-ip" style="accent-color:var(--fp-primary);"> Endereço IP
+              <input type="checkbox" id="filter-ip" style="accent-color:var(--fp-primary);"> IP Address
             </label>
             <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px;cursor:pointer;">
-              <input type="checkbox" id="filter-mac" style="accent-color:var(--fp-primary);"> Endereço MAC
+              <input type="checkbox" id="filter-mac" style="accent-color:var(--fp-primary);"> MAC Address
             </label>
             <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px;cursor:pointer;">
-              <input type="checkbox" id="filter-user" style="accent-color:var(--fp-primary);"> Usuário
+              <input type="checkbox" id="filter-user" style="accent-color:var(--fp-primary);"> User
             </label>
           </div>
         </div>
@@ -83,7 +83,7 @@ $css_file = count($css_files) > 0 ? basename($css_files[0]) : '';
         <div id="floorplan-container"></div>
         
         <!-- Interactive Breadcrumb Overlay -->
-        <nav id="breadcrumb" class="fp-canvas-breadcrumb">Loading…</nav>
+        <nav id="breadcrumb" class="fp-canvas-breadcrumb"><a href="#" onclick="if(window.openMapNavigator) window.openMapNavigator(); return false;" title="Open Navigator">🗺️ All Maps</a></nav>
         
         <div class="fp-camera-controls">
           <button id="btn-zoom-in" title="Zoom In">+</button>
@@ -99,7 +99,7 @@ $css_file = count($css_files) > 0 ? basename($css_files[0]) : '';
         <!-- ── Furniture Catalog Panel ─────────────────────────────────────── -->
         <div id="furniture-catalog-panel" style="display:none;background:var(--fp-bg-sidebar);border-bottom:1px solid var(--fp-border);flex-direction:column;max-height:100%;z-index:100;pointer-events:auto;">
           <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--fp-border);">
-            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Catálogo de Mobília</h3>
+            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Furniture Catalog</h3>
             <button id="btn-close-furniture" style="background:none;border:none;color:var(--fp-text-muted);cursor:pointer;font-size:16px;line-height:1;">&times;</button>
           </div>
           <div id="furniture-catalog-body" style="flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start;">
@@ -110,22 +110,22 @@ $css_file = count($css_files) > 0 ? basename($css_files[0]) : '';
         <!-- ── IT Assets Catalog Panel ─────────────────────────────────────── -->
         <div id="assets-catalog-panel" style="display:none;background:var(--fp-bg-sidebar);border-bottom:1px solid var(--fp-border);flex-direction:column;max-height:100%;z-index:101;pointer-events:auto;position:absolute;top:0;left:0;right:0;bottom:0;">
           <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--fp-border);">
-            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Equipamentos (Sem Mapa)</h3>
+            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Unmapped Assets</h3>
             <button id="btn-close-assets" style="background:none;border:none;color:var(--fp-text-muted);cursor:pointer;font-size:16px;line-height:1;">&times;</button>
           </div>
           <div style="padding:8px 12px;border-bottom:1px solid var(--fp-border);background:#f8fafc;">
-             <input type="text" id="assets-catalog-search" placeholder="Filtrar equipamentos..." style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px;">
+             <input type="text" id="assets-catalog-search" placeholder="Filter assets..." style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px;">
           </div>
           <div id="assets-catalog-body" style="flex:1;overflow-y:auto;padding:0;">
             <!-- Fetched from API -->
-            <div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">Carregando...</div>
+            <div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">Loading...</div>
           </div>
         </div>
 
         <div class="fp-explorer__header">Object Explorer</div>
         <div id="explorer-body" class="fp-explorer__body">
           <div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">
-            Listando Equipamentos de TI...
+            Loading IT Assets...
           </div>
         </div>
         <div id="properties-panel" class="fp-properties">
@@ -135,58 +135,58 @@ $css_file = count($css_files) > 0 ? basename($css_files[0]) : '';
 
         <!-- Asset Micro-Edit Panel (Overlays the explorer) -->
         <div id="asset-edit-modal" class="fp-asset-edit-panel">
-          <div class="fp-asset-edit__title" style="font-weight:600;font-size:14px;margin-bottom:16px;">Configuração do Layout</div>
+          <div class="fp-asset-edit__title" style="font-weight:600;font-size:14px;margin-bottom:16px;">Layout Configuration</div>
           
           <div class="fp-form-group">
-            <label>Mesa (Table)</label>
+            <label>Table</label>
             <select id="asset-edit-table" class="fp-select">
-              <option value="none">Nenhuma</option>
-              <option value="desk_small">Mesa Pequena</option>
-              <option value="desk_straight">Mesa Reta</option>
-              <option value="desk_l">Mesa em L</option>
-              <option value="desk_round">Mesa Redonda</option>
-              <option value="rack_cabinet">Rack de Servidor</option>
+              <option value="none">None</option>
+              <option value="desk_small">Small Desk</option>
+              <option value="desk_straight">Straight Desk</option>
+              <option value="desk_l">L-Desk</option>
+              <option value="desk_round">Round Table</option>
+              <option value="rack_cabinet">Server Rack</option>
             </select>
           </div>
           
           <div class="fp-form-group">
-            <label>Dispositivo (Device)</label>
+            <label>Device</label>
             <select id="asset-edit-device" class="fp-select">
-              <option value="none">Nenhum</option>
+              <option value="none">None</option>
               <option value="desktop_single">Desktop (1 Monitor)</option>
-              <option value="desktop_dual">Desktop (2 Monitores)</option>
-              <option value="laptop">Notebook</option>
-              <option value="server_unit">Servidor 1U</option>
+              <option value="desktop_dual">Desktop (2 Monitors)</option>
+              <option value="laptop">Laptop</option>
+              <option value="server_unit">Server 1U</option>
               <option value="switch_unit">Switch</option>
-              <option value="printer_unit">Impressora</option>
-              <option value="monitor_wall">Monitor de Parede</option>
-              <option value="conference_phone">Telefone de Conferência</option>
+              <option value="printer_unit">Printer</option>
+              <option value="monitor_wall">Wall Monitor</option>
+              <option value="conference_phone">Conference Phone</option>
             </select>
           </div>
           
           <div class="fp-form-group">
-            <label>Cadeira (Chair)</label>
+            <label>Chair</label>
             <select id="asset-edit-chair" class="fp-select">
-              <option value="none">Nenhuma</option>
-              <option value="office_chair">Cadeira de Escritório</option>
-              <option value="executive_chair">Cadeira Executiva</option>
-              <option value="meeting_chairs_4">Cadeiras de Reunião (x4)</option>
+              <option value="none">None</option>
+              <option value="office_chair">Office Chair</option>
+              <option value="executive_chair">Executive Chair</option>
+              <option value="meeting_chairs_4">Meeting Chairs (x4)</option>
             </select>
           </div>
 
           <div class="fp-form-group">
-            <label>Rotação Interna</label>
+            <label>Internal Rotation</label>
             <select id="asset-edit-rotation" class="fp-select">
-              <option value="0">0º (Cima)</option>
-              <option value="90">90º (Direita)</option>
-              <option value="180">180º (Baixo)</option>
-              <option value="270">270º (Esquerda)</option>
+              <option value="0">0º (Up)</option>
+              <option value="90">90º (Right)</option>
+              <option value="180">180º (Down)</option>
+              <option value="270">270º (Left)</option>
             </select>
           </div>
 
           <div style="display:flex;gap:8px;margin-top:24px;">
-            <button class="fp-btn fp-btn--outline" id="asset-edit-cancel" style="flex:1;">Cancelar</button>
-            <button class="fp-btn fp-btn--primary" id="asset-edit-save" style="flex:1;">Salvar</button>
+            <button class="fp-btn fp-btn--outline" id="asset-edit-cancel" style="flex:1;">Cancel</button>
+            <button class="fp-btn fp-btn--primary" id="asset-edit-save" style="flex:1;">Save</button>
           </div>
         </div>
       </aside>
@@ -300,15 +300,63 @@ $css_file = count($css_files) > 0 ? basename($css_files[0]) : '';
       </div>
     </div>
 
+    <!-- ── Create Map Modal ─────────────────────────────────────── -->
+    <div id="create-map-modal" class="fp-modal">
+      <div class="fp-modal__content" style="max-width:400px;">
+        <h2 style="margin:0 0 16px;font-size:16px;">Create New Map</h2>
+        
+        <div class="fp-form-group">
+          <label>Building</label>
+          <div style="display:flex;gap:8px;">
+            <select id="create-map-building-sel" class="fp-select" style="flex:1;">
+              <option value="">-- New Building --</option>
+            </select>
+            <input type="text" id="create-map-building-txt" placeholder="Building name" style="flex:1;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+          </div>
+        </div>
+
+        <div class="fp-form-group">
+          <label>Floor</label>
+          <div style="display:flex;gap:8px;">
+            <select id="create-map-floor-sel" class="fp-select" style="flex:1;">
+              <option value="">-- New Floor --</option>
+            </select>
+            <input type="text" id="create-map-floor-txt" placeholder="Floor name" style="flex:1;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+          </div>
+        </div>
+
+        <div class="fp-form-group">
+          <label>Map / Room Name</label>
+          <input type="text" id="create-map-room-txt" placeholder="e.g. Open Office A" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+        </div>
+        
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <div class="fp-form-group" style="flex:1;">
+            <label>Width (px)</label>
+            <input type="number" id="create-map-w" value="800" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+          </div>
+          <div class="fp-form-group" style="flex:1;">
+            <label>Height (px)</label>
+            <input type="number" id="create-map-h" value="600" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;">
+          <button class="fp-btn fp-btn--outline" id="btn-cancel-create" style="flex:1;">Cancel</button>
+          <button class="fp-btn fp-btn--primary" id="btn-submit-create" style="flex:1;">Create</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Confirm Modal ───────────────────────────────────────── -->
     <div id="confirm-modal" class="fp-modal">
       <div class="fp-modal__content fp-confirm-dialog">
         <div class="fp-confirm-dialog__icon">⚠️</div>
-        <div class="fp-confirm-dialog__title">Atenção!</div>
-        <div class="fp-confirm-dialog__message" id="confirm-modal-message">Você está no modo de edição. Deseja descartar suas alterações e continuar?</div>
+        <div class="fp-confirm-dialog__title">Warning!</div>
+        <div class="fp-confirm-dialog__message" id="confirm-modal-message">You are in edit mode. Do you want to discard your changes and continue?</div>
         <div class="fp-confirm-dialog__actions">
-          <button class="fp-btn fp-btn--outline" id="confirm-modal-cancel">Cancelar</button>
-          <button class="fp-btn fp-btn--primary" id="confirm-modal-ok">Continuar</button>
+          <button class="fp-btn fp-btn--outline" id="confirm-modal-cancel">Cancel</button>
+          <button class="fp-btn fp-btn--primary" id="confirm-modal-ok">Continue</button>
         </div>
       </div>
     </div>

@@ -47,11 +47,34 @@ class MapEngineTest extends TestCase {
         $this->assertIsArray($room);
         $this->assertArrayHasKey('id', $room);
         $this->assertEquals($roomId, $room['id']);
+        $this->assertArrayHasKey('building_name', $room);
+        $this->assertArrayHasKey('floor_name', $room);
         $this->assertArrayHasKey('assets', $room);
         $this->assertIsArray($room['assets']);
-        $this->assertArrayHasKey('walls', $room);
-        $this->assertArrayHasKey('doors', $room);
-        $this->assertArrayHasKey('floor_zones', $room);
+        $this->assertArrayHasKey('furniture', $room);
+        $this->assertIsArray($room['furniture']);
+    }
+
+    public function testCreateHierarchy() {
+        $bName = "Test Building " . time();
+        $bid = $this->engine->createBuilding($bName);
+        $this->assertGreaterThan(0, $bid);
+
+        $fName = "Test Floor " . time();
+        $fid = $this->engine->createFloor($bid, $fName);
+        $this->assertGreaterThan(0, $fid);
+
+        $rName = "Test Room " . time();
+        $rid = $this->engine->createRoom($fid, $rName, 1000, 800);
+        $this->assertGreaterThan(0, $rid);
+
+        // Verify the room was created and hierarchy is correctly joined
+        $room = $this->engine->getRoom($rid);
+        $this->assertEquals($rName, $room['name']);
+        $this->assertEquals($fName, $room['floor_name']);
+        $this->assertEquals($bName, $room['building_name']);
+        $this->assertEquals(1000, $room['width']);
+        $this->assertEquals(800, $room['height']);
     }
 
     public function testGetUnmappedAssets() {
