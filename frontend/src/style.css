@@ -90,6 +90,31 @@ body {
   box-shadow: 0 2px 6px rgba(150, 27, 126, 0.3);
 }
 
+.fp-btn--secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-weight: 600;
+}
+
+.fp-btn--secondary:hover {
+  background: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.fp-btn--danger {
+  background: #ef4444;
+  color: #ffffff;
+  border: 1px solid #dc2626;
+  font-weight: 600;
+}
+
+.fp-btn--danger:hover {
+  background: #dc2626;
+  color: #ffffff;
+}
+
 .fp-btn--outline {
   background: transparent;
   color: var(--fp-text);

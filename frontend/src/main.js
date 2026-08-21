@@ -1010,13 +1010,23 @@ function bindMapNavigator() {
     });
   }
 }
-
 function bindCreateMap() {
   const modal = document.getElementById('create-map-modal');
   const btnCancel = document.getElementById('btn-cancel-create');
   const btnSubmit = document.getElementById('btn-submit-create');
+  const btnCloseHeader = document.getElementById('create-map-close');
   
   if (!modal) return;
+
+  const closeAndReopenNav = () => {
+    window.closeModal(modal);
+    if (window.openMapNavigator) {
+      window.openMapNavigator();
+    }
+  };
+
+  btnCloseHeader?.addEventListener('click', closeAndReopenNav);
+  btnCancel.addEventListener('click', closeAndReopenNav);
   
   window.openCreateMapModal = async function() {
     modal.classList.add('visible');
