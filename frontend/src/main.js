@@ -702,23 +702,50 @@ function bindMapNavigator() {
   let isEditMapMode = false;
   let mapOrderUpdates = []; // stores {type, id, order}
 
-  closeBtn?.addEventListener('click', () => window.closeModal(modal));
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) window.closeModal(modal);
-  });
-  
   const btnEditOrder = document.getElementById('btn-edit-order');
   const btnSaveOrder = document.getElementById('btn-save-order');
-  
+  const btnCancelOrder = document.getElementById('btn-cancel-order');
+
+  function resetEditOrderMode() {
+    if (!isEditMapMode) return;
+    isEditMapMode = false;
+    mapOrderUpdates = [];
+    if (btnSaveOrder) btnSaveOrder.style.display = 'none';
+    if (btnCancelOrder) btnCancelOrder.style.display = 'none';
+    if (btnEditOrder) btnEditOrder.style.display = 'inline-block';
+    
+    // Reload tree from server to restore original order
+    api('get_map_tree.php').then(json => {
+      currentMapTree = json.data;
+      const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
+      window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
+    });
+  }
+
+  const closeModalFunc = () => {
+    resetEditOrderMode();
+    window.closeModal(modal);
+  };
+
+  closeBtn?.addEventListener('click', closeModalFunc);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModalFunc();
+  });
+
   btnEditOrder?.addEventListener('click', () => {
     isEditMapMode = true;
     mapOrderUpdates = [];
     btnEditOrder.style.display = 'none';
     btnSaveOrder.style.display = 'inline-block';
+    if (btnCancelOrder) btnCancelOrder.style.display = 'inline-block';
     
     // Refresh with edit UI
     const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
     window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
+  });
+
+  btnCancelOrder?.addEventListener('click', () => {
+    resetEditOrderMode();
   });
   
   btnSaveOrder?.addEventListener('click', async () => {
@@ -738,6 +765,7 @@ function bindMapNavigator() {
     isEditMapMode = false;
     btnSaveOrder.innerText = '✔ Save Order';
     btnSaveOrder.style.display = 'none';
+    if (btnCancelOrder) btnCancelOrder.style.display = 'none';
     btnEditOrder.style.display = 'inline-block';
     
     const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
@@ -787,9 +815,13 @@ function bindMapNavigator() {
     let html = '';
     
     currentMapTree.buildings.forEach(b => {
-      // Filter logic: if building matches or any floor matches
+      // Filter logic: if building matches or any floor matches or any room inside floor matches
       const bMatch = b.name.toLowerCase().includes(filter);
-      const matchedFloors = b.floors.filter(f => f.name.toLowerCase().includes(filter));
+      const matchedFloors = b.floors.filter(f => {
+        const fMatch = f.name.toLowerCase().includes(filter);
+        const rMatch = (f.rooms || []).some(r => r.name.toLowerCase().includes(filter));
+        return fMatch || rMatch;
+      });
       
       if (filter && !bMatch && matchedFloors.length === 0) return; // Skip if no match
       
@@ -887,7 +919,16 @@ function bindMapNavigator() {
       return;
     }
 
-    grid.innerHTML = floor.rooms.map((r, idx) => `
+    const searchVal = document.getElementById('nav-sidebar-search')?.value.toLowerCase().trim() || '';
+    let roomsToRender = floor.rooms;
+    if (searchVal) {
+      const filtered = roomsToRender.filter(r => r.name.toLowerCase().includes(searchVal));
+      if (filtered.length > 0) {
+        roomsToRender = filtered;
+      }
+    }
+
+    grid.innerHTML = roomsToRender.map((r, idx) => `
       <div class="fp-room-card" data-bname="${building.name}" data-fname="${floor.name}" data-rname="${r.name}" data-room-id="${r.id}" style="${isEditMapMode ? 'border:1px solid var(--fp-primary);' : ''}">
         <div class="fp-room-thumb" style="background:${r.color};">${r.icon}</div>
         <div class="fp-room-info" style="flex:1;">
@@ -1036,7 +1077,12 @@ function bindCreateMap() {
     });
   };
 
-  btnCancel.addEventListener('click', () => window.closeModal(modal));
+  btnCancel.addEventListener('click', () => {
+    window.closeModal(modal);
+    if (window.openMapNavigator) {
+      window.openMapNavigator();
+    }
+  });
   
   btnSubmit.addEventListener('click', async () => {
     const bSel = document.getElementById('create-map-building-sel');

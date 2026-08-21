@@ -279,6 +279,7 @@ $css_file = count($css_files) > 0 ? basename($css_files[0]) : '';
           <div class="fp-navigator__title">Map Navigator</div>
           <div style="flex:1;"></div>
           <button class="fp-btn fp-btn--secondary" id="btn-edit-order" style="padding:4px 12px;font-size:11px;margin-right:8px;">↕ Edit Order</button>
+          <button class="fp-btn fp-btn--secondary" id="btn-cancel-order" style="padding:4px 12px;font-size:11px;margin-right:8px;display:none;">✖ Cancel</button>
           <button class="fp-btn fp-btn--primary" id="btn-save-order" style="padding:4px 12px;font-size:11px;margin-right:8px;display:none;background:#28a745;border-color:#28a745;">✔ Save Order</button>
           <button class="fp-btn fp-btn--primary" id="btn-new-map" style="padding:4px 12px;font-size:11px;margin-right:12px;">+ New Map</button>
           <button class="fp-navigator__close">×</button>
@@ -304,48 +305,48 @@ $css_file = count($css_files) > 0 ? basename($css_files[0]) : '';
 
     <!-- ── Create Map Modal ─────────────────────────────────────── -->
     <div id="create-map-modal" class="fp-modal">
-      <div class="fp-modal__content" style="max-width:400px;">
-        <h2 style="margin:0 0 16px;font-size:16px;">Create New Map</h2>
+      <div class="fp-modal__content" style="max-width:440px; padding:24px; border-radius:12px; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+        <h2 style="margin:0 0 20px; font-size:18px; font-weight:700; color:var(--fp-text);">Create New Map</h2>
         
-        <div class="fp-form-group">
-          <label>Building</label>
-          <div style="display:flex;gap:8px;">
-            <select id="create-map-building-sel" class="fp-select" style="flex:1;">
+        <div class="fp-form-group" style="margin-bottom:16px;">
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--fp-text-muted); margin-bottom:6px;">Building</label>
+          <div style="display:flex; gap:8px;">
+            <select id="create-map-building-sel" class="fp-select" style="flex:1; padding:8px 10px; font-size:13px;">
               <option value="">-- New Building --</option>
             </select>
-            <input type="text" id="create-map-building-txt" placeholder="Building name" style="flex:1;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+            <input type="text" id="create-map-building-txt" placeholder="Building name" style="flex:1; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px;">
           </div>
         </div>
 
-        <div class="fp-form-group">
-          <label>Floor</label>
-          <div style="display:flex;gap:8px;">
-            <select id="create-map-floor-sel" class="fp-select" style="flex:1;">
+        <div class="fp-form-group" style="margin-bottom:16px;">
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--fp-text-muted); margin-bottom:6px;">Floor</label>
+          <div style="display:flex; gap:8px;">
+            <select id="create-map-floor-sel" class="fp-select" style="flex:1; padding:8px 10px; font-size:13px;">
               <option value="">-- New Floor --</option>
             </select>
-            <input type="text" id="create-map-floor-txt" placeholder="Floor name" style="flex:1;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+            <input type="text" id="create-map-floor-txt" placeholder="Floor name" style="flex:1; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px;">
           </div>
         </div>
 
-        <div class="fp-form-group">
-          <label>Map / Room Name</label>
-          <input type="text" id="create-map-room-txt" placeholder="e.g. Open Office A" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+        <div class="fp-form-group" style="margin-bottom:16px;">
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--fp-text-muted); margin-bottom:6px;">Map / Room Name</label>
+          <input type="text" id="create-map-room-txt" placeholder="e.g. Open Office A" style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px; box-sizing:border-box;">
         </div>
         
-        <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <div style="display:flex; gap:12px; margin-bottom:24px;">
           <div class="fp-form-group" style="flex:1;">
-            <label>Width (px)</label>
-            <input type="number" id="create-map-w" value="800" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+            <label style="display:block; font-size:12px; font-weight:600; color:var(--fp-text-muted); margin-bottom:6px;">Width (px)</label>
+            <input type="number" id="create-map-w" value="800" style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px; box-sizing:border-box;">
           </div>
           <div class="fp-form-group" style="flex:1;">
-            <label>Height (px)</label>
-            <input type="number" id="create-map-h" value="600" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+            <label style="display:block; font-size:12px; font-weight:600; color:var(--fp-text-muted); margin-bottom:6px;">Height (px)</label>
+            <input type="number" id="create-map-h" value="600" style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px; box-sizing:border-box;">
           </div>
         </div>
 
-        <div style="display:flex;gap:8px;">
-          <button class="fp-btn fp-btn--outline" id="btn-cancel-create" style="flex:1;">Cancel</button>
-          <button class="fp-btn fp-btn--primary" id="btn-submit-create" style="flex:1;">Create</button>
+        <div style="display:flex; gap:12px; justify-content:flex-end;">
+          <button class="fp-btn fp-btn--outline" id="btn-cancel-create" style="flex:1; padding:8px 16px; font-size:13px; font-weight:600;">Cancel</button>
+          <button class="fp-btn fp-btn--primary" id="btn-submit-create" style="flex:1; padding:8px 16px; font-size:13px; font-weight:600;">Create</button>
         </div>
       </div>
     </div>
