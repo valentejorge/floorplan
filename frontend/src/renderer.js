@@ -13,15 +13,16 @@ export function repopulateAssetsExplorer() {
 export function loadMapData(data, isInitial = true) {
   const emptyStateOverlay = document.getElementById('empty-state-overlay');
   
-  if (!data || !data.id) {
+  if (!data || (!data.id && (!data.room_data || !data.room_data.id))) {
     if (emptyStateOverlay) emptyStateOverlay.style.display = 'block';
     if (!data) return;
   } else {
     if (emptyStateOverlay) emptyStateOverlay.style.display = 'none';
   }
 
-  currentRoomData = data;
+  currentRoomData = data.room_data || data;
   currentAssets = data.assets || [];
+  const architecture = data.architecture || data;
 
   // Clear existing objects
   import('./engine.js').then(({ globalTransformer }) => {
@@ -34,8 +35,8 @@ export function loadMapData(data, isInitial = true) {
   furnitureLayer.destroyChildren();
 
   // 1. Render Floor Zones
-  if (data.floor_zones) {
-    data.floor_zones.forEach(zone => {
+  if (architecture.floor_zones) {
+    architecture.floor_zones.forEach(zone => {
       const rect = new Konva.Rect({
         x: zone.x,
         y: zone.y,
@@ -56,8 +57,8 @@ export function loadMapData(data, isInitial = true) {
   }
 
   // 2. Render Walls
-  if (data.walls) {
-    data.walls.forEach(wall => {
+  if (architecture.walls) {
+    architecture.walls.forEach(wall => {
       let strokeColor = '#2d3748';
       let strokeWidth = 8;
       let opacity = 1;
@@ -91,8 +92,8 @@ export function loadMapData(data, isInitial = true) {
   }
 
   // 3. Render Doors
-  if (data.doors) {
-    data.doors.forEach(door => {
+  if (architecture.doors) {
+    architecture.doors.forEach(door => {
       const rect = new Konva.Rect({
         x: door.x,
         y: door.y,
@@ -109,8 +110,8 @@ export function loadMapData(data, isInitial = true) {
   }
 
   // 3. Render Furniture (from history state or separate array)
-  if (data.furniture) {
-    data.furniture.forEach(item => {
+  if (architecture.furniture) {
+    architecture.furniture.forEach(item => {
       const fnNode = buildFurnitureNode({
         id: item.id,
         type: item.type || item.layout?.table || 'desk_straight',

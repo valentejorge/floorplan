@@ -18,210 +18,153 @@ class MapEngine
     }
 
     /**
-     * Get the full hierarchy tree: Buildings -> Floors -> Rooms
+     * Helper to insert a new location for testing or logic
      */
-    public function getMapTree(): array
+    public function createLocation(?int $parentId, string $type, string $name, int $sequence = 0): int
     {
-        $buildings = [];
-        
-        // Get buildings
-        $b_stmt = $this->pdo->query('SELECT id, name FROM plugin_floorplan_buildings ORDER BY sort_order ASC, name ASC');
-        while ($b = $b_stmt->fetch()) {
-            $b['floors'] = [];
-            $buildings[$b['id']] = $b;
-        }
-
-        if (empty($buildings)) return ['buildings' => []];
-
-        // Get floors
-        $f_stmt = $this->pdo->query('SELECT id, building_id, name FROM plugin_floorplan_floors ORDER BY sort_order ASC, name ASC');
-        $floors = [];
-        while ($f = $f_stmt->fetch()) {
-            $f['rooms'] = [];
-            $floors[$f['id']] = $f;
-        }
-
-        // Get rooms
-        $r_stmt = $this->pdo->query('
-            SELECT r.id, r.floor_id, r.name, 
-                   COUNT(o.id) as assetCount
-            FROM plugin_floorplan_rooms r
-            LEFT JOIN plugin_floorplan_objects o ON o.room_id = r.id AND o.device_id IS NOT NULL
-            GROUP BY r.id, r.floor_id, r.name
-            ORDER BY r.sort_order ASC, r.name ASC
-        ');
-        while ($r = $r_stmt->fetch()) {
-            if (isset($floors[$r['floor_id']])) {
-                $floors[$r['floor_id']]['rooms'][] = [
-                    'id' => $r['id'], 
-                    'name' => $r['name'],
-                    'icon' => mb_substr($r['name'], 0, 1) ?: 'M',
-                    'color' => '#' . substr(md5($r['name']), 0, 6),
-                    'assetCount' => (int)$r['assetCount']
-                ];
-            }
-        }
-
-        // Assemble tree
-        foreach ($floors as $f) {
-            if (isset($buildings[$f['building_id']])) {
-                $buildings[$f['building_id']]['floors'][] = $f;
-            }
-        }
-
-        return ['buildings' => array_values($buildings)];
+        $stmt = $this->pdo->prepare('INSERT INTO plugin_floorplan_locations (parent_id, type, name, sequence) VALUES (?, ?, ?, ?)');
+        $stmt->execute([$parentId, $type, $name, $sequence]);
+        return (int) $this->pdo->lastInsertId();
     }
 
     /**
-     * Get a room layout with all its objects (furniture and assets)
+     * GET /api/tree logic
+     */
+    public function getMapTree(): array
+    {
+        // 1. Fetch all locations
+        $stmt = $this->pdo->query('SELECT id, parent_id, type, name, sequence FROM plugin_floorplan_locations ORDER BY sequence ASC, name ASC');
+        $locations = $stmt->fetchAll();
+
+        // 2. Build the tree
+        $tree = [];
+        $lookup = [];
+        foreach ($locations as $loc) {
+            $loc['children'] = [];
+            $lookup[$loc['id']] = $loc;
+        }
+
+        foreach ($lookup as &$loc) {
+            if ($loc['parent_id'] !== null && isset($lookup[$loc['parent_id']])) {
+                $lookup[$loc['parent_id']]['children'][] = &$loc;
+            } else {
+                $tree[] = &$loc;
+            }
+        }
+
+        return ['locations' => $tree];
+    }
+
+    /**
+     * GET /api/room/{id} logic
      */
     public function getRoom(int $roomId): array
     {
+        // 1. Validate location exists and is a room, fetching parent names for breadcrumbs
         $stmt = $this->pdo->prepare('
-            SELECT r.*, f.name AS floor_name, b.name AS building_name 
-            FROM plugin_floorplan_rooms r
-            LEFT JOIN plugin_floorplan_floors f ON r.floor_id = f.id
-            LEFT JOIN plugin_floorplan_buildings b ON f.building_id = b.id
-            WHERE r.id = :id
+            SELECT l1.id, l1.name, 
+                   l2.name as floor_name, 
+                   l3.name as building_name
+            FROM plugin_floorplan_locations l1
+            LEFT JOIN plugin_floorplan_locations l2 ON l1.parent_id = l2.id
+            LEFT JOIN plugin_floorplan_locations l3 ON l2.parent_id = l3.id
+            WHERE l1.id = ? AND l1.type = "room"
         ');
-        $stmt->execute(['id' => $roomId]);
+        $stmt->execute([$roomId]);
         $room = $stmt->fetch();
 
         if (!$room) {
             throw new Exception("Room not found");
         }
 
-        // Fetch objects
-        $stmt = $this->pdo->prepare('
-            SELECT o.*, 
-                   ANY_VALUE(h.NAME) as hardware_name, 
-                   ANY_VALUE(h.USERID) as user,
-                   ANY_VALUE(n.IPADDRESS) as ip, 
-                   ANY_VALUE(n.MACADDR) as mac
-            FROM plugin_floorplan_objects o
-            LEFT JOIN hardware h ON o.device_id = h.ID
-            LEFT JOIN networks n ON n.HARDWARE_ID = h.ID
-            WHERE o.room_id = :room_id
-            GROUP BY o.id
-        ');
-        $stmt->execute(['room_id' => $roomId]);
-        
-        $furniture = [];
-        $assets = [];
+        // 2. Fetch Room Data (Blob)
+        $dataStmt = $this->pdo->prepare('SELECT canvas_width, canvas_height, architecture_payload FROM plugin_floorplan_rooms_data WHERE room_id = ?');
+        $dataStmt->execute([$roomId]);
+        $data = $dataStmt->fetch();
 
-        while ($row = $stmt->fetch()) {
-            if ($row['device_id']) {
-                $assets[] = [
-                    'id' => 'asset_' . $row['id'],
-                    'db_id' => (int)$row['id'],
-                    'hardware_id' => (int)$row['device_id'],
-                    'hardware_name' => $row['hardware_name'] ?: 'Unknown',
-                    'type' => $row['type'],
-                    'x' => (float)$row['x'],
-                    'y' => (float)$row['y'],
-                    'width' => (float)$row['width'],
-                    'height' => (float)$row['height'],
-                    'rotation' => (float)$row['rotation'],
-                    'ip' => $row['ip'],
-                    'mac' => $row['mac'],
-                    'user' => $row['user']
-                ];
-            } else {
-                $furniture[] = [
-                    'id' => 'furn_' . $row['id'],
-                    'db_id' => (int)$row['id'],
-                    'type' => $row['type'],
-                    'x' => (float)$row['x'],
-                    'y' => (float)$row['y'],
-                    'width' => (float)$row['width'],
-                    'height' => (float)$row['height'],
-                    'rotation' => (float)$row['rotation'],
-                    'color' => $row['color'],
-                    'label' => $row['label']
-                ];
-            }
+        $width = $data ? (int)$data['canvas_width'] : 1200;
+        $height = $data ? (int)$data['canvas_height'] : 800;
+        $architecture = $data && $data['architecture_payload'] ? json_decode($data['architecture_payload'], true) : ['walls' => [], 'floors' => [], 'furniture' => []];
+
+        // 3. Fetch Assets and Join with OCS Hardware
+        $assetsStmt = $this->pdo->prepare('
+            SELECT a.hardware_id, 
+                   ANY_VALUE(a.pos_x) as pos_x, 
+                   ANY_VALUE(a.pos_y) as pos_y, 
+                   ANY_VALUE(a.rotation) as rotation,
+                   ANY_VALUE(h.NAME) as hardware_name,
+                   ANY_VALUE(n.IPADDRESS) as ip
+            FROM plugin_floorplan_assets a
+            LEFT JOIN hardware h ON a.hardware_id = h.ID
+            LEFT JOIN networks n ON n.HARDWARE_ID = h.ID
+            WHERE a.room_id = ?
+            GROUP BY a.hardware_id
+        ');
+        $assetsStmt->execute([$roomId]);
+        
+        $assets = [];
+        while ($row = $assetsStmt->fetch()) {
+            $assets[] = [
+                'hardware_id' => (int)$row['hardware_id'],
+                'pos_x' => (float)$row['pos_x'],
+                'pos_y' => (float)$row['pos_y'],
+                'rotation' => (float)$row['rotation'],
+                'canonical_data' => [
+                    'name' => $row['hardware_name'] ?: 'Unknown',
+                    'ip' => $row['ip']
+                ]
+            ];
         }
 
         return [
-            'id' => (int)$room['id'],
-            'name' => $room['name'],
-            'building_name' => $room['building_name'] ?: 'Unknown Building',
-            'floor_name' => $room['floor_name'] ?: 'Unknown Floor',
-            'width' => (float)$room['width'],
-            'height' => (float)$room['height'],
-            'wall_color' => $room['wall_color'],
-            'floor_color' => $room['floor_color'],
-            'grid_size' => (float)$room['grid_size'],
-            'furniture' => $furniture,
+            'room_data' => [
+                'id' => (int)$room['id'],
+                'name' => $room['name'],
+                'floor_name' => $room['floor_name'] ?: 'Unassigned',
+                'building_name' => $room['building_name'] ?: 'Others',
+                'canvas_width' => $width,
+                'canvas_height' => $height
+            ],
+            'architecture' => $architecture,
             'assets' => $assets
         ];
     }
 
     /**
-     * Save room properties and all its objects
+     * POST /api/room/{id}/save logic
      */
-    public function saveRoom(int $roomId, array $data): void
+    public function saveRoom(int $roomId, int $width, int $height, array $payload): void
     {
         $this->pdo->beginTransaction();
         try {
-            // 1. Update room properties if provided
-            if (isset($data['width'], $data['height'])) {
-                $stmt = $this->pdo->prepare('
-                    UPDATE plugin_floorplan_rooms 
-                    SET width = :w, height = :h, wall_color = :wc, floor_color = :fc, grid_size = :gs
-                    WHERE id = :id
-                ');
-                $stmt->execute([
-                    'w' => $data['width'],
-                    'h' => $data['height'],
-                    'wc' => $data['wall_color'] ?? '#333333',
-                    'fc' => $data['floor_color'] ?? '#f0f0f0',
-                    'gs' => $data['grid_size'] ?? 0.5,
-                    'id' => $roomId
-                ]);
-            }
-
-            // 2. Clear old objects
-            $stmt = $this->pdo->prepare('DELETE FROM plugin_floorplan_objects WHERE room_id = :id');
-            $stmt->execute(['id' => $roomId]);
-
-            // 3. Insert new objects
-            $insertObj = $this->pdo->prepare('
-                INSERT INTO plugin_floorplan_objects 
-                (room_id, type, x, y, width, height, rotation, color, label, device_id)
-                VALUES (:rid, :type, :x, :y, :w, :h, :rot, :color, :label, :did)
+            // 1. Save architecture payload to rooms_data
+            $architectureJson = isset($payload['architecture']) ? json_encode($payload['architecture']) : '{}';
+            
+            $stmt = $this->pdo->prepare('
+                INSERT INTO plugin_floorplan_rooms_data (room_id, canvas_width, canvas_height, architecture_payload) 
+                VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE canvas_width = VALUES(canvas_width), canvas_height = VALUES(canvas_height), architecture_payload = VALUES(architecture_payload)
             ');
+            $stmt->execute([$roomId, $width, $height, $architectureJson]);
 
-            if (!empty($data['furniture'])) {
-                foreach ($data['furniture'] as $f) {
-                    $insertObj->execute([
-                        'rid' => $roomId,
-                        'type' => $f['type'],
-                        'x' => $f['x'],
-                        'y' => $f['y'],
-                        'w' => $f['width'],
-                        'h' => $f['height'],
-                        'rot' => $f['rotation'] ?? 0,
-                        'color' => $f['color'] ?? null,
-                        'label' => $f['label'] ?? null,
-                        'did' => null
-                    ]);
-                }
-            }
+            // 2. Refresh Assets Relation
+            // Delete all existing assets for this room
+            $delStmt = $this->pdo->prepare('DELETE FROM plugin_floorplan_assets WHERE room_id = ?');
+            $delStmt->execute([$roomId]);
 
-            if (!empty($data['assets'])) {
-                foreach ($data['assets'] as $a) {
-                    $insertObj->execute([
-                        'rid' => $roomId,
-                        'type' => $a['type'] ?? 'asset',
-                        'x' => $a['x'],
-                        'y' => $a['y'],
-                        'w' => $a['width'],
-                        'h' => $a['height'],
-                        'rot' => $a['rotation'] ?? 0,
-                        'color' => null,
-                        'label' => null,
-                        'did' => $a['hardware_id']
+            // Insert new assets state
+            if (!empty($payload['assets'])) {
+                $insStmt = $this->pdo->prepare('
+                    INSERT INTO plugin_floorplan_assets (room_id, hardware_id, pos_x, pos_y, rotation)
+                    VALUES (?, ?, ?, ?, ?)
+                ');
+                foreach ($payload['assets'] as $a) {
+                    $insStmt->execute([
+                        $roomId,
+                        $a['hardware_id'],
+                        $a['pos_x'],
+                        $a['pos_y'],
+                        $a['rotation'] ?? 0
                     ]);
                 }
             }
@@ -234,148 +177,77 @@ class MapEngine
     }
 
     /**
-     * Searches for assets by hostname, IP address, MAC address, or user.
+     * GET /api/search?q={query} logic
      */
     public function searchAsset(string $query): array
     {
-        $stmt = $this->pdo->prepare('
-            SELECT
-                h.ID          AS hardware_id,
-                ANY_VALUE(h.NAME)        AS hardware_name,
-                ANY_VALUE(h.USERID)      AS user,
-                ANY_VALUE(n.IPADDRESS)   AS ip,
-                ANY_VALUE(n.MACADDR)     AS mac,
-                ANY_VALUE(o.room_id)     AS room_id
+        $like = '%' . $query . '%';
+
+        // 1. Search Hardware
+        $hwStmt = $this->pdo->prepare('
+            SELECT h.ID AS hardware_id, ANY_VALUE(h.NAME) AS name, ANY_VALUE(a.room_id) AS room_id, ANY_VALUE(l.name) AS room_name
             FROM hardware h
+            LEFT JOIN plugin_floorplan_assets a ON a.hardware_id = h.ID
+            LEFT JOIN plugin_floorplan_locations l ON a.room_id = l.id
             LEFT JOIN networks n ON n.HARDWARE_ID = h.ID
-            LEFT JOIN plugin_floorplan_objects o ON o.device_id = h.ID
-            WHERE h.NAME      LIKE :q
-               OR n.IPADDRESS LIKE :q
-               OR n.MACADDR   LIKE :q
-               OR h.USERID    LIKE :q
+            WHERE h.NAME LIKE :q OR n.IPADDRESS LIKE :q OR n.MACADDR LIKE :q
             GROUP BY h.ID
             LIMIT 50
         ');
+        $hwStmt->execute(['q' => $like]);
+        $assets = $hwStmt->fetchAll();
 
-        $like = '%' . $query . '%';
-        $stmt->execute(['q' => $like]);
-
-        $results = [];
-        while ($row = $stmt->fetch()) {
-            $results[] = [
-                'type' => 'asset',
-                'hardware_id' => (int)$row['hardware_id'],
-                'hardware_name' => $row['hardware_name'] ?: 'Unknown',
-                'ip' => $row['ip'],
-                'mac' => $row['mac'],
-                'user' => $row['user'],
-                'is_mapped' => !empty($row['room_id']),
-                'room_id' => $row['room_id'] ? (int)$row['room_id'] : null
-            ];
-        }
-
-        return $results;
-    }
-    
-    /**
-     * Helper methods for manual seed creation
-     */
-    public function getUnmappedAssets(): array
-    {
-        $stmt = $this->pdo->query('
-            SELECT
-                h.ID          AS hardware_id,
-                ANY_VALUE(h.NAME)        AS hardware_name,
-                ANY_VALUE(h.USERID)      AS user,
-                ANY_VALUE(n.IPADDRESS)   AS ip,
-                ANY_VALUE(n.MACADDR)     AS mac,
-                ANY_VALUE(o.room_id)     AS room_id
-            FROM hardware h
-            LEFT JOIN networks n ON n.HARDWARE_ID = h.ID
-            LEFT JOIN plugin_floorplan_objects o ON o.device_id = h.ID
-            WHERE o.room_id IS NULL
-            GROUP BY h.ID
-            LIMIT 100
+        // 2. Search Rooms
+        $roomStmt = $this->pdo->prepare('
+            SELECT l.id, l.name, ANY_VALUE(p.name) as parent_name
+            FROM plugin_floorplan_locations l
+            LEFT JOIN plugin_floorplan_locations p ON l.parent_id = p.id
+            WHERE l.type = "room" AND l.name LIKE :q
+            GROUP BY l.id
+            LIMIT 50
         ');
+        $roomStmt->execute(['q' => $like]);
+        $rooms = $roomStmt->fetchAll();
 
-        $results = [];
-        while ($row = $stmt->fetch()) {
-            $results[] = [
-                'type' => 'asset',
-                'hardware_id' => (int)$row['hardware_id'],
-                'hardware_name' => $row['hardware_name'] ?: 'Unknown',
-                'ip' => $row['ip'],
-                'mac' => $row['mac'],
-                'user' => $row['user']
-            ];
-        }
-
-        return $results;
-    }
-    
-    public function createBuilding(string $name): int {
-        $stmt = $this->pdo->prepare('INSERT INTO plugin_floorplan_buildings (name) VALUES (:name)');
-        $stmt->execute(['name' => $name]);
-        return (int) $this->pdo->lastInsertId();
-    }
-    public function createFloor(int $bid, string $name): int {
-        $stmt = $this->pdo->prepare('INSERT INTO plugin_floorplan_floors (building_id, name) VALUES (?, ?)');
-        $stmt->execute([$bid, $name]);
-        return (int) $this->pdo->lastInsertId();
-    }
-    public function createRoom(int $fid, string $name, float $width = 800, float $height = 600): int {
-        $stmt = $this->pdo->prepare('INSERT INTO plugin_floorplan_rooms (floor_id, name, width, height) VALUES (?, ?, ?, ?)');
-        $stmt->execute([$fid, $name, $width, $height]);
-        return (int) $this->pdo->lastInsertId();
+        return [
+            'results' => [
+                'assets' => $assets,
+                'rooms' => $rooms
+            ]
+        ];
     }
 
-    public function deleteRoom(int $id): void {
-        $this->pdo->beginTransaction();
-        try {
-            $stmt = $this->pdo->prepare('DELETE FROM plugin_floorplan_objects WHERE room_id = ?');
-            $stmt->execute([$id]);
-            $stmt = $this->pdo->prepare('DELETE FROM plugin_floorplan_rooms WHERE id = ?');
-            $stmt->execute([$id]);
-            $this->pdo->commit();
-        } catch (Exception $e) {
-            $this->pdo->rollBack();
-            throw $e;
-        }
-    }
-
-    public function deleteFloor(int $id): void {
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM plugin_floorplan_rooms WHERE floor_id = ?');
+    /**
+     * Delete a location with safety lock
+     */
+    public function deleteLocation(int $id): void
+    {
+        // Safety lock: check if it has children
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM plugin_floorplan_locations WHERE parent_id = ?');
         $stmt->execute([$id]);
         if ($stmt->fetchColumn() > 0) {
-            throw new Exception("Cannot delete floor. It contains maps.");
+            throw new Exception("Cannot delete location. It contains nested maps or floors.");
         }
-        $stmt = $this->pdo->prepare('DELETE FROM plugin_floorplan_floors WHERE id = ?');
+        
+        $stmt = $this->pdo->prepare('DELETE FROM plugin_floorplan_locations WHERE id = ?');
         $stmt->execute([$id]);
     }
 
-    public function deleteBuilding(int $id): void {
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM plugin_floorplan_floors WHERE building_id = ?');
-        $stmt->execute([$id]);
-        if ($stmt->fetchColumn() > 0) {
-            throw new Exception("Cannot delete building. It contains floors.");
-        }
-        $stmt = $this->pdo->prepare('DELETE FROM plugin_floorplan_buildings WHERE id = ?');
-        $stmt->execute([$id]);
+    /**
+     * Move a location to a new parent
+     */
+    public function moveLocation(int $id, ?int $newParentId): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE plugin_floorplan_locations SET parent_id = ? WHERE id = ?');
+        $stmt->execute([$newParentId, $id]);
     }
 
-    public function moveRoom(int $id, int $newFloorId): void {
-        $stmt = $this->pdo->prepare('UPDATE plugin_floorplan_rooms SET floor_id = ? WHERE id = ?');
-        $stmt->execute([$newFloorId, $id]);
-    }
-
-    public function updateSortOrder(string $type, int $id, int $newOrder): void {
-        $table = '';
-        if ($type === 'building') $table = 'plugin_floorplan_buildings';
-        elseif ($type === 'floor') $table = 'plugin_floorplan_floors';
-        elseif ($type === 'room') $table = 'plugin_floorplan_rooms';
-        else throw new Exception("Invalid type for sort order update.");
-
-        $stmt = $this->pdo->prepare("UPDATE {$table} SET sort_order = ? WHERE id = ?");
+    /**
+     * Update sequence/sort order
+     */
+    public function updateSortOrder(int $id, int $newOrder): void
+    {
+        $stmt = $this->pdo->prepare("UPDATE plugin_floorplan_locations SET sequence = ? WHERE id = ?");
         $stmt->execute([$newOrder, $id]);
     }
 }

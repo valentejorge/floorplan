@@ -10,9 +10,13 @@ header('Content-Type: application/json');
 try {
     $pdo = get_floorplan_pdo();
     $engine = new \Floorplan\MapEngine($pdo);
+    
     $tree = $engine->getMapTree();
-    echo json_encode(['status' => 'success', 'data' => $tree]);
+    
+    // Contract: return { "locations": [...] }
+    echo json_encode($tree);
 } catch (Exception $e) {
-    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
 }
 ?>

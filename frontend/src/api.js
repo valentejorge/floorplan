@@ -157,7 +157,52 @@ export async function api(endpoint, options = {}) {
     throw new Error(`[floorplan:api] HTTP ${response.status} → ${url}`);
   }
 
-  return response.json();
+  const json = await response.json();
+  
+  // Adapt MVP backend contracts to Legacy Frontend UI expectations
+  if (endpoint.startsWith('get_map_tree.php')) {
+    // Wrap locations into buildings and handle orphan rooms
+    const buildings = [];
+    let othersBuilding = null;
+    let othersFloor = null;
+
+    (json.locations || []).forEach(loc => {
+      if (loc.type === 'building') {
+         const b = { id: loc.id, name: loc.name, floors: [] };
+         (loc.children || []).forEach(fLoc => {
+            if (fLoc.type === 'floor') {
+               const f = { id: fLoc.id, name: fLoc.name, rooms: [] };
+               (fLoc.children || []).forEach(rLoc => {
+                  f.rooms.push({ id: rLoc.id, name: rLoc.name, assetCount: 0 });
+               });
+               b.floors.push(f);
+            }
+         });
+         buildings.push(b);
+      } else if (loc.type === 'room') {
+         // Orphan room created without parent!
+         if (!othersBuilding) {
+             othersBuilding = { id: -1, name: 'Others', floors: [] };
+             othersFloor = { id: -1, name: 'Unassigned Rooms', rooms: [] };
+             othersBuilding.floors.push(othersFloor);
+             buildings.push(othersBuilding);
+         }
+         othersFloor.rooms.push({ id: loc.id, name: loc.name, assetCount: 0 });
+      }
+    });
+    
+    return { status: 'success', data: { buildings } };
+  }
+  
+  if (endpoint.startsWith('get_room.php')) {
+    return { status: 'success', data: json };
+  }
+
+  if (endpoint.startsWith('search_asset.php')) {
+    return { status: 'success', data: json.results };
+  }
+
+  return json;
 }
 
 export default api;

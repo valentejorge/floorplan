@@ -24,22 +24,17 @@ try {
         $type = $data['type'];
         $id = (int)$data['id'];
 
-        if ($type === 'room') {
-            $engine->deleteRoom($id);
-        } elseif ($type === 'floor') {
-            $engine->deleteFloor($id);
-        } elseif ($type === 'building') {
-            $engine->deleteBuilding($id);
+        if (in_array($type, ['room', 'floor', 'building'])) {
+            $engine->deleteLocation($id);
         } else {
             throw new Exception("Invalid type for delete");
         }
         
         echo json_encode(['status' => 'success']);
     } 
-    elseif ($action === 'move') {
         $roomId = (int)$data['room_id'];
         $newFloorId = (int)$data['new_floor_id'];
-        $engine->moveRoom($roomId, $newFloorId);
+        $engine->moveLocation($roomId, $newFloorId);
         echo json_encode(['status' => 'success']);
     } 
     elseif ($action === 'reorder') {
@@ -51,7 +46,7 @@ try {
         $pdo->beginTransaction();
         try {
             foreach ($updates as $u) {
-                $engine->updateSortOrder($u['type'], (int)$u['id'], (int)$u['sort_order']);
+                $engine->updateSortOrder((int)$u['id'], (int)$u['sort_order']);
             }
             $pdo->commit();
             echo json_encode(['status' => 'success']);

@@ -2,70 +2,55 @@
 function extension_install_floorplan() {
     $commonObject = new ExtensionCommon;
 
+    // Drop legacy tables if they exist
+    $commonObject->sqlQuery("DROP TABLE IF EXISTS `plugin_floorplan_objects`");
+    $commonObject->sqlQuery("DROP TABLE IF EXISTS `plugin_floorplan_rooms`");
+    $commonObject->sqlQuery("DROP TABLE IF EXISTS `plugin_floorplan_floors`");
+    $commonObject->sqlQuery("DROP TABLE IF EXISTS `plugin_floorplan_buildings`");
+
     // 1. Create DB Tables
     $query = "
-    CREATE TABLE IF NOT EXISTS `plugin_floorplan_buildings` (
+    CREATE TABLE IF NOT EXISTS `plugin_floorplan_locations` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
+      `parent_id` int(11) DEFAULT NULL,
+      `type` enum('building','floor','room') NOT NULL,
       `name` varchar(255) NOT NULL,
-      `sort_order` int(11) NOT NULL DEFAULT '0',
-      PRIMARY KEY (`id`)
+      `sequence` int(11) NOT NULL DEFAULT '0',
+      PRIMARY KEY (`id`),
+      KEY `parent_id` (`parent_id`),
+      CONSTRAINT `fk_fp_loc_parent` FOREIGN KEY (`parent_id`) REFERENCES `plugin_floorplan_locations` (`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
     ";
     $commonObject->sqlQuery($query);
 
     $query = "
-    CREATE TABLE IF NOT EXISTS `plugin_floorplan_floors` (
-      `id` int(11) NOT NULL AUTO_INCREMENT,
-      `building_id` int(11) NOT NULL,
-      `name` varchar(255) NOT NULL,
-      `sort_order` int(11) NOT NULL DEFAULT '0',
-      PRIMARY KEY (`id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-    ";
-    $commonObject->sqlQuery($query);
-
-    $query = "
-    CREATE TABLE IF NOT EXISTS `plugin_floorplan_rooms` (
-      `id` int(11) NOT NULL AUTO_INCREMENT,
-      `floor_id` int(11) NOT NULL,
-      `name` varchar(255) NOT NULL,
-      `width` float NOT NULL DEFAULT '10',
-      `height` float NOT NULL DEFAULT '10',
-      `wall_color` varchar(50) DEFAULT '#333333',
-      `floor_color` varchar(50) DEFAULT '#f0f0f0',
-      `grid_size` float NOT NULL DEFAULT '0.5',
-      `sort_order` int(11) NOT NULL DEFAULT '0',
-      PRIMARY KEY (`id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-    ";
-    $commonObject->sqlQuery($query);
-
-    $query = "
-    CREATE TABLE IF NOT EXISTS `plugin_floorplan_objects` (
+    CREATE TABLE IF NOT EXISTS `plugin_floorplan_assets` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `room_id` int(11) NOT NULL,
-      `type` varchar(50) NOT NULL,
-      `x` float NOT NULL,
-      `y` float NOT NULL,
-      `width` float NOT NULL,
-      `height` float NOT NULL,
-      `rotation` float DEFAULT '0',
-      `color` varchar(50) DEFAULT NULL,
-      `label` varchar(255) DEFAULT NULL,
-      `device_id` int(11) DEFAULT NULL,
-      PRIMARY KEY (`id`)
+      `hardware_id` int(11) NOT NULL,
+      `pos_x` float NOT NULL,
+      `pos_y` float NOT NULL,
+      `rotation` float NOT NULL DEFAULT '0',
+      PRIMARY KEY (`id`),
+      KEY `room_id` (`room_id`),
+      CONSTRAINT `fk_fp_assets_room` FOREIGN KEY (`room_id`) REFERENCES `plugin_floorplan_locations` (`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
     ";
     $commonObject->sqlQuery($query);
 
-    // Seed initial data for testing if not exists
     $query = "
-    INSERT IGNORE INTO `plugin_floorplan_buildings` (`id`, `name`) VALUES (1, 'Headquarters');
-    INSERT IGNORE INTO `plugin_floorplan_floors` (`id`, `building_id`, `name`) VALUES (1, 1, 'Ground Floor');
-    INSERT IGNORE INTO `plugin_floorplan_rooms` (`id`, `floor_id`, `name`, `width`, `height`, `wall_color`, `floor_color`, `grid_size`) 
-    VALUES (1, 1, 'Open Office A', 800, 600, '#333333', '#f0f0f0', 20);
+    CREATE TABLE IF NOT EXISTS `plugin_floorplan_rooms_data` (
+      `room_id` int(11) NOT NULL,
+      `canvas_width` int(11) NOT NULL DEFAULT '1200',
+      `canvas_height` int(11) NOT NULL DEFAULT '800',
+      `architecture_payload` text,
+      PRIMARY KEY (`room_id`),
+      CONSTRAINT `fk_fp_rooms_data_room` FOREIGN KEY (`room_id`) REFERENCES `plugin_floorplan_locations` (`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
     ";
     $commonObject->sqlQuery($query);
+
+    // Mock data seeding removed for MVP. Database starts clean.
 
     // OCS routing is handled natively by the folder structure
     $urlsXmlPath = __DIR__ . '/../../config/urls.xml';
@@ -102,10 +87,9 @@ function extension_install_floorplan() {
 
 function extension_delete_floorplan() {
     $commonObject = new ExtensionCommon;
-    $commonObject->sqlQuery("DROP TABLE IF EXISTS `plugin_floorplan_objects`");
-    $commonObject->sqlQuery("DROP TABLE IF EXISTS `plugin_floorplan_rooms`");
-    $commonObject->sqlQuery("DROP TABLE IF EXISTS `plugin_floorplan_floors`");
-    $commonObject->sqlQuery("DROP TABLE IF EXISTS `plugin_floorplan_buildings`");
+    $commonObject->sqlQuery("DROP TABLE IF EXISTS `plugin_floorplan_rooms_data`");
+    $commonObject->sqlQuery("DROP TABLE IF EXISTS `plugin_floorplan_assets`");
+    $commonObject->sqlQuery("DROP TABLE IF EXISTS `plugin_floorplan_locations`");
     
     // Cleanup files
     $mainSectionsDir = __DIR__ . '/../../plugins/main_sections/ms_floorplan';

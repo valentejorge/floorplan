@@ -10,10 +10,20 @@ header('Content-Type: application/json');
 try {
     $pdo = get_floorplan_pdo();
     $engine = new \Floorplan\MapEngine($pdo);
-    $q = isset($_GET['q']) ? $_GET['q'] : '';
-    $data = $engine->searchAsset($q);
-    echo json_encode(['status' => 'success', 'data' => $data]);
+    
+    $query = isset($_GET['q']) ? trim($_GET['q']) : '';
+    if ($query === '') {
+        echo json_encode(['results' => ['assets' => [], 'rooms' => []]]);
+        exit;
+    }
+
+    $results = $engine->searchAsset($query);
+    
+    // Contract: return { "results": { "assets": [...], "rooms": [...] } }
+    echo json_encode($results);
+
 } catch (Exception $e) {
-    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
 }
 ?>

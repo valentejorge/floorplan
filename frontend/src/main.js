@@ -138,7 +138,8 @@ async function init() {
             const roomJson = await api(`get_room.php?id=${firstRoomId}`);
             if (roomJson.status === 'success') {
               loadMapData(roomJson.data);
-              updateBreadcrumb(roomJson.data.building_name, roomJson.data.floor_name, roomJson.data.name);
+              const roomData = roomJson.data.room_data;
+              updateBreadcrumb(roomData.building_name, roomData.floor_name, roomData.name);
               import('./history.js').then(({ initHistory }) => initHistory());
             }
         } else {
@@ -226,21 +227,31 @@ function bindModeToggle() {
           }
           
           const state = serializeMapState();
-          
-          // Inject room properties
-          state.id = currentRoomData.id;
-          state.width = currentRoomData.width || 800;
-          state.height = currentRoomData.height || 600;
-          state.wall_color = currentRoomData.wall_color || '#333333';
-          state.floor_color = currentRoomData.floor_color || '#f0f0f0';
-          state.grid_size = currentRoomData.grid_size || 0.5;
+          // Build the strict MVP contract payload
+          const payload = {
+            id: currentRoomData.id,
+            width: currentRoomData.canvas_width || currentRoomData.width || 1200,
+            height: currentRoomData.canvas_height || currentRoomData.height || 800,
+            architecture: {
+              walls: state.walls || [],
+              floor_zones: state.floor_zones || [],
+              furniture: state.furniture || [],
+              doors: state.doors || []
+            },
+            assets: (state.assets || []).map(a => ({
+              hardware_id: a.hardware_id,
+              pos_x: a.pos_x !== undefined ? a.pos_x : a.x,
+              pos_y: a.pos_y !== undefined ? a.pos_y : a.y,
+              rotation: a.rotation || (a.layout ? a.layout.rotation : 0) || 0
+            }))
+          };
 
           const apiModule = await import('./api.js');
           const api = apiModule.api || apiModule.default;
           
           const res = await api('save_room.php', {
             method: 'POST',
-            body: JSON.stringify(state)
+            body: JSON.stringify(payload)
           });
           
           if (res.status === 'success') {
@@ -934,7 +945,8 @@ function bindMapNavigator() {
             if (json.status === 'success') {
               import('./renderer.js').then(({ loadMapData }) => {
                 loadMapData(json.data);
-                updateBreadcrumb(json.data.building_name, json.data.floor_name, json.data.name);
+                const roomData = json.data.room_data;
+                updateBreadcrumb(roomData.building_name, roomData.floor_name, roomData.name);
               });
             }
           })
@@ -1070,7 +1082,8 @@ function bindCreateMap() {
         if (mapRes.status === 'success') {
           import('./renderer.js').then(({ loadMapData }) => {
             loadMapData(mapRes.data);
-            updateBreadcrumb(mapRes.data.building_name, mapRes.data.floor_name, mapRes.data.name);
+            const roomData = mapRes.data.room_data;
+            updateBreadcrumb(roomData.building_name, roomData.floor_name, roomData.name);
             // Auto enter edit mode
             document.getElementById('btn-edit-mode')?.click();
           });
