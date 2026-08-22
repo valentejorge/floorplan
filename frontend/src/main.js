@@ -719,14 +719,13 @@ function bindMapNavigator() {
     document.querySelectorAll('.fp-sidebar-actions').forEach(el => el.classList.add('is-closing'));
     
     const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
-    const activeFidStr = activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '';
     
     api('get_map_tree.php').then(json => {
       currentMapTree = json.data;
     });
     
     setTimeout(() => {
-      window.renderNavigatorSidebar('', activeFidStr);
+      window.renderNavigatorSidebar('', activeFid);
     }, 300);
   }
 
@@ -752,7 +751,7 @@ function bindMapNavigator() {
 
     // Refresh with edit UI
     const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
-    window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
+    window.renderNavigatorSidebar('', activeFid);
   });
 
   btnCancelOrder?.addEventListener('click', () => {
@@ -785,10 +784,9 @@ function bindMapNavigator() {
     document.querySelectorAll('.fp-sidebar-actions').forEach(el => el.classList.add('is-closing'));
     
     const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
-    const activeFidStr = activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '';
     
     setTimeout(() => {
-       window.renderNavigatorSidebar('', activeFidStr);
+       window.renderNavigatorSidebar('', activeFid);
     }, 300);
   });
 
@@ -896,7 +894,7 @@ function bindMapNavigator() {
                const json = await api('get_map_tree.php');
                currentMapTree = json.data;
                const activeFid = document.querySelector('.fp-nav-floor.active')?.dataset.fid;
-               window.renderNavigatorSidebar('', activeFid ? document.querySelector('.fp-nav-floor.active').innerText : '');
+               window.renderNavigatorSidebar('', activeFid);
            }
        } catch (err) {
            notify("Error updating properties: " + err.message, "error");
@@ -930,7 +928,7 @@ function bindMapNavigator() {
     else mapOrderUpdates.push({ type, id, sort_order: newOrder });
   }
 
-  window.renderNavigatorSidebar = function(filter = '', preselect = '') {
+  window.renderNavigatorSidebar = function(filter = '', preselectFid = null) {
     if (!currentMapTree) return;
     let html = '';
     
@@ -1070,7 +1068,7 @@ function bindMapNavigator() {
             if (moveItemInArray(arr, idx, dir)) {
                arr.forEach((item, i) => registerOrderUpdate(type, item.id, i));
                const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
-               window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
+               window.renderNavigatorSidebar('', activeFid);
             }
           }
           
@@ -1101,7 +1099,7 @@ function bindMapNavigator() {
                      currentMapTree = json.data;
                      
                      const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
-                     window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
+                     window.renderNavigatorSidebar('', activeFid);
                  } catch (err) {
                      notify("Error moving floor: " + err.message, "error");
                      btn.innerText = dir === 'up' ? '▲' : '▼';
@@ -1111,7 +1109,7 @@ function bindMapNavigator() {
                  if (moveItemInArray(arr, idx, dir)) {
                     arr.forEach((item, i) => registerOrderUpdate(type, item.id, i));
                     const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
-                    window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
+                    window.renderNavigatorSidebar('', activeFid);
                  }
              }
           }
@@ -1135,9 +1133,8 @@ function bindMapNavigator() {
     
     // Auto-select floor
     let targetFloor = null;
-    if (preselect) {
-      const pLower = preselect.toLowerCase();
-      targetFloor = Array.from(sidebar.querySelectorAll('.fp-nav-floor')).find(el => el.innerText.trim().toLowerCase() === pLower);
+    if (preselectFid) {
+      targetFloor = sidebar.querySelector(`.fp-nav-floor[data-fid="${preselectFid}"]`);
     }
     
     if (!targetFloor) {
@@ -1149,7 +1146,7 @@ function bindMapNavigator() {
       targetFloor.click();
       targetFloor.offsetHeight; // force reflow
       targetFloor.style.transition = '';
-      if (preselect) targetFloor.scrollIntoView({ block: 'nearest' });
+      if (preselectFid) targetFloor.scrollIntoView({ block: 'nearest' });
     } else {
       grid.innerHTML = '<div style="padding:40px;grid-column:1/-1;text-align:center;">Select a floor</div>';
     }
