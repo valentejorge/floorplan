@@ -44,6 +44,7 @@ function extension_install_floorplan() {
       `canvas_width` int(11) NOT NULL DEFAULT '1200',
       `canvas_height` int(11) NOT NULL DEFAULT '800',
       `architecture_payload` text,
+      `thumbnail` LONGTEXT DEFAULT NULL,
       PRIMARY KEY (`room_id`),
       CONSTRAINT `fk_fp_rooms_data_room` FOREIGN KEY (`room_id`) REFERENCES `plugin_floorplan_locations` (`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

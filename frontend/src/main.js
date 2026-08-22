@@ -227,11 +227,12 @@ function bindModeToggle() {
           }
           
           const state = serializeMapState();
-          // Build the strict MVP contract payload
+          const { captureThumbnail } = await import('./engine.js');
           const payload = {
             id: currentRoomData.id,
             width: currentRoomData.canvas_width || currentRoomData.width || 1200,
             height: currentRoomData.canvas_height || currentRoomData.height || 800,
+            thumbnail: captureThumbnail(),
             architecture: {
               walls: state.walls || [],
               floor_zones: state.floor_zones || [],
@@ -1297,7 +1298,7 @@ function bindMapNavigator() {
       
       return `
       <div class="fp-room-card" data-bname="${building.name}" data-fname="${floor.name}" data-rname="${r.name}" data-room-id="${r.id}">
-        <div class="fp-room-thumb" style="background:${r.color};">${r.icon}</div>
+        <div class="fp-room-thumb" style="${r.thumbnail ? `background-image: url(${r.thumbnail}); background-size: cover; background-position: center; border: 1px solid var(--fp-border);` : `background:${r.color};`}">${r.thumbnail ? '' : r.icon}</div>
         ${isEditMapMode ? `
         <div class="fp-room-card-actions">
             <button class="fp-btn-icon fp-btn-rename" data-id="${r.id}" data-name="${r.name}" title="Rename">${pencilSvg}</button>

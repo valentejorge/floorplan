@@ -24,6 +24,30 @@ export function getLayerAssets() { return assetsLayer; }
 export function getOverlayLayer() { return overlayLayer; }
 export function getTransformer() { return globalTransformer; }
 
+export function captureThumbnail() {
+  if (!stage) return null;
+  
+  const wasGridVisible = gridLayer.opacity() > 0;
+  if (wasGridVisible) gridLayer.opacity(0);
+  
+  const activeNodes = globalTransformer.nodes();
+  globalTransformer.nodes([]);
+  
+  const targetWidth = 400;
+  const ratio = Math.min(targetWidth / stage.width(), 1);
+  
+  const dataURL = stage.toDataURL({
+    mimeType: 'image/jpeg',
+    quality: 0.6,
+    pixelRatio: ratio
+  });
+
+  if (wasGridVisible) gridLayer.opacity(0.1);
+  globalTransformer.nodes(activeNodes);
+
+  return dataURL;
+}
+
 export function getRelativePointerPosition() {
   const pointerPosition = stage.getPointerPosition();
   if (!pointerPosition) return { x: 0, y: 0 };

@@ -33,7 +33,12 @@ class MapEngine
     public function getMapTree(): array
     {
         // 1. Fetch all locations
-        $stmt = $this->pdo->query('SELECT id, parent_id, type, name, sequence FROM plugin_floorplan_locations ORDER BY sequence ASC, name ASC');
+        $stmt = $this->pdo->query('
+            SELECT l.id, l.parent_id, l.type, l.name, l.sequence, d.thumbnail 
+            FROM plugin_floorplan_locations l
+            LEFT JOIN plugin_floorplan_rooms_data d ON l.id = d.room_id
+            ORDER BY l.sequence ASC, l.name ASC
+        ');
         $locations = $stmt->fetchAll();
 
         // 2. Build the tree
@@ -139,13 +144,14 @@ class MapEngine
         try {
             // 1. Save architecture payload to rooms_data
             $architectureJson = isset($payload['architecture']) ? json_encode($payload['architecture']) : '{}';
+            $thumbnail = isset($payload['thumbnail']) ? $payload['thumbnail'] : null;
             
             $stmt = $this->pdo->prepare('
-                INSERT INTO plugin_floorplan_rooms_data (room_id, canvas_width, canvas_height, architecture_payload) 
-                VALUES (?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE canvas_width = VALUES(canvas_width), canvas_height = VALUES(canvas_height), architecture_payload = VALUES(architecture_payload)
+                INSERT INTO plugin_floorplan_rooms_data (room_id, canvas_width, canvas_height, architecture_payload, thumbnail) 
+                VALUES (?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE canvas_width = VALUES(canvas_width), canvas_height = VALUES(canvas_height), architecture_payload = VALUES(architecture_payload), thumbnail = VALUES(thumbnail)
             ');
-            $stmt->execute([$roomId, $width, $height, $architectureJson]);
+            $stmt->execute([$roomId, $width, $height, $architectureJson, $thumbnail]);
 
             // 2. Refresh Assets Relation
             // Delete all existing assets for this room
