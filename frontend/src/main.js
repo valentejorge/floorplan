@@ -761,14 +761,24 @@ function bindMapNavigator() {
   const btnEditOrder = document.getElementById('btn-edit-order');
   const btnSaveOrder = document.getElementById('btn-save-order');
   const btnCancelOrder = document.getElementById('btn-cancel-order');
+  const btnNewMap = document.getElementById('btn-new-map');
+
+  const navDefaultActions = document.getElementById('nav-default-actions');
+  const navEditActions = document.getElementById('nav-edit-actions');
 
   function resetEditOrderMode() {
     if (!isEditMapMode) return;
     isEditMapMode = false;
     mapOrderUpdates = [];
-    if (btnSaveOrder) btnSaveOrder.style.display = 'none';
-    if (btnCancelOrder) btnCancelOrder.style.display = 'none';
-    if (btnEditOrder) btnEditOrder.style.display = 'inline-block';
+    
+    if (navEditActions) {
+      navEditActions.style.opacity = '0';
+      navEditActions.style.pointerEvents = 'none';
+    }
+    if (navDefaultActions) {
+      navDefaultActions.style.opacity = '1';
+      navDefaultActions.style.pointerEvents = 'auto';
+    }
     const sidebarContainer = document.querySelector('.fp-navigator__sidebar');
     if (sidebarContainer) sidebarContainer.style.width = '220px';
     
@@ -798,9 +808,15 @@ function bindMapNavigator() {
   btnEditOrder?.addEventListener('click', () => {
     isEditMapMode = true;
     mapOrderUpdates = [];
-    btnEditOrder.style.display = 'none';
-    btnSaveOrder.style.display = 'inline-block';
-    if (btnCancelOrder) btnCancelOrder.style.display = 'inline-block';
+    
+    if (navDefaultActions) {
+      navDefaultActions.style.opacity = '0';
+      navDefaultActions.style.pointerEvents = 'none';
+    }
+    if (navEditActions) {
+      navEditActions.style.opacity = '1';
+      navEditActions.style.pointerEvents = 'auto';
+    }
     
     const sidebarContainer = document.querySelector('.fp-navigator__sidebar');
     if (sidebarContainer) sidebarContainer.style.width = '300px';
@@ -1373,7 +1389,6 @@ function bindMapNavigator() {
     });
   }
 
-  const btnNewMap = document.getElementById('btn-new-map');
   const createModal = document.getElementById('create-map-modal');
   if (btnNewMap && createModal) {
     btnNewMap.addEventListener('click', () => {
