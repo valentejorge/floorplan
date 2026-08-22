@@ -675,18 +675,35 @@ window.openMapNavigator = async function(preselect = '') {
     sidebarSearch.value = ''; // clear search box so we don't filter out things
   }
 
+  const resolveTargetFid = () => {
+    const pLower = (preselect || '').trim().toLowerCase();
+    if (!pLower) return null;
+    let foundFid = null;
+    currentMapTree.buildings.forEach(b => {
+      if (!foundFid && b.name.toLowerCase() === pLower && b.floors.length > 0) {
+        foundFid = b.floors[0].id;
+      }
+      b.floors.forEach(f => {
+        if (!foundFid && f.name.toLowerCase() === pLower) {
+          foundFid = f.id;
+        }
+      });
+    });
+    return foundFid;
+  };
+
   if (!currentMapTree) {
     try {
       const json = await api('get_map_tree.php');
       currentMapTree = json.data;
-      window.renderNavigatorSidebar('', preselect);
+      window.renderNavigatorSidebar('', resolveTargetFid());
     } catch (e) {
       console.error("Failed to load map tree", e);
       if (sidebar) sidebar.innerHTML = '<div style="padding:16px;color:red;">Error loading tree.</div>';
     }
   } else {
     // If it's already loaded, just render it again to reset search state if needed
-    window.renderNavigatorSidebar('', preselect);
+    window.renderNavigatorSidebar('', resolveTargetFid());
   }
 };
 
