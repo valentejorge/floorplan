@@ -964,7 +964,7 @@ textarea:focus-visible,
 
 .fp-navigator__sidebar::-webkit-scrollbar-track,
 .fp-navigator__grid::-webkit-scrollbar-track {
-  background: transparent;
+  background: #fafbfc;
 }
 
 .fp-navigator__sidebar::-webkit-scrollbar-thumb,
