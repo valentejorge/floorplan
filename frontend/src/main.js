@@ -713,6 +713,8 @@ function bindMapNavigator() {
     if (btnSaveOrder) btnSaveOrder.style.display = 'none';
     if (btnCancelOrder) btnCancelOrder.style.display = 'none';
     if (btnEditOrder) btnEditOrder.style.display = 'inline-block';
+    const sidebarContainer = document.querySelector('.fp-navigator__sidebar');
+    if (sidebarContainer) sidebarContainer.style.width = '220px';
     
     // Reload tree from server to restore original order
     api('get_map_tree.php').then(json => {
@@ -739,6 +741,9 @@ function bindMapNavigator() {
     btnSaveOrder.style.display = 'inline-block';
     if (btnCancelOrder) btnCancelOrder.style.display = 'inline-block';
     
+    const sidebarContainer = document.querySelector('.fp-navigator__sidebar');
+    if (sidebarContainer) sidebarContainer.style.width = '300px';
+
     // Refresh with edit UI
     const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
     window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
@@ -878,6 +883,11 @@ function bindMapNavigator() {
       const fFloorIcon = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;color:#94a3b8;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>`;
       const chevronIcon = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:2px;color:#cbd5e1;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>`;
 
+      const bIdx = currentMapTree.buildings.indexOf(b);
+      const bTotal = currentMapTree.buildings.length;
+      const showBUp = bTotal > 1 && bIdx > 0;
+      const showBDown = bTotal > 1 && bIdx < bTotal - 1;
+
       html += `<div class="fp-nav-building" data-id="${b.id}" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
         <div style="display:flex;align-items:center;min-width:0;flex:1;">
           ${chevronIcon}
@@ -887,12 +897,15 @@ function bindMapNavigator() {
         ${isEditMapMode ? `<div style="display:flex;gap:2px;align-items:center;flex-shrink:0;">
             <button class="fp-btn-icon fp-btn-rename" data-id="${b.id}" data-name="${b.name}" title="Rename">${pencilSvg}</button>
             <button class="fp-btn-icon fp-btn-del" data-type="building" data-id="${b.id}" title="Delete">${trashSvg}</button>
-            <button class="fp-btn-icon fp-btn-up" data-type="building" data-id="${b.id}" data-idx="${currentMapTree.buildings.indexOf(b)}" title="Move up">▲</button>
-            <button class="fp-btn-icon fp-btn-down" data-type="building" data-id="${b.id}" data-idx="${currentMapTree.buildings.indexOf(b)}" title="Move down">▼</button>
+            ${showBUp ? `<button class="fp-btn-icon fp-btn-up" data-type="building" data-id="${b.id}" data-idx="${bIdx}" title="Move up">▲</button>` : ''}
+            ${showBDown ? `<button class="fp-btn-icon fp-btn-down" data-type="building" data-id="${b.id}" data-idx="${bIdx}" title="Move down">▼</button>` : ''}
         </div>` : ''}
       </div>`;
       
-      floorsToRender.forEach(f => {
+      const fTotal = floorsToRender.length;
+      floorsToRender.forEach((f, fIdx) => {
+        const showFUp = fTotal > 1 && fIdx > 0;
+        const showFDown = fTotal > 1 && fIdx < fTotal - 1;
         html += `<div class="fp-nav-floor" data-bid="${b.id}" data-fid="${f.id}" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
           <div style="display:flex;align-items:center;min-width:0;flex:1;">
             ${fFloorIcon}
@@ -901,8 +914,8 @@ function bindMapNavigator() {
           ${isEditMapMode ? `<div style="display:flex;gap:2px;align-items:center;flex-shrink:0;">
               <button class="fp-btn-icon fp-btn-rename" data-id="${f.id}" data-name="${f.name}" title="Rename">${pencilSvg}</button>
               <button class="fp-btn-icon fp-btn-del" data-type="floor" data-id="${f.id}" title="Delete">${trashSvg}</button>
-              <button class="fp-btn-icon fp-btn-up" data-type="floor" data-bid="${b.id}" data-id="${f.id}" data-idx="${b.floors.indexOf(f)}" title="Move up">▲</button>
-              <button class="fp-btn-icon fp-btn-down" data-type="floor" data-bid="${b.id}" data-id="${f.id}" data-idx="${b.floors.indexOf(f)}" title="Move down">▼</button>
+              ${showFUp ? `<button class="fp-btn-icon fp-btn-up" data-type="floor" data-bid="${b.id}" data-id="${f.id}" data-idx="${fIdx}" title="Move up">▲</button>` : ''}
+              ${showFDown ? `<button class="fp-btn-icon fp-btn-down" data-type="floor" data-bid="${b.id}" data-id="${f.id}" data-idx="${fIdx}" title="Move down">▼</button>` : ''}
           </div>` : ''}
         </div>`;
       });
@@ -940,21 +953,62 @@ function bindMapNavigator() {
 
     if (isEditMapMode) {
       sidebar.querySelectorAll('.fp-btn-up, .fp-btn-down').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', async (e) => {
           e.stopPropagation();
           const type = btn.dataset.type;
           const dir = btn.classList.contains('fp-btn-up') ? 'up' : 'down';
           const idx = parseInt(btn.dataset.idx);
           let arr = [];
-          if (type === 'building') arr = currentMapTree.buildings;
+          
+          if (type === 'building') {
+            arr = currentMapTree.buildings;
+            if (moveItemInArray(arr, idx, dir)) {
+               arr.forEach((item, i) => registerOrderUpdate(type, item.id, i));
+               const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
+               window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
+            }
+          }
+          
           if (type === 'floor') {
              const b = currentMapTree.buildings.find(x => x.id == btn.dataset.bid);
+             const bIdx = currentMapTree.buildings.indexOf(b);
              arr = b.floors;
-          }
-          if (moveItemInArray(arr, idx, dir)) {
-             arr.forEach((item, i) => registerOrderUpdate(type, item.id, i));
-             const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
-             window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
+             const fId = btn.dataset.id;
+             
+             let moveTargetBid = null;
+             if (dir === 'up' && idx === 0 && bIdx > 0) {
+                 moveTargetBid = currentMapTree.buildings[bIdx - 1].id;
+             } else if (dir === 'down' && idx === arr.length - 1 && bIdx < currentMapTree.buildings.length - 1) {
+                 moveTargetBid = currentMapTree.buildings[bIdx + 1].id;
+             }
+             
+             if (moveTargetBid) {
+                 // Cross-building move!
+                 btn.innerText = '...';
+                 try {
+                     if (mapOrderUpdates && mapOrderUpdates.length > 0) {
+                        await api('manage_tree.php', { method: 'POST', body: JSON.stringify({ action: 'reorder', updates: mapOrderUpdates }) });
+                        mapOrderUpdates = [];
+                     }
+                     await api('manage_tree.php', { method: 'POST', body: JSON.stringify({ action: 'move', id: fId, parent_id: moveTargetBid }) });
+                     
+                     const json = await api('get_map_tree.php');
+                     currentMapTree = json.data;
+                     
+                     const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
+                     window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
+                 } catch (err) {
+                     notify("Error moving floor: " + err.message, "error");
+                     btn.innerText = dir === 'up' ? '▲' : '▼';
+                 }
+             } else {
+                 // Normal reorder inside the same building
+                 if (moveItemInArray(arr, idx, dir)) {
+                    arr.forEach((item, i) => registerOrderUpdate(type, item.id, i));
+                    const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
+                    window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
+                 }
+             }
           }
         });
       });

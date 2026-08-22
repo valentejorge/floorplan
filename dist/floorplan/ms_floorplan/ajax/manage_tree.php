@@ -42,9 +42,12 @@ try {
         echo json_encode(['status' => 'success']);
     }
     elseif ($action === 'move') {
-        $roomId = (int)$data['room_id'];
-        $newFloorId = (int)$data['new_floor_id'];
-        $engine->moveLocation($roomId, $newFloorId);
+        $id = (int)($data['id'] ?? $data['room_id'] ?? 0);
+        $newParentId = (int)($data['parent_id'] ?? $data['new_floor_id'] ?? 0);
+        if (!$id || !$newParentId) {
+            throw new Exception("Missing id or parent_id for move");
+        }
+        $engine->moveLocation($id, $newParentId);
         echo json_encode(['status' => 'success']);
     } 
     elseif ($action === 'reorder') {
