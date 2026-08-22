@@ -286,13 +286,21 @@ if (file_exists($css_file_path)) {
     <div id="map-navigator-modal" class="fp-modal">
       <div class="fp-modal__content fp-navigator">
         <div class="fp-navigator__header">
+          <button class="fp-navigator__close" style="margin-right:12px; display:flex; align-items:center; justify-content:center; padding:4px;" title="Back">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </button>
           <div class="fp-navigator__title">Map Navigator</div>
           <div style="flex:1;"></div>
-          <button class="fp-btn fp-btn--secondary" id="btn-edit-order" style="padding:4px 12px;font-size:11px;margin-right:8px;">✏ Edit</button>
-          <button class="fp-btn fp-btn--secondary" id="btn-cancel-order" style="padding:4px 12px;font-size:11px;margin-right:8px;display:none;">✖ Cancel</button>
-          <button class="fp-btn fp-btn--primary" id="btn-save-order" style="padding:4px 12px;font-size:11px;margin-right:8px;display:none;background:#28a745;border-color:#28a745;">✔ Save</button>
-          <button class="fp-btn fp-btn--primary" id="btn-new-map" style="padding:4px 12px;font-size:11px;margin-right:12px;">+ New Map</button>
-          <button class="fp-navigator__close">×</button>
+          <button class="fp-btn" id="btn-edit-order" style="background:var(--fp-primary);color:#fff;border:none;padding:6px 14px;border-radius:4px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:600;margin-right:8px;" title="Edit Map">
+            <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.5 3.5L16.5 5.5L5.5 16.5L3.5 16.5L3.5 14.5L14.5 3.5Z"/></svg>
+            Edit Map
+          </button>
+          <button class="fp-btn" id="btn-cancel-order" style="display:none;background:transparent;color:var(--fp-text-muted);border:1px solid var(--fp-border);padding:6px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-weight:600;margin-right:8px;">Cancel</button>
+          <button class="fp-btn" id="btn-save-order" style="display:none;background:#5cb85c;color:#fff;border:none;padding:6px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-weight:600;margin-right:8px;">Save</button>
+          <button class="fp-btn" id="btn-new-map" style="background:var(--fp-primary);color:#fff;border:none;padding:6px 14px;border-radius:4px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:600;" title="New Map">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            New Map
+          </button>
         </div>
         <div class="fp-navigator__body">
           <div class="fp-navigator__sidebar" style="display:flex;flex-direction:column;">
