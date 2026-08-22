@@ -316,20 +316,20 @@ $css_file = count($css_files) > 0 ? basename($css_files[0]) : '';
           <div class="fp-form-group" style="margin-bottom:16px;">
             <label style="display:block; font-size:12px; font-weight:600; color:var(--fp-text-muted); margin-bottom:6px;">Building</label>
             <div style="display:flex; gap:8px;">
-              <select id="create-map-building-sel" class="fp-select" style="flex: 0 0 40%; padding:8px 10px; font-size:13px;">
-                <option value="">-- New Building --</option>
+              <select id="create-map-building-sel" class="fp-select" style="flex: 0 0 25%; padding:8px 6px; font-size:12px;">
+                <option value="">+ New</option>
               </select>
-              <input type="text" id="create-map-building-txt" placeholder="Building name" style="flex: 1 1 60%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px;">
+              <input type="text" id="create-map-building-txt" placeholder="Building name" style="flex: 1 1 75%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px;">
             </div>
           </div>
 
           <div class="fp-form-group" style="margin-bottom:16px;">
             <label style="display:block; font-size:12px; font-weight:600; color:var(--fp-text-muted); margin-bottom:6px;">Floor</label>
             <div style="display:flex; gap:8px;">
-              <select id="create-map-floor-sel" class="fp-select" style="flex: 0 0 40%; padding:8px 10px; font-size:13px;">
-                <option value="">-- New Floor --</option>
+              <select id="create-map-floor-sel" class="fp-select" style="flex: 0 0 25%; padding:8px 6px; font-size:12px;">
+                <option value="">+ New</option>
               </select>
-              <input type="text" id="create-map-floor-txt" placeholder="Floor name" style="flex: 1 1 60%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px;">
+              <input type="text" id="create-map-floor-txt" placeholder="Floor name" style="flex: 1 1 75%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px;">
             </div>
           </div>
 

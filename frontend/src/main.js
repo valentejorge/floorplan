@@ -1044,7 +1044,7 @@ function bindCreateMap() {
     
     // Populate Buildings
     if (bSel && currentMapTree && currentMapTree.buildings) {
-      let bHtml = '<option value="">-- New Building --</option>';
+      let bHtml = '<option value="">+ New</option>';
       currentMapTree.buildings.forEach(b => {
         bHtml += `<option value="${b.id}">${b.name}</option>`;
       });
@@ -1056,19 +1056,30 @@ function bindCreateMap() {
     document.getElementById('create-map-floor-txt').value = '';
     document.getElementById('create-map-room-txt').value = '';
     
-    if (fSel) fSel.innerHTML = '<option value="">-- New Floor --</option>';
+    if (fSel) fSel.innerHTML = '<option value="">+ New</option>';
     
+    // Reset flex styles
+    bSel.style.flex = '0 0 25%';
+    if (fSel) fSel.style.flex = '0 0 25%';
+
     bSel.addEventListener('change', () => {
+      const bTxt = document.getElementById('create-map-building-txt');
+      const fTxt = document.getElementById('create-map-floor-txt');
+
       if (bSel.value === "") {
-        document.getElementById('create-map-building-txt').style.display = 'block';
-        fSel.innerHTML = '<option value="">-- New Floor --</option>';
-        document.getElementById('create-map-floor-txt').style.display = 'block';
+        bSel.style.flex = '0 0 25%';
+        bTxt.style.display = 'block';
+        fSel.style.flex = '0 0 25%';
+        fSel.innerHTML = '<option value="">+ New</option>';
+        fTxt.style.display = 'block';
       } else {
-        document.getElementById('create-map-building-txt').style.display = 'none';
-        document.getElementById('create-map-floor-txt').style.display = 'block';
+        bSel.style.flex = '1 1 100%';
+        bTxt.style.display = 'none';
+        fSel.style.flex = '0 0 25%';
+        fTxt.style.display = 'block';
         
         const b = currentMapTree.buildings.find(x => x.id == bSel.value);
-        let fHtml = '<option value="">-- New Floor --</option>';
+        let fHtml = '<option value="">+ New</option>';
         if (b && b.floors) {
           b.floors.forEach(f => {
             fHtml += `<option value="${f.id}">${f.name}</option>`;
@@ -1079,10 +1090,13 @@ function bindCreateMap() {
     });
     
     fSel.addEventListener('change', () => {
+      const fTxt = document.getElementById('create-map-floor-txt');
       if (fSel.value === "") {
-        document.getElementById('create-map-floor-txt').style.display = 'block';
+        fSel.style.flex = '0 0 25%';
+        fTxt.style.display = 'block';
       } else {
-        document.getElementById('create-map-floor-txt').style.display = 'none';
+        fSel.style.flex = '1 1 100%';
+        fTxt.style.display = 'none';
       }
     });
   };
