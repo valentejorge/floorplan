@@ -637,6 +637,17 @@ window.closeModal = function(modal) {
   }, 250);
 };
 
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const modals = Array.from(document.querySelectorAll('.fp-modal.visible'));
+    if (modals.length > 0) {
+      const modalToClose = modals[modals.length - 1];
+      // Simulate click on the modal overlay which triggers the close handler
+      modalToClose.click();
+    }
+  }
+});
+
 function bindFurnitureModal() {
   const modal = document.getElementById('furniture-modal');
   if (!modal) return;
@@ -898,7 +909,7 @@ function bindMapNavigator() {
       });
     }
     
-    modal.style.display = 'flex';
+    modal.classList.add('visible');
     setTimeout(() => { nameInput.focus(); nameInput.select(); }, 100);
     
     let btnCancel = document.getElementById('btn-cancel-prop');
@@ -913,7 +924,7 @@ function bindMapNavigator() {
     
     const closeFunc = () => {
        cleanup();
-       modal.style.display = 'none';
+       window.closeModal(modal);
     };
     
     btnCancel.addEventListener('click', closeFunc);
@@ -956,8 +967,7 @@ function bindMapNavigator() {
        
        btnSave.disabled = false;
        btnSave.innerText = 'Save';
-       cleanup();
-       modal.style.display = 'none';
+       closeFunc();
     });
   }
 
