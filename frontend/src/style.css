@@ -880,14 +880,26 @@ body {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* Global input focus ring (Lilac theme) */
+input,
+select,
+textarea {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:focus,
+input:focus-visible,
+select:focus,
+select:focus-visible,
+textarea:focus,
+textarea:focus-visible,
 .fp-select:focus,
-.fp-modal input[type="text"]:focus,
-.fp-modal input[type="number"]:focus,
+.fp-modal input:focus,
 .fp-topbar__input:focus,
 #nav-sidebar-search:focus,
 #assets-catalog-search:focus {
   border-color: var(--fp-primary) !important;
-  box-shadow: 0 0 0 3px rgba(150, 27, 126, 0.18) !important;
+  box-shadow: 0 0 0 3px rgba(150, 27, 126, 0.25) !important;
   outline: none !important;
 }
 

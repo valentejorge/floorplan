@@ -2,11 +2,21 @@
 // Define the base URL for the plugin assets dynamically
 $plugin_dir = "extensions/floorplan/ms_floorplan";
 $assets_dir = "$plugin_dir/assets";
-
-// We find the dynamically generated CSS file
-$css_files = glob(__DIR__ . '/assets/assets/*.css');
-$css_file = count($css_files) > 0 ? basename($css_files[0]) : '';
 ?>
+<style>
+<?php 
+$css_file_path = __DIR__ . '/assets/style.css';
+if (file_exists($css_file_path)) {
+    echo file_get_contents($css_file_path);
+} else {
+    $css_files = glob(__DIR__ . '/assets/assets/*.css');
+    if (!empty($css_files)) {
+        usort($css_files, function($a, $b) { return filemtime($b) - filemtime($a); });
+        echo file_get_contents($css_files[0]);
+    }
+}
+?>
+</style>
 <div id="floorplan-root" style="height: calc(100vh - 120px); position: relative; display: flex; flex-direction: column;">
   <!-- OCS Plugin Container -->
     <!-- ── Topbar ──────────────────────────────────────────────── -->
@@ -378,13 +388,7 @@ $css_file = count($css_files) > 0 ? basename($css_files[0]) : '';
 
 </div>
 
-<?php 
-if ($css_file): 
-    $css_path = __DIR__ . '/assets/assets/' . $css_file;
-    $css_v = file_exists($css_path) ? filemtime($css_path) : time();
-?>
-<link rel="stylesheet" href="<?php echo $assets_dir; ?>/assets/<?php echo $css_file; ?>?v=<?php echo $css_v; ?>">
-<?php endif; ?>
+
 
 <?php
 $js_path = __DIR__ . '/assets/map-bundle.js';

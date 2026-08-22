@@ -13,6 +13,7 @@ export default defineConfig({
       input: resolve(root, 'src/main.js'),
       output: {
         entryFileNames: 'map-bundle.js',
+        assetFileNames: 'style.[ext]',
         // Inline everything into a single file for OCS deployment
         inlineDynamicImports: true,
       },
