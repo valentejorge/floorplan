@@ -716,12 +716,18 @@ function bindMapNavigator() {
     const sidebarContainer = document.querySelector('.fp-navigator__sidebar');
     if (sidebarContainer) sidebarContainer.style.width = '220px';
     
-    // Reload tree from server to restore original order
+    document.querySelectorAll('.fp-sidebar-actions').forEach(el => el.classList.add('is-closing'));
+    
+    const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
+    const activeFidStr = activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '';
+    
     api('get_map_tree.php').then(json => {
       currentMapTree = json.data;
-      const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
-      window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
     });
+    
+    setTimeout(() => {
+      window.renderNavigatorSidebar('', activeFidStr);
+    }, 300);
   }
 
   const closeModalFunc = () => {
@@ -776,8 +782,14 @@ function bindMapNavigator() {
     const sidebarContainer = document.querySelector('.fp-navigator__sidebar');
     if (sidebarContainer) sidebarContainer.style.width = '220px';
     
+    document.querySelectorAll('.fp-sidebar-actions').forEach(el => el.classList.add('is-closing'));
+    
     const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
-    window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
+    const activeFidStr = activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '';
+    
+    setTimeout(() => {
+       window.renderNavigatorSidebar('', activeFidStr);
+    }, 300);
   });
 
   async function handleDelete(type, id) {
