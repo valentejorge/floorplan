@@ -1010,6 +1010,8 @@ textarea:focus-visible,
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.15s ease;
+  height: 34px;
+  box-sizing: border-box;
 }
 
 .fp-nav-building:hover {
@@ -1025,6 +1027,8 @@ textarea:focus-visible,
   cursor: pointer;
   border-radius: 6px;
   transition: all 0.15s ease;
+  height: 34px;
+  box-sizing: border-box;
 }
 
 .fp-nav-floor:hover {

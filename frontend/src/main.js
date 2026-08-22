@@ -1145,7 +1145,10 @@ function bindMapNavigator() {
     }
 
     if (targetFloor) {
+      targetFloor.style.transition = 'none';
       targetFloor.click();
+      targetFloor.offsetHeight; // force reflow
+      targetFloor.style.transition = '';
       if (preselect) targetFloor.scrollIntoView({ block: 'nearest' });
     } else {
       grid.innerHTML = '<div style="padding:40px;grid-column:1/-1;text-align:center;">Select a floor</div>';
