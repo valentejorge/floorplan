@@ -911,10 +911,19 @@ function bindMapNavigator() {
        btnSave.replaceWith(newSave);
     };
     
-    btnCancel.addEventListener('click', () => {
+    const closeFunc = () => {
        cleanup();
        modal.style.display = 'none';
-    });
+    };
+    
+    btnCancel.addEventListener('click', closeFunc);
+    
+    const headerCloseBtn = document.getElementById('prop-close-header-btn');
+    if (headerCloseBtn) headerCloseBtn.onclick = closeFunc;
+    
+    modal.onclick = (e) => {
+       if (e.target === modal) closeFunc();
+    };
     
     btnSave.addEventListener('click', async () => {
        btnSave.disabled = true;
