@@ -949,23 +949,70 @@ textarea:focus-visible,
   overflow-y: auto;
 }
 
+/* ── Custom Scrollbars for Navigator (Chrome/Edge/Safari & Firefox) ─────────────────────────────── */
+.fp-navigator__sidebar,
+.fp-navigator__grid {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+.fp-navigator__sidebar::-webkit-scrollbar,
+.fp-navigator__grid::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.fp-navigator__sidebar::-webkit-scrollbar-track,
+.fp-navigator__grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.fp-navigator__sidebar::-webkit-scrollbar-thumb,
+.fp-navigator__grid::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+}
+
+.fp-navigator__sidebar::-webkit-scrollbar-thumb:hover,
+.fp-navigator__grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* ── Buildings & Floors Visual Hierarchy ─────────────────────────── */
 .fp-nav-building {
-  padding: 12px 16px;
-  font-weight: 700;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--fp-text-muted);
-  border-bottom: 1px solid var(--fp-border);
+  padding: 8px 12px;
+  margin: 4px 8px;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--fp-text);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.fp-nav-building:hover {
+  background: #f1f5f9;
 }
 
 .fp-nav-floor {
-  padding: 12px 16px 12px 24px;
-  font-size: 13px;
-  color: var(--fp-text);
+  padding: 8px 12px 8px 36px;
+  margin: 2px 8px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--fp-text-muted);
   cursor: pointer;
-  border-bottom: 1px solid #f1f3f5;
-  transition: background 0.1s;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.fp-nav-floor:hover {
+  background: #f1f5f9;
+}
+
+.fp-nav-floor.active {
+  background: var(--fp-primary-soft);
+  color: var(--fp-primary);
+  font-weight: 600;
 }
 
 .fp-actions-group {
@@ -1031,7 +1078,48 @@ textarea:focus-visible,
   align-content: start;
 }
 
+.fp-btn-icon {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  color: var(--fp-text-muted);
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.fp-btn-icon:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--fp-text);
+}
+
+.fp-btn-icon.fp-btn-del:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.fp-room-card-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  padding: 2px 4px;
+  display: flex;
+  gap: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+}
+
 .fp-room-card {
+  position: relative;
   border: 1px solid var(--fp-border);
   border-radius: 6px;
   background: #fff;

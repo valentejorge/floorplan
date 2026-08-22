@@ -873,25 +873,36 @@ function bindMapNavigator() {
 
       const pencilSvg = `<svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5L16.5 5.5L5.5 16.5L3.5 16.5L3.5 14.5L14.5 3.5Z"/></svg>`;
       const trashSvg = `<svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h14M8 6V4a1 1 0 011-1h2a1 1 0 011 1v2M5 6v10a2 2 0 002 2h6a2 2 0 002-2V6"/></svg>`;
+      
+      const bBuildingIcon = `<svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" style="margin-right:6px;color:#64748b;flex-shrink:0;"><rect x="4" y="2" width="12" height="16" rx="1"/><line x1="7" y1="5" x2="9" y2="5"/><line x1="11" y1="5" x2="13" y2="5"/><line x1="7" y1="9" x2="9" y2="9"/><line x1="11" y1="9" x2="13" y2="9"/><line x1="7" y1="13" x2="9" y2="13"/><line x1="11" y1="13" x2="13" y2="13"/><line x1="9" y1="18" x2="9" y2="15"/></svg>`;
+      const fFloorIcon = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;color:#94a3b8;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>`;
+      const chevronIcon = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:2px;color:#cbd5e1;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>`;
 
-      html += `<div class="fp-nav-building" data-id="${b.id}" style="display:flex;justify-content:space-between;align-items:center;">
-        <span class="fp-item-title">${b.name}</span>
-        ${isEditMapMode ? `<div style="display:flex;gap:4px;align-items:center;">
-            <button class="fp-btn fp-btn--icon fp-btn-rename" data-id="${b.id}" data-name="${b.name}" title="Rename building">${pencilSvg}</button>
-            <button class="fp-btn fp-btn--icon fp-btn-del" style="color:var(--fp-danger);" data-type="building" data-id="${b.id}" title="Delete building">${trashSvg}</button>
-            <button class="fp-btn fp-btn--icon fp-btn-up" data-type="building" data-id="${b.id}" data-idx="${currentMapTree.buildings.indexOf(b)}">⬆</button>
-            <button class="fp-btn fp-btn--icon fp-btn-down" data-type="building" data-id="${b.id}" data-idx="${currentMapTree.buildings.indexOf(b)}">⬇</button>
+      html += `<div class="fp-nav-building" data-id="${b.id}" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <div style="display:flex;align-items:center;min-width:0;flex:1;">
+          ${chevronIcon}
+          ${bBuildingIcon}
+          <span class="fp-item-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.name}</span>
+        </div>
+        ${isEditMapMode ? `<div style="display:flex;gap:2px;align-items:center;flex-shrink:0;">
+            <button class="fp-btn-icon fp-btn-rename" data-id="${b.id}" data-name="${b.name}" title="Rename">${pencilSvg}</button>
+            <button class="fp-btn-icon fp-btn-del" data-type="building" data-id="${b.id}" title="Delete">${trashSvg}</button>
+            <button class="fp-btn-icon fp-btn-up" data-type="building" data-id="${b.id}" data-idx="${currentMapTree.buildings.indexOf(b)}" title="Move up">▲</button>
+            <button class="fp-btn-icon fp-btn-down" data-type="building" data-id="${b.id}" data-idx="${currentMapTree.buildings.indexOf(b)}" title="Move down">▼</button>
         </div>` : ''}
       </div>`;
       
       floorsToRender.forEach(f => {
-        html += `<div class="fp-nav-floor" data-bid="${b.id}" data-fid="${f.id}" style="display:flex;justify-content:space-between;align-items:center;">
-          <span class="fp-item-title">${f.name}</span>
-          ${isEditMapMode ? `<div style="display:flex;gap:4px;align-items:center;">
-              <button class="fp-btn fp-btn--icon fp-btn-rename" data-id="${f.id}" data-name="${f.name}" title="Rename floor">${pencilSvg}</button>
-              <button class="fp-btn fp-btn--icon fp-btn-del" style="color:var(--fp-danger);" data-type="floor" data-id="${f.id}" title="Delete floor">${trashSvg}</button>
-              <button class="fp-btn fp-btn--icon fp-btn-up" data-type="floor" data-bid="${b.id}" data-id="${f.id}" data-idx="${b.floors.indexOf(f)}">⬆</button>
-              <button class="fp-btn fp-btn--icon fp-btn-down" data-type="floor" data-bid="${b.id}" data-id="${f.id}" data-idx="${b.floors.indexOf(f)}">⬇</button>
+        html += `<div class="fp-nav-floor" data-bid="${b.id}" data-fid="${f.id}" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <div style="display:flex;align-items:center;min-width:0;flex:1;">
+            ${fFloorIcon}
+            <span class="fp-item-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
+          </div>
+          ${isEditMapMode ? `<div style="display:flex;gap:2px;align-items:center;flex-shrink:0;">
+              <button class="fp-btn-icon fp-btn-rename" data-id="${f.id}" data-name="${f.name}" title="Rename">${pencilSvg}</button>
+              <button class="fp-btn-icon fp-btn-del" data-type="floor" data-id="${f.id}" title="Delete">${trashSvg}</button>
+              <button class="fp-btn-icon fp-btn-up" data-type="floor" data-bid="${b.id}" data-id="${f.id}" data-idx="${b.floors.indexOf(f)}" title="Move up">▲</button>
+              <button class="fp-btn-icon fp-btn-down" data-type="floor" data-bid="${b.id}" data-id="${f.id}" data-idx="${b.floors.indexOf(f)}" title="Move down">▼</button>
           </div>` : ''}
         </div>`;
       });
@@ -901,13 +912,29 @@ function bindMapNavigator() {
 
     sidebar.querySelectorAll('.fp-nav-floor').forEach(el => {
       el.addEventListener('click', (e) => {
-        if (e.target.tagName === 'BUTTON') return; // let buttons handle themselves
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return; // let buttons handle themselves
         sidebar.querySelectorAll('.fp-nav-floor').forEach(x => x.classList.remove('active'));
         el.classList.add('active');
         
         const b = currentMapTree.buildings.find(x => x.id == el.dataset.bid);
         const f = b.floors.find(x => x.id == el.dataset.fid);
         renderNavigatorGrid(b, f);
+      });
+    });
+
+    sidebar.querySelectorAll('.fp-nav-building').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return; // let buttons handle themselves
+        const b = currentMapTree.buildings.find(x => x.id == el.dataset.id);
+        if (b && b.floors && b.floors.length > 0) {
+          const f = b.floors[0];
+          const floorEl = sidebar.querySelector(`.fp-nav-floor[data-bid="${b.id}"][data-fid="${f.id}"]`);
+          if (floorEl) {
+            floorEl.click();
+          } else {
+            renderNavigatorGrid(b, f);
+          }
+        }
       });
     });
 
@@ -941,7 +968,7 @@ function bindMapNavigator() {
     sidebar.querySelectorAll('.fp-btn-rename').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const parentDiv = btn.closest('.fp-hover-actions-item');
+        const parentDiv = btn.closest('.fp-nav-building, .fp-nav-floor');
         const titleSpan = parentDiv.querySelector('.fp-item-title');
         handleRename(btn.dataset.id, btn.dataset.name, titleSpan);
       });
@@ -990,24 +1017,22 @@ function bindMapNavigator() {
     const trashSvg = `<svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h14M8 6V4a1 1 0 011-1h2a1 1 0 011 1v2M5 6v10a2 2 0 002 2h6a2 2 0 002-2V6"/></svg>`;
 
     grid.innerHTML = roomsToRender.map((r, idx) => `
-      <div class="fp-room-card" data-bname="${building.name}" data-fname="${floor.name}" data-rname="${r.name}" data-room-id="${r.id}" style="${isEditMapMode ? 'border:1px solid var(--fp-primary);' : ''}">
+      <div class="fp-room-card" data-bname="${building.name}" data-fname="${floor.name}" data-rname="${r.name}" data-room-id="${r.id}">
         <div class="fp-room-thumb" style="background:${r.color};">${r.icon}</div>
+        ${isEditMapMode ? `
+        <div class="fp-room-card-actions">
+            <button class="fp-btn-icon fp-btn-rename" data-id="${r.id}" data-name="${r.name}" title="Rename">${pencilSvg}</button>
+            <button class="fp-btn-icon fp-btn-del" data-type="room" data-id="${r.id}" title="Delete">${trashSvg}</button>
+            <button class="fp-btn-icon fp-grid-up" data-idx="${idx}" data-fid="${floor.id}" data-bid="${building.id}" title="Move left">◀</button>
+            <button class="fp-btn-icon fp-grid-down" data-idx="${idx}" data-fid="${floor.id}" data-bid="${building.id}" title="Move right">▶</button>
+        </div>` : ''}
         <div class="fp-room-info" style="flex:1;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div class="fp-room-name fp-item-title" title="${r.name}">${r.name}</div>
-          </div>
+          <div class="fp-room-name fp-item-title" title="${r.name}">${r.name}</div>
           <div class="fp-room-meta">
             <svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor"><rect x="3" y="2" width="14" height="16" rx="2"/></svg>
             ${r.assetCount} assets
           </div>
         </div>
-        ${isEditMapMode ? `
-        <div style="display:flex;flex-direction:column;gap:4px;padding:4px;align-items:center;">
-            <button class="fp-btn fp-btn--icon fp-btn-rename" data-id="${r.id}" data-name="${r.name}" title="Rename room">${pencilSvg}</button>
-            <button class="fp-btn fp-btn--icon fp-btn-del" style="color:var(--fp-danger);" data-type="room" data-id="${r.id}" title="Delete room">${trashSvg}</button>
-            <button class="fp-btn fp-btn--icon fp-grid-up" data-idx="${idx}" data-fid="${floor.id}" data-bid="${building.id}">⬆</button>
-            <button class="fp-btn fp-btn--icon fp-grid-down" data-idx="${idx}" data-fid="${floor.id}" data-bid="${building.id}">⬇</button>
-        </div>` : ''}
       </div>
     `).join('');
 
