@@ -773,6 +773,9 @@ function bindMapNavigator() {
     if (btnCancelOrder) btnCancelOrder.style.display = 'none';
     btnEditOrder.style.display = 'inline-block';
     
+    const sidebarContainer = document.querySelector('.fp-navigator__sidebar');
+    if (sidebarContainer) sidebarContainer.style.width = '220px';
+    
     const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
     window.renderNavigatorSidebar('', activeFid ? sidebar.querySelector('.fp-nav-floor.active').innerText : '');
   });
@@ -921,7 +924,41 @@ function bindMapNavigator() {
       });
     });
     
+    const firstRects = new Map();
+    if (isEditMapMode) {
+      sidebar.querySelectorAll('.fp-nav-building, .fp-nav-floor').forEach(el => {
+         const key = el.dataset.fid ? 'floor-' + el.dataset.fid : 'building-' + el.dataset.id;
+         firstRects.set(key, el.getBoundingClientRect());
+      });
+    }
+    
     sidebar.innerHTML = html || '<div style="padding:10px;color:var(--fp-text-muted);font-size:11px;">No matches</div>';
+
+    if (isEditMapMode && firstRects.size > 0) {
+       requestAnimationFrame(() => {
+         sidebar.querySelectorAll('.fp-nav-building, .fp-nav-floor').forEach(el => {
+           const key = el.dataset.fid ? 'floor-' + el.dataset.fid : 'building-' + el.dataset.id;
+           const firstRect = firstRects.get(key);
+           if (firstRect) {
+             const lastRect = el.getBoundingClientRect();
+             const deltaY = firstRect.top - lastRect.top;
+             if (deltaY !== 0) {
+                el.style.transform = `translateY(${deltaY}px)`;
+                el.style.transition = 'none';
+                
+                requestAnimationFrame(() => {
+                  el.style.transform = '';
+                  el.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'; // slightly bouncy spring
+                  
+                  setTimeout(() => {
+                      el.style.transition = '';
+                  }, 400);
+                });
+             }
+           }
+         });
+       });
+    }
 
     sidebar.querySelectorAll('.fp-nav-floor').forEach(el => {
       el.addEventListener('click', (e) => {

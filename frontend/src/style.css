@@ -947,6 +947,7 @@ textarea:focus-visible,
   background: #fafbfc;
   border-right: 1px solid var(--fp-border);
   overflow-y: auto;
+  transition: width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
 /* ── Custom Scrollbars for Navigator (Chrome/Edge/Safari & Firefox) ─────────────────────────────── */
