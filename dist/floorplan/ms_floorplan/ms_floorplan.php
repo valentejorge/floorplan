@@ -367,6 +367,30 @@ if (file_exists($css_file_path)) {
       </div>
     </div>
 
+    <!-- ── Properties Modal (Jira-style edit) ─────────────────────────── -->
+    <div id="fp-properties-modal" class="fp-modal">
+      <div class="fp-modal__content" style="width: 360px; padding: 24px;">
+        <h2 style="margin:0 0 16px 0; font-size:16px; font-weight:600; color:var(--fp-text);">Edit Properties</h2>
+        
+        <div class="fp-form-group" style="margin-bottom: 16px;">
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--fp-text-muted); margin-bottom:6px;">Name</label>
+          <input type="text" id="prop-name-input" style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px; box-sizing:border-box;">
+        </div>
+        
+        <div class="fp-form-group" id="prop-parent-group" style="margin-bottom: 24px;">
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--fp-text-muted); margin-bottom:6px;">Parent</label>
+          <select id="prop-parent-select" style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px; box-sizing:border-box; background:#fff;">
+            <!-- Options dynamically populated -->
+          </select>
+        </div>
+        
+        <div style="display:flex; gap:12px; justify-content:flex-end;">
+          <button class="fp-btn fp-btn--outline" id="btn-cancel-prop" style="padding:7px 14px; font-size:13px; font-weight:600;">Cancel</button>
+          <button class="fp-btn fp-btn--primary" id="btn-save-prop" style="padding:7px 14px; font-size:13px; font-weight:600;">Save</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Confirm Modal ───────────────────────────────────────── -->
     <div id="confirm-modal" class="fp-modal">
       <div class="fp-modal__content fp-confirm-dialog">

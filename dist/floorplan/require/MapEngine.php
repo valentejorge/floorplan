@@ -120,8 +120,8 @@ class MapEngine
             'room_data' => [
                 'id' => (int)$room['id'],
                 'name' => $room['name'],
-                'floor_name' => $room['floor_name'] ?: 'Unassigned',
-                'building_name' => $room['building_name'] ?: 'Others',
+                'floor_name' => $room['floor_name'] ?: '',
+                'building_name' => $room['building_name'] ?: '',
                 'canvas_width' => $width,
                 'canvas_height' => $height
             ],

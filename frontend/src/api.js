@@ -163,8 +163,6 @@ export async function api(endpoint, options = {}) {
   if (endpoint.startsWith('get_map_tree.php')) {
     // Wrap locations into buildings and handle orphan rooms
     const buildings = [];
-    let othersBuilding = null;
-    let othersFloor = null;
 
     (json.locations || []).forEach(loc => {
       if (loc.type === 'building') {
@@ -180,14 +178,7 @@ export async function api(endpoint, options = {}) {
          });
          buildings.push(b);
       } else if (loc.type === 'room') {
-         // Orphan room created without parent!
-         if (!othersBuilding) {
-             othersBuilding = { id: -1, name: 'Others', floors: [] };
-             othersFloor = { id: -1, name: 'Unassigned Rooms', rooms: [] };
-             othersBuilding.floors.push(othersFloor);
-             buildings.push(othersBuilding);
-         }
-         othersFloor.rooms.push({ id: loc.id, name: loc.name, assetCount: 0 });
+         // Orphan rooms are ignored as they shouldn't exist in the UI without a parent
       }
     });
     
