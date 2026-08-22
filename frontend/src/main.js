@@ -661,6 +661,34 @@ function bindFurnitureModal() {
   });
 }
 
+window.loadRoomMap = async function(roomId, roomName, buildingName, floorName) {
+  if (!(await window.checkEditMode())) return;
+  
+  updateBreadcrumb(buildingName, floorName, roomName);
+  
+  const modal = document.getElementById('map-navigator-modal');
+  if (modal) window.closeModal(modal);
+  
+  notify(`Loading map: ${roomName}...`);
+  
+  api(`get_room.php?id=${roomId}`)
+    .then(json => {
+      if (json.status === 'success') {
+        import('./renderer.js').then(({ loadMapData }) => {
+          loadMapData(json.data);
+          const roomData = json.data.room_data;
+          updateBreadcrumb(roomData.building_name, roomData.floor_name, roomData.name);
+        });
+      }
+    })
+    .catch(() => {
+      notify(`No data found for "${roomName}". Loading empty map.`, 'warning');
+      import('./renderer.js').then(({ loadMapData }) => {
+        loadMapData({ floor_zones: [], walls: [], doors: [], furniture: [], assets: [] });
+      });
+    });
+};
+
 window.openMapNavigator = async function(preselect = '') {
   if (!(await window.checkEditMode())) return;
   
@@ -1053,6 +1081,18 @@ function bindMapNavigator() {
         const f = b.floors.find(x => x.id == el.dataset.fid);
         renderNavigatorGrid(b, f);
       });
+      
+      el.addEventListener('dblclick', async (e) => {
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+        if (isEditMapMode) return;
+        
+        const b = currentMapTree.buildings.find(x => x.id == el.dataset.bid);
+        const f = b.floors.find(x => x.id == el.dataset.fid);
+        if (f && f.rooms && f.rooms.length > 0) {
+            const r = f.rooms[0];
+            window.loadRoomMap(r.id, r.name, b.name, f.name);
+        }
+      });
     });
 
     sidebar.querySelectorAll('.fp-nav-building').forEach(el => {
@@ -1067,6 +1107,22 @@ function bindMapNavigator() {
           } else {
             renderNavigatorGrid(b, f);
           }
+        }
+      });
+
+      el.addEventListener('dblclick', async (e) => {
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+        if (isEditMapMode) return;
+        
+        const b = currentMapTree.buildings.find(x => x.id == el.dataset.id);
+        if (b && b.floors && b.floors.length > 0) {
+            for (let f of b.floors) {
+                if (f.rooms && f.rooms.length > 0) {
+                    const r = f.rooms[0];
+                    window.loadRoomMap(r.id, r.name, b.name, f.name);
+                    return;
+                }
+            }
         }
       });
     });
@@ -1293,27 +1349,7 @@ function bindMapNavigator() {
         
         const roomName = card.dataset.rname;
         const roomId = card.dataset.roomId || '100'; // Default fallback
-        updateBreadcrumb(card.dataset.bname, card.dataset.fname, roomName);
-        window.closeModal(modal);
-        
-        notify(`Loading map: ${roomName}...`);
-        
-        api(`get_room.php?id=${roomId}`)
-          .then(json => {
-            if (json.status === 'success') {
-              import('./renderer.js').then(({ loadMapData }) => {
-                loadMapData(json.data);
-                const roomData = json.data.room_data;
-                updateBreadcrumb(roomData.building_name, roomData.floor_name, roomData.name);
-              });
-            }
-          })
-          .catch(() => {
-            notify(`No data found for "${roomName}". Loading empty map.`, 'warning');
-            import('./renderer.js').then(({ loadMapData }) => {
-              loadMapData({ floor_zones: [], walls: [], doors: [], furniture: [], assets: [] });
-            });
-          });
+        window.loadRoomMap(roomId, roomName, card.dataset.bname, card.dataset.fname);
       });
     });
   }
