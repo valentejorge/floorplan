@@ -98,7 +98,7 @@ js: import "konva/skia-backend";
           <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" style="margin-right:6px;color:#64748b;flex-shrink:0;"><rect x="4" y="2" width="12" height="16" rx="1"/><line x1="7" y1="5" x2="9" y2="5"/><line x1="11" y1="5" x2="13" y2="5"/><line x1="7" y1="9" x2="9" y2="9"/><line x1="11" y1="9" x2="13" y2="9"/><line x1="7" y1="13" x2="9" y2="13"/><line x1="11" y1="13" x2="13" y2="13"/><line x1="9" y1="18" x2="9" y2="15"/></svg>
           <span class="fp-item-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name}</span>
         </div>
-        ${o?`<div style="display:flex;gap:2px;align-items:center;flex-shrink:0;">
+        ${o?`<div class="fp-sidebar-actions" style="display:flex;gap:2px;align-items:center;flex-shrink:0;">
             <button class="fp-btn-icon fp-btn-rename" data-id="${t.id}" data-name="${t.name}" title="Rename">${s}</button>
             <button class="fp-btn-icon fp-btn-del" data-type="building" data-id="${t.id}" title="Delete">${c}</button>
             ${d?`<button class="fp-btn-icon fp-btn-up" data-type="building" data-id="${t.id}" data-idx="${l}" title="Move up">▲</button>`:``}
@@ -109,7 +109,7 @@ js: import "konva/skia-backend";
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;color:#94a3b8;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
             <span class="fp-item-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.name}</span>
           </div>
-          ${o?`<div style="display:flex;gap:2px;align-items:center;flex-shrink:0;">
+          ${o?`<div class="fp-sidebar-actions" style="display:flex;gap:2px;align-items:center;flex-shrink:0;">
               <button class="fp-btn-icon fp-btn-rename" data-id="${e.id}" data-name="${e.name}" title="Rename">${s}</button>
               <button class="fp-btn-icon fp-btn-del" data-type="floor" data-id="${e.id}" title="Delete">${c}</button>
               ${r?`<button class="fp-btn-icon fp-btn-up" data-type="floor" data-bid="${t.id}" data-id="${e.id}" data-idx="${n}" title="Move up">▲</button>`:``}

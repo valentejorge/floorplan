@@ -950,6 +950,17 @@ textarea:focus-visible,
   transition: width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
+@keyframes fp-actions-reveal {
+  0% { max-width: 0; opacity: 0; }
+  100% { max-width: 140px; opacity: 1; }
+}
+
+.fp-sidebar-actions {
+  animation: fp-actions-reveal 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) backwards;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 /* ── Custom Scrollbars for Navigator (Chrome/Edge/Safari & Firefox) ─────────────────────────────── */
 .fp-navigator__sidebar,
 .fp-navigator__grid {

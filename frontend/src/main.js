@@ -953,7 +953,7 @@ function bindMapNavigator() {
           ${bBuildingIcon}
           <span class="fp-item-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.name}</span>
         </div>
-        ${isEditMapMode ? `<div style="display:flex;gap:2px;align-items:center;flex-shrink:0;">
+        ${isEditMapMode ? `<div class="fp-sidebar-actions" style="display:flex;gap:2px;align-items:center;flex-shrink:0;">
             <button class="fp-btn-icon fp-btn-rename" data-id="${b.id}" data-name="${b.name}" title="Rename">${pencilSvg}</button>
             <button class="fp-btn-icon fp-btn-del" data-type="building" data-id="${b.id}" title="Delete">${trashSvg}</button>
             ${showBUp ? `<button class="fp-btn-icon fp-btn-up" data-type="building" data-id="${b.id}" data-idx="${bIdx}" title="Move up">▲</button>` : ''}
@@ -970,7 +970,7 @@ function bindMapNavigator() {
             ${fFloorIcon}
             <span class="fp-item-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
           </div>
-          ${isEditMapMode ? `<div style="display:flex;gap:2px;align-items:center;flex-shrink:0;">
+          ${isEditMapMode ? `<div class="fp-sidebar-actions" style="display:flex;gap:2px;align-items:center;flex-shrink:0;">
               <button class="fp-btn-icon fp-btn-rename" data-id="${f.id}" data-name="${f.name}" title="Rename">${pencilSvg}</button>
               <button class="fp-btn-icon fp-btn-del" data-type="floor" data-id="${f.id}" title="Delete">${trashSvg}</button>
               ${showFUp ? `<button class="fp-btn-icon fp-btn-up" data-type="floor" data-bid="${b.id}" data-id="${f.id}" data-idx="${fIdx}" title="Move up">▲</button>` : ''}
