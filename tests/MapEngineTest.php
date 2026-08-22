@@ -53,6 +53,7 @@ class MapEngineTest extends TestCase {
                 canvas_width INT NOT NULL,
                 canvas_height INT NOT NULL,
                 architecture_payload TEXT,
+                thumbnail LONGTEXT DEFAULT NULL,
                 FOREIGN KEY (room_id) REFERENCES plugin_floorplan_locations(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         ");
@@ -82,7 +83,8 @@ class MapEngineTest extends TestCase {
         // 3. Save room data
         $payload = [
             'architecture' => $mockArchitecture,
-            'assets' => [] // No assets for this test
+            'assets' => [], // No assets for this test
+            'thumbnail' => 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD' // mock base64
         ];
         
         // Engine should split this and save architecture to rooms_data
@@ -98,6 +100,12 @@ class MapEngineTest extends TestCase {
         $this->assertIsArray($retrieved['architecture']);
         $this->assertArrayHasKey('walls', $retrieved['architecture']);
         $this->assertCount(1, $retrieved['architecture']['walls']);
+        $this->assertEquals(100, $retrieved['architecture']['walls'][0]['length']);
+        
+        // 5. Verify thumbnail in map tree
+        $tree = $this->engine->getMapTree();
+        $this->assertNotEmpty($tree['locations']);
+        $this->assertEquals('data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD', $tree['locations'][0]['thumbnail']);
     }
 
     public function testAssetRelationWithOcsHardware() {
