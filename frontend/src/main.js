@@ -716,7 +716,7 @@ function bindMapNavigator() {
     const sidebarContainer = document.querySelector('.fp-navigator__sidebar');
     if (sidebarContainer) sidebarContainer.style.width = '220px';
     
-    document.querySelectorAll('.fp-sidebar-actions').forEach(el => el.classList.add('is-closing'));
+    document.querySelectorAll('.fp-sidebar-actions, .fp-room-card-actions').forEach(el => el.classList.add('is-closing'));
     
     const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
     
@@ -781,7 +781,7 @@ function bindMapNavigator() {
     const sidebarContainer = document.querySelector('.fp-navigator__sidebar');
     if (sidebarContainer) sidebarContainer.style.width = '220px';
     
-    document.querySelectorAll('.fp-sidebar-actions').forEach(el => el.classList.add('is-closing'));
+    document.querySelectorAll('.fp-sidebar-actions, .fp-room-card-actions').forEach(el => el.classList.add('is-closing'));
     
     const activeFid = sidebar.querySelector('.fp-nav-floor.active')?.dataset.fid;
     

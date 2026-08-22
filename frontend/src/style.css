@@ -1129,6 +1129,16 @@ textarea:focus-visible,
   color: #dc2626;
 }
 
+@keyframes fp-room-actions-in {
+  0% { transform: scale(0.8) translateY(-4px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes fp-room-actions-out {
+  0% { transform: scale(1) translateY(0); opacity: 1; }
+  100% { transform: scale(0.8) translateY(-4px); opacity: 0; }
+}
+
 .fp-room-card-actions {
   position: absolute;
   top: 6px;
@@ -1142,6 +1152,11 @@ textarea:focus-visible,
   gap: 2px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   z-index: 10;
+  animation: fp-room-actions-in 0.2s cubic-bezier(0.34, 1.15, 0.64, 1) backwards;
+}
+
+.fp-room-card-actions.is-closing {
+  animation: fp-room-actions-out 0.2s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
 }
 
 .fp-room-card {
