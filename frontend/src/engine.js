@@ -37,8 +37,7 @@ export function captureThumbnail() {
   const ratio = Math.min(targetWidth / stage.width(), 1);
   
   const dataURL = stage.toDataURL({
-    mimeType: 'image/jpeg',
-    quality: 0.6,
+    mimeType: 'image/png',
     pixelRatio: ratio
   });
 
