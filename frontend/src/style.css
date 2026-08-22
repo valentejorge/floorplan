@@ -951,19 +951,20 @@ textarea:focus-visible,
 }
 
 @keyframes fp-actions-reveal {
-  0% { max-width: 0; opacity: 0; }
-  100% { max-width: 140px; opacity: 1; }
+  0% { max-width: 0; opacity: 0; margin-left: 0; }
+  100% { max-width: 140px; opacity: 1; margin-left: 8px; }
 }
 
 @keyframes fp-actions-hide {
-  0% { max-width: 140px; opacity: 1; }
-  100% { max-width: 0; opacity: 0; }
+  0% { max-width: 140px; opacity: 1; margin-left: 8px; }
+  100% { max-width: 0; opacity: 0; margin-left: 0; }
 }
 
 .fp-sidebar-actions {
   animation: fp-actions-reveal 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) backwards;
   overflow: hidden;
   white-space: nowrap;
+  margin-left: 8px;
 }
 
 .fp-sidebar-actions.is-closing {

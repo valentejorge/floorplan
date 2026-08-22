@@ -959,7 +959,7 @@ function bindMapNavigator() {
       const showBUp = bTotal > 1 && bIdx > 0;
       const showBDown = bTotal > 1 && bIdx < bTotal - 1;
 
-      html += `<div class="fp-nav-building" data-id="${b.id}" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+      html += `<div class="fp-nav-building" data-id="${b.id}" style="display:flex;justify-content:space-between;align-items:center;">
         <div style="display:flex;align-items:center;min-width:0;flex:1;">
           ${chevronIcon}
           ${bBuildingIcon}
@@ -977,7 +977,7 @@ function bindMapNavigator() {
       floorsToRender.forEach((f, fIdx) => {
         const showFUp = fTotal > 1 && fIdx > 0;
         const showFDown = fTotal > 1 && fIdx < fTotal - 1;
-        html += `<div class="fp-nav-floor" data-bid="${b.id}" data-fid="${f.id}" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        html += `<div class="fp-nav-floor" data-bid="${b.id}" data-fid="${f.id}" style="display:flex;justify-content:space-between;align-items:center;">
           <div style="display:flex;align-items:center;min-width:0;flex:1;">
             ${fFloorIcon}
             <span class="fp-item-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
