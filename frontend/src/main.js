@@ -1004,11 +1004,11 @@ function bindMapNavigator() {
                 
                 requestAnimationFrame(() => {
                   el.style.transform = '';
-                  el.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)'; // smooth ease-out
+                  el.style.transition = 'transform 0.35s cubic-bezier(0.34, 1.15, 0.64, 1)'; // very slight, crisp bounce
                   
                   setTimeout(() => {
                       el.style.transition = '';
-                  }, 300);
+                  }, 350);
                 });
              }
            }
@@ -1209,11 +1209,11 @@ function bindMapNavigator() {
                 
                 requestAnimationFrame(() => {
                   el.style.transform = '';
-                  el.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
+                  el.style.transition = 'transform 0.35s cubic-bezier(0.34, 1.15, 0.64, 1)';
                   
                   setTimeout(() => {
                       el.style.transition = '';
-                  }, 300);
+                  }, 350);
                 });
              }
            }
