@@ -763,7 +763,7 @@ function bindMapNavigator() {
     }
     
     isEditMapMode = false;
-    btnSaveOrder.innerText = '✔ Save Order';
+    btnSaveOrder.innerText = '✔ Save';
     btnSaveOrder.style.display = 'none';
     if (btnCancelOrder) btnCancelOrder.style.display = 'none';
     btnEditOrder.style.display = 'inline-block';
@@ -787,6 +787,50 @@ function bindMapNavigator() {
     } catch (e) {
       notify("Failed to delete: " + e.message, "error");
     }
+  }
+
+  function handleRename(id, oldName, targetNode) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = oldName;
+    input.className = 'fp-inline-rename-input';
+
+    targetNode.replaceWith(input);
+    input.focus();
+    input.select();
+
+    let isSaved = false;
+    const saveRename = async () => {
+      if (isSaved) return;
+      isSaved = true;
+      const newName = input.value.trim();
+      if (newName && newName !== oldName) {
+        try {
+          const res = await api('manage_tree.php', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'rename', id, name: newName })
+          });
+          if (res.status === 'success') {
+            notify("Renamed successfully", "success");
+            const json = await api('get_map_tree.php');
+            currentMapTree = json.data;
+            window.renderNavigatorSidebar();
+            return;
+          } else {
+            notify("Rename error: " + res.message, "error");
+          }
+        } catch (e) {
+          notify("Failed to rename: " + e.message, "error");
+        }
+      }
+      input.replaceWith(targetNode);
+    };
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') saveRename();
+      if (e.key === 'Escape') { isSaved = true; input.replaceWith(targetNode); }
+    });
+    input.addEventListener('blur', saveRename);
   }
 
   function moveItemInArray(arr, index, dir) {
@@ -827,22 +871,27 @@ function bindMapNavigator() {
       
       const floorsToRender = filter && !bMatch ? matchedFloors : b.floors;
 
-      html += `<div class="fp-nav-building" style="display:flex;justify-content:space-between;align-items:center;">
-        <span>${b.name}</span>
-        ${isEditMapMode ? `<div style="display:flex;gap:4px;">
+      const pencilSvg = `<svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5L16.5 5.5L5.5 16.5L3.5 16.5L3.5 14.5L14.5 3.5Z"/></svg>`;
+      const trashSvg = `<svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h14M8 6V4a1 1 0 011-1h2a1 1 0 011 1v2M5 6v10a2 2 0 002 2h6a2 2 0 002-2V6"/></svg>`;
+
+      html += `<div class="fp-nav-building" data-id="${b.id}" style="display:flex;justify-content:space-between;align-items:center;">
+        <span class="fp-item-title">${b.name}</span>
+        ${isEditMapMode ? `<div style="display:flex;gap:4px;align-items:center;">
+            <button class="fp-btn fp-btn--icon fp-btn-rename" data-id="${b.id}" data-name="${b.name}" title="Rename building">${pencilSvg}</button>
+            <button class="fp-btn fp-btn--icon fp-btn-del" style="color:var(--fp-danger);" data-type="building" data-id="${b.id}" title="Delete building">${trashSvg}</button>
             <button class="fp-btn fp-btn--icon fp-btn-up" data-type="building" data-id="${b.id}" data-idx="${currentMapTree.buildings.indexOf(b)}">⬆</button>
             <button class="fp-btn fp-btn--icon fp-btn-down" data-type="building" data-id="${b.id}" data-idx="${currentMapTree.buildings.indexOf(b)}">⬇</button>
-            <button class="fp-btn fp-btn--icon fp-btn-del" style="color:red;" data-type="building" data-id="${b.id}">✖</button>
         </div>` : ''}
       </div>`;
       
       floorsToRender.forEach(f => {
         html += `<div class="fp-nav-floor" data-bid="${b.id}" data-fid="${f.id}" style="display:flex;justify-content:space-between;align-items:center;">
-          <span>${f.name}</span>
-          ${isEditMapMode ? `<div style="display:flex;gap:4px;">
+          <span class="fp-item-title">${f.name}</span>
+          ${isEditMapMode ? `<div style="display:flex;gap:4px;align-items:center;">
+              <button class="fp-btn fp-btn--icon fp-btn-rename" data-id="${f.id}" data-name="${f.name}" title="Rename floor">${pencilSvg}</button>
+              <button class="fp-btn fp-btn--icon fp-btn-del" style="color:var(--fp-danger);" data-type="floor" data-id="${f.id}" title="Delete floor">${trashSvg}</button>
               <button class="fp-btn fp-btn--icon fp-btn-up" data-type="floor" data-bid="${b.id}" data-id="${f.id}" data-idx="${b.floors.indexOf(f)}">⬆</button>
               <button class="fp-btn fp-btn--icon fp-btn-down" data-type="floor" data-bid="${b.id}" data-id="${f.id}" data-idx="${b.floors.indexOf(f)}">⬇</button>
-              <button class="fp-btn fp-btn--icon fp-btn-del" style="color:red;" data-type="floor" data-id="${f.id}">✖</button>
           </div>` : ''}
         </div>`;
       });
@@ -882,12 +931,21 @@ function bindMapNavigator() {
           }
         });
       });
-      sidebar.querySelectorAll('.fp-btn-del').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          handleDelete(btn.dataset.type, btn.dataset.id);
-        });
+    sidebar.querySelectorAll('.fp-btn-del').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleDelete(btn.dataset.type, btn.dataset.id);
       });
+    });
+
+    sidebar.querySelectorAll('.fp-btn-rename').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const parentDiv = btn.closest('.fp-hover-actions-item');
+        const titleSpan = parentDiv.querySelector('.fp-item-title');
+        handleRename(btn.dataset.id, btn.dataset.name, titleSpan);
+      });
+    });
     }
     
     // Auto-select floor
@@ -928,24 +986,46 @@ function bindMapNavigator() {
       }
     }
 
+    const pencilSvg = `<svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5L16.5 5.5L5.5 16.5L3.5 16.5L3.5 14.5L14.5 3.5Z"/></svg>`;
+    const trashSvg = `<svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h14M8 6V4a1 1 0 011-1h2a1 1 0 011 1v2M5 6v10a2 2 0 002 2h6a2 2 0 002-2V6"/></svg>`;
+
     grid.innerHTML = roomsToRender.map((r, idx) => `
       <div class="fp-room-card" data-bname="${building.name}" data-fname="${floor.name}" data-rname="${r.name}" data-room-id="${r.id}" style="${isEditMapMode ? 'border:1px solid var(--fp-primary);' : ''}">
         <div class="fp-room-thumb" style="background:${r.color};">${r.icon}</div>
         <div class="fp-room-info" style="flex:1;">
-          <div class="fp-room-name" title="${r.name}">${r.name}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="fp-room-name fp-item-title" title="${r.name}">${r.name}</div>
+          </div>
           <div class="fp-room-meta">
             <svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor"><rect x="3" y="2" width="14" height="16" rx="2"/></svg>
             ${r.assetCount} assets
           </div>
         </div>
         ${isEditMapMode ? `
-        <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="display:flex;flex-direction:column;gap:4px;padding:4px;align-items:center;">
+            <button class="fp-btn fp-btn--icon fp-btn-rename" data-id="${r.id}" data-name="${r.name}" title="Rename room">${pencilSvg}</button>
+            <button class="fp-btn fp-btn--icon fp-btn-del" style="color:var(--fp-danger);" data-type="room" data-id="${r.id}" title="Delete room">${trashSvg}</button>
             <button class="fp-btn fp-btn--icon fp-grid-up" data-idx="${idx}" data-fid="${floor.id}" data-bid="${building.id}">⬆</button>
             <button class="fp-btn fp-btn--icon fp-grid-down" data-idx="${idx}" data-fid="${floor.id}" data-bid="${building.id}">⬇</button>
-            <button class="fp-btn fp-btn--icon fp-grid-del" style="color:red;" data-id="${r.id}">✖</button>
         </div>` : ''}
       </div>
     `).join('');
+
+    grid.querySelectorAll('.fp-btn-del').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleDelete(btn.dataset.type, btn.dataset.id);
+      });
+    });
+
+    grid.querySelectorAll('.fp-btn-rename').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const parentCard = btn.closest('.fp-room-card');
+        const titleDiv = parentCard.querySelector('.fp-item-title');
+        handleRename(btn.dataset.id, btn.dataset.name, titleDiv);
+      });
+    });
 
     if (isEditMapMode) {
       grid.querySelectorAll('.fp-grid-up, .fp-grid-down').forEach(btn => {

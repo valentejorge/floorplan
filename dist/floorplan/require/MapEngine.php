@@ -250,4 +250,13 @@ class MapEngine
         $stmt = $this->pdo->prepare("UPDATE plugin_floorplan_locations SET sequence = ? WHERE id = ?");
         $stmt->execute([$newOrder, $id]);
     }
+
+    /**
+     * Rename a location
+     */
+    public function renameLocation(int $id, string $newName): void
+    {
+        $stmt = $this->pdo->prepare("UPDATE plugin_floorplan_locations SET name = ? WHERE id = ?");
+        $stmt->execute([$newName, $id]);
+    }
 }

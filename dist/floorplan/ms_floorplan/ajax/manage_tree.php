@@ -32,13 +32,23 @@ try {
         
         echo json_encode(['status' => 'success']);
     } 
+    elseif ($action === 'rename') {
+        $id = (int)$data['id'];
+        $name = trim($data['name'] ?? '');
+        if (empty($name)) {
+            throw new Exception("Name cannot be empty");
+        }
+        $engine->renameLocation($id, $name);
+        echo json_encode(['status' => 'success']);
+    }
+    elseif ($action === 'move') {
         $roomId = (int)$data['room_id'];
         $newFloorId = (int)$data['new_floor_id'];
         $engine->moveLocation($roomId, $newFloorId);
         echo json_encode(['status' => 'success']);
     } 
     elseif ($action === 'reorder') {
-        $updates = $data['updates']; // Array of ['type' => 'room', 'id' => 1, 'sort_order' => 5]
+        $updates = $data['updates']; // Array of ['id' => 1, 'sort_order' => 5]
         if (!is_array($updates)) {
             throw new Exception("Invalid updates payload");
         }
@@ -60,6 +70,7 @@ try {
     }
 
 } catch (Exception $e) {
+    http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 ?>
