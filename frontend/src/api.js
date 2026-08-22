@@ -171,7 +171,7 @@ export async function api(endpoint, options = {}) {
             if (fLoc.type === 'floor') {
                const f = { id: fLoc.id, name: fLoc.name, rooms: [] };
                (fLoc.children || []).forEach(rLoc => {
-                  f.rooms.push({ id: rLoc.id, name: rLoc.name, assetCount: 0 });
+                  f.rooms.push({ id: rLoc.id, name: rLoc.name, assetCount: 0, thumbnail: rLoc.thumbnail });
                });
                b.floors.push(f);
             }
