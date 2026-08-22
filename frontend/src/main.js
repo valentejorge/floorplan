@@ -211,8 +211,8 @@ function bindModeToggle() {
       
       layout.classList.add('is-editing');
       btnEdit.style.display = 'none';
-      btnCancel.style.display = 'block';
-      btnSave.style.display = 'block';
+      btnCancel.style.display = 'flex';
+      btnSave.style.display = 'flex';
       
       refreshExplorer();
       notify('Edit Mode activated.', 'warning');

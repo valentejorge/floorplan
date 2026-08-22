@@ -75,10 +75,12 @@ if (file_exists($css_file_path)) {
           <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.5 3.5L16.5 5.5L5.5 16.5L3.5 16.5L3.5 14.5L14.5 3.5Z"/></svg>
           Edit Map
         </button>
-        <button id="btn-cancel-edit" style="display:none;background:transparent;color:var(--fp-text-muted);border:1px solid var(--fp-border);padding:6px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-weight:600;">
+        <button id="btn-cancel-edit" class="fp-btn" style="display:none;background:transparent;color:var(--fp-text-muted);border:1px solid var(--fp-border);padding:6px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-weight:600;">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           Cancel
         </button>
-        <button id="btn-save-edit" style="display:none;background:var(--fp-primary);color:#fff;border:none;padding:6px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-weight:600;">
+        <button id="btn-save-edit" class="fp-btn" style="display:none;background:var(--fp-primary);color:#fff;border:none;padding:6px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-weight:600;">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
           Save
         </button>
       </div>
@@ -195,8 +197,14 @@ if (file_exists($css_file_path)) {
           </div>
 
           <div style="display:flex;gap:8px;margin-top:24px;">
-            <button class="fp-btn fp-btn--outline" id="asset-edit-cancel" style="flex:1;">Cancel</button>
-            <button class="fp-btn fp-btn--primary" id="asset-edit-save" style="flex:1;">Save</button>
+            <button class="fp-btn fp-btn--outline" id="asset-edit-cancel" style="flex:1;">
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              Cancel
+            </button>
+            <button class="fp-btn fp-btn--primary" id="asset-edit-save" style="flex:1;">
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Save
+            </button>
           </div>
         </div>
       </aside>
@@ -303,8 +311,14 @@ if (file_exists($css_file_path)) {
               </button>
             </div>
             <div id="nav-edit-actions" style="position:absolute; right:0; display:flex; transition: opacity 0.2s ease-in-out; opacity: 0; pointer-events: none;">
-              <button class="fp-btn" id="btn-cancel-order" style="background:transparent;color:var(--fp-text-muted);border:1px solid var(--fp-border);padding:6px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-weight:600;margin-left:8px;">Cancel</button>
-              <button class="fp-btn" id="btn-save-order" style="background:var(--fp-primary);color:#fff;border:none;padding:6px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-weight:600;margin-left:8px;">Save</button>
+              <button class="fp-btn" id="btn-cancel-order" style="background:transparent;color:var(--fp-text-muted);border:1px solid var(--fp-border);padding:6px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-weight:600;margin-left:8px;">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                Cancel
+              </button>
+              <button class="fp-btn" id="btn-save-order" style="background:var(--fp-primary);color:#fff;border:none;padding:6px 14px;border-radius:4px;font-size:12px;cursor:pointer;font-weight:600;margin-left:8px;">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Save
+              </button>
             </div>
           </div>
         </div>
@@ -373,9 +387,15 @@ if (file_exists($css_file_path)) {
             </div>
           </div>
 
-          <div style="display:flex; gap:12px; justify-content:flex-end;">
-            <button class="fp-btn fp-btn--outline" id="btn-cancel-create" style="flex:1; padding:9px 16px; font-size:13px; font-weight:600;">Cancel</button>
-            <button class="fp-btn fp-btn--primary" id="btn-submit-create" style="flex:1; padding:9px 16px; font-size:13px; font-weight:600;">Create Map</button>
+          <div style="display:flex; gap:12px; margin-top:24px;">
+            <button class="fp-btn fp-btn--outline" id="btn-cancel-create" style="flex:1; padding:9px 16px; font-size:13px; font-weight:600;">
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              Cancel
+            </button>
+            <button class="fp-btn fp-btn--primary" id="btn-submit-create" style="flex:1; padding:9px 16px; font-size:13px; font-weight:600;">
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Create
+            </button>
           </div>
         </div>
       </div>
@@ -404,9 +424,15 @@ if (file_exists($css_file_path)) {
             </select>
           </div>
           
-          <div style="display:flex; gap:12px; justify-content:flex-end;">
-            <button class="fp-btn fp-btn--outline" id="btn-cancel-prop" style="padding:7px 14px; font-size:13px; font-weight:600;">Cancel</button>
-            <button class="fp-btn fp-btn--primary" id="btn-save-prop" style="padding:7px 14px; font-size:13px; font-weight:600;">Save</button>
+          <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end;">
+            <button class="fp-btn fp-btn--outline" id="btn-cancel-prop" style="padding:7px 14px; font-size:13px; font-weight:600;">
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              Cancel
+            </button>
+            <button class="fp-btn fp-btn--primary" id="btn-save-prop" style="padding:7px 14px; font-size:13px; font-weight:600;">
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Save
+            </button>
           </div>
         </div>
       </div>
@@ -419,8 +445,14 @@ if (file_exists($css_file_path)) {
         <div class="fp-confirm-dialog__title">Warning!</div>
         <div class="fp-confirm-dialog__message" id="confirm-modal-message">You are in edit mode. Do you want to discard your changes and continue?</div>
         <div class="fp-confirm-dialog__actions">
-          <button class="fp-btn fp-btn--outline" id="confirm-modal-cancel">Cancel</button>
-          <button class="fp-btn fp-btn--primary" id="confirm-modal-ok">Continue</button>
+          <button class="fp-btn fp-btn--outline" id="confirm-modal-cancel">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            Cancel
+          </button>
+          <button class="fp-btn fp-btn--primary" id="confirm-modal-ok">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Continue
+          </button>
         </div>
       </div>
     </div>
