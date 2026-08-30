@@ -33,13 +33,52 @@ export function captureThumbnail() {
   const activeNodes = globalTransformer.nodes();
   globalTransformer.nodes([]);
   
-  const targetWidth = 400;
-  const ratio = Math.min(targetWidth / stage.width(), 1);
+  // Calculate bounding box of all shapes
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const layers = [wallsLayer, zonesLayer, furnitureLayer, assetsLayer];
   
-  const dataURL = stage.toDataURL({
-    mimeType: 'image/png',
-    pixelRatio: ratio
+  layers.forEach(layer => {
+    layer.getChildren().forEach(node => {
+      const box = node.getClientRect({ skipTransform: false });
+      if (box.width > 0 && box.height > 0) {
+        if (box.x < minX) minX = box.x;
+        if (box.y < minY) minY = box.y;
+        if (box.x + box.width > maxX) maxX = box.x + box.width;
+        if (box.y + box.height > maxY) maxY = box.y + box.height;
+      }
+    });
   });
+
+  let dataURL;
+  if (minX !== Infinity && maxX > minX) {
+    const padding = 40; // padding around the drawing
+    const cropX = minX - padding;
+    const cropY = minY - padding;
+    const cropWidth = (maxX - minX) + (padding * 2);
+    const cropHeight = (maxY - minY) + (padding * 2);
+    
+    // Scale the crop so the max dimension is roughly 400px
+    const targetWidth = 400;
+    // We want the resulting image to fit inside a 400px box while maintaining its own aspect ratio
+    const ratio = Math.min(targetWidth / cropWidth, targetWidth / cropHeight);
+    
+    dataURL = stage.toDataURL({
+      mimeType: 'image/png',
+      x: cropX,
+      y: cropY,
+      width: cropWidth,
+      height: cropHeight,
+      pixelRatio: ratio
+    });
+  } else {
+    // Fallback if empty room
+    const targetWidth = 400;
+    const ratio = Math.min(targetWidth / stage.width(), 1);
+    dataURL = stage.toDataURL({
+      mimeType: 'image/png',
+      pixelRatio: ratio
+    });
+  }
 
   if (wasGridVisible) gridLayer.opacity(0.1);
   globalTransformer.nodes(activeNodes);
