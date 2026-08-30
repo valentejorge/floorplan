@@ -455,7 +455,7 @@ function bindSearch() {
     }
 
     try {
-      const res = await api(`ajax/search_asset.php?q=${encodeURIComponent(q)}`);
+      const res = await api(`search_asset.php?q=${encodeURIComponent(q)}`);
       const items = res.data || [];
       selectedIndex = -1;
 
@@ -471,10 +471,15 @@ function bindSearch() {
               </div>
             `;
           } else {
+            const isMapped = !!item.room_id && item.room_id !== "null";
+            const locText = isMapped 
+                 ? `📍 ${item.building_name} › ${item.floor_name} › ${item.room_name}`
+                 : `📍 (Unmapped)`;
+                 
             return `
-              <div class="fp-search-results__item" data-type="asset" data-asset-id="${item.asset_id}" data-hw-id="${item.hardware_id}" data-room-id="${item.room_id}" data-r="${item.room_name}" data-b="${item.building_name}" data-f="${item.floor_name}">
+              <div class="fp-search-results__item" data-type="asset" data-asset-id="${item.asset_id}" data-hw-id="${item.hardware_id}" data-room-id="${item.room_id}" data-r="${item.room_name}" data-b="${item.building_name}" data-f="${item.floor_name}" data-mapped="${isMapped}">
                 <span class="fp-search-results__name">💻 ${item.hardware_name} — ${item.ip || '—'}</span>
-                <span class="fp-search-results__location">📍 ${item.building_name} › ${item.floor_name} › ${item.room_name}</span>
+                <span class="fp-search-results__location">${locText}</span>
               </div>
             `;
           }
@@ -484,14 +489,14 @@ function bindSearch() {
           el.addEventListener('click', async () => {
             if (!(await window.checkEditMode())) return;
             
-            const roomId = el.dataset.roomId || el.dataset.rId; // rId for rooms if I set it
+            const roomId = el.dataset.roomId || el.dataset.rId;
             const roomName = el.dataset.r;
             
             if (el.dataset.type === 'room') {
               updateBreadcrumb(el.dataset.b, el.dataset.f, roomName);
               notify(`Switched to map: ${roomName}`);
               
-              api(`get_room.php?id=${fetchId}`)
+              api(`get_room.php?id=${roomId}`)
                 .then(json => {
                   if (json.status === 'success') {
                     import('./renderer.js').then(({ loadMapData }) => loadMapData(json.data));
@@ -504,7 +509,24 @@ function bindSearch() {
                   });
                 });
             } else {
-              // It's an asset. We must switch to the room AND focus the asset!
+              // It's an asset.
+              const isMapped = el.dataset.mapped === 'true';
+              if (!isMapped) {
+                results.classList.remove('visible');
+                input.value = '';
+                notify("This asset has not been mapped to any floorplan yet.", "warning");
+                
+                // Open the unmapped assets catalog!
+                const panel = document.getElementById('assets-catalog-panel');
+                if (panel) {
+                  panel.style.display = 'flex';
+                  import('./assets-catalog.js').then(({ fetchUnmappedAssets, renderAssetsCatalog }) => {
+                    fetchUnmappedAssets().then(() => renderAssetsCatalog());
+                  });
+                }
+                return;
+              }
+              
               const roomId = el.dataset.roomId;
               const roomName = el.dataset.r;
               const assetId = el.dataset.assetId;
@@ -1718,14 +1740,14 @@ async function populateFurnitureCatalog() {
           });
           
           if (!minGroup || minDist > maxDropRadius) {
-            notify("Arraste o computador para mais perto do centro de uma Mesa ou Rack.", "warning");
+            notify("Drag the computer closer to the center of a Desk or Rack.", "warning");
             return;
           }
           
           // 3. Use the unified pipeline to assign
           const { assignHardwareToNode } = await import('./explorer.js');
           await assignHardwareToNode(minGroup, asset);
-          notify(`${asset.hardware_name || 'Equipamento'} associado com sucesso!`, 'success');
+          notify(`${asset.hardware_name || 'Asset'} assigned successfully!`, 'success');
         }
       } catch (err) {
         console.error("Drop asset parse error", err);

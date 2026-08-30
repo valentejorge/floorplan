@@ -141,30 +141,35 @@ class MapEngine
                 n.IPADDRESS   AS ip,
                 n.MACADDR     AS mac,
                 a.room_id,
-                r.name        AS room_name,
-                f.name        AS floor_name,
-                b.name        AS building_name,
-                a.pos_x,
-                a.pos_y
-            FROM plugin_floorplan_assets a
-            INNER JOIN hardware h                    ON h.ID = a.hardware_id
-            INNER JOIN plugin_floorplan_rooms r       ON r.id = a.room_id
-            INNER JOIN plugin_floorplan_floors f      ON f.id = r.floor_id
-            INNER JOIN plugin_floorplan_buildings b   ON b.id = f.building_id
-            LEFT  JOIN networks n                     ON n.HARDWARE_ID = h.ID
-            WHERE h.NAME      LIKE :q_name
-               OR n.IPADDRESS LIKE :q_ip
-               OR n.MACADDR   LIKE :q_mac
-            GROUP BY a.id
+        $like = '%' . $query . '%';
+
+        // 1. Search Hardware
+        $hwStmt = $this->pdo->prepare('
+            SELECT h.ID AS hardware_id, ANY_VALUE(h.NAME) AS name, ANY_VALUE(a.room_id) AS room_id, ANY_VALUE(l.name) AS room_name, ANY_VALUE(f.name) AS floor_name, ANY_VALUE(b.name) AS building_name
+            FROM hardware h
+            LEFT JOIN plugin_floorplan_assets a ON a.hardware_id = h.ID
+            LEFT JOIN plugin_floorplan_locations l ON a.room_id = l.id
+            LEFT JOIN plugin_floorplan_locations f ON l.parent_id = f.id
+            LEFT JOIN plugin_floorplan_locations b ON f.parent_id = b.id
+            LEFT JOIN networks n ON n.HARDWARE_ID = h.ID
+            WHERE h.NAME LIKE :q OR n.IPADDRESS LIKE :q OR n.MACADDR LIKE :q
+            GROUP BY h.ID
+            LIMIT 50
+        ');
+        $hwStmt->execute(['q' => $like]);
+        $assets = $hwStmt->fetchAll();
+
+        // 2. Search Rooms
+        $roomStmt = $this->pdo->prepare('
+            SELECT l.id, l.name, ANY_VALUE(p.name) as floor_name, ANY_VALUE(b.name) as building_name
+            FROM plugin_floorplan_locations l
+            LEFT JOIN plugin_floorplan_locations p ON l.parent_id = p.id
+            LEFT JOIN plugin_floorplan_locations b ON p.parent_id = b.id
+            WHERE l.type = "room" AND l.name LIKE :q
+            GROUP BY l.id
+            LIMIT 50
         ');
 
-        $like = '%' . $query . '%';
-        $stmt->execute([
-            'q_name' => $like,
-            'q_ip'   => $like,
-            'q_mac'  => $like,
-        ]);
-
-        return $stmt->fetchAll();
+        return $assets;
     }
 }

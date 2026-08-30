@@ -245,7 +245,7 @@ if (file_exists($css_file_path)) {
             </div>
             <div style="display:flex; gap:4px; margin-top:8px;">
               <button id="asset-edit-assign-btn" class="fp-btn fp-btn--outline" style="width:100%; justify-content:center;">
-                + Associar Equipamento
+                + Assign Asset
               </button>
             </div>
           </div>

@@ -116,7 +116,7 @@ export function refreshExplorer() {
     empty.style.textAlign = 'center';
     empty.style.color = 'var(--fp-text-muted)';
     empty.style.fontSize = '12px';
-    empty.textContent = 'Nenhum equipamento mapeado.';
+    empty.textContent = 'No mapped assets.';
     body.appendChild(empty);
     return;
   }

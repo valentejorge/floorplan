@@ -80,7 +80,7 @@ export async function api(endpoint, options = {}) {
             if (!a.hardware_name || !a.hardware_id) return false;
             const mac = a.mac || `00:1A:2B:3C:4D:${a.hardware_id.toString().substring(0,2)}`;
             const user = a.user || (a.type === 'desktop' ? 'jorge.silva' : 'system');
-            const desc = a.description || `Equipamento ${a.type} padrão`;
+            const desc = a.description || `Standard ${a.type} equipment`;
             
             return a.hardware_name.toLowerCase().includes(q) || 
                    (a.ip && a.ip.toLowerCase().includes(q)) || 
@@ -90,7 +90,7 @@ export async function api(endpoint, options = {}) {
           }).map(a => {
             const mac = a.mac || `00:1A:2B:3C:4D:${a.hardware_id.toString().substring(0,2)}`;
             const user = a.user || (a.type === 'desktop' ? 'jorge.silva' : 'system');
-            const desc = a.description || `Equipamento ${a.type} padrão`;
+            const desc = a.description || `Standard ${a.type} equipment`;
             
             return {
               type: 'asset',
@@ -190,7 +190,26 @@ export async function api(endpoint, options = {}) {
   }
 
   if (endpoint.startsWith('search_asset.php')) {
-    return { status: 'success', data: json.results };
+    const assets = (json.results?.assets || []).map(a => ({
+      type: 'asset',
+      hardware_id: a.hardware_id,
+      room_id: a.room_id,
+      room_name: a.room_name || '',
+      building_name: a.building_name || '',
+      floor_name: a.floor_name || '',
+      hardware_name: a.name || 'Unknown',
+      ip: a.ip || ''
+    }));
+    
+    const rooms = (json.results?.rooms || []).map(r => ({
+      type: 'room',
+      room_id: r.id,
+      room_name: r.name,
+      building_name: r.building_name || '',
+      floor_name: r.floor_name || ''
+    }));
+
+    return { status: 'success', data: [...rooms, ...assets] };
   }
 
   return json;

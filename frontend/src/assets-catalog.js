@@ -15,7 +15,7 @@ export function initAssetsCatalog() {
 
   btnAssets.addEventListener('click', async () => {
     panel.style.display = 'flex';
-    document.getElementById('assets-catalog-body').innerHTML = '<div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">Buscando equipamentos...</div>';
+    document.getElementById('assets-catalog-body').innerHTML = '<div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">Fetching assets...</div>';
     
     try {
       unmappedAssets = await fetchUnmappedAssets();
@@ -23,7 +23,7 @@ export function initAssetsCatalog() {
         renderAssetsCatalog();
       }
     } catch (e) {
-      document.getElementById('assets-catalog-body').innerHTML = '<div style="padding:16px;text-align:center;color:#e53e3e;font-size:12px;">Erro ao carregar equipamentos.</div>';
+      document.getElementById('assets-catalog-body').innerHTML = '<div style="padding:16px;text-align:center;color:#e53e3e;font-size:12px;">Error loading assets.</div>';
     }
   });
 
@@ -44,14 +44,15 @@ function renderAssetsCatalog(filter = '') {
   
   const filtered = unmappedAssets.filter(a => {
     if (!filter) return true;
-    return (a.hardware_name && a.hardware_name.toLowerCase().includes(filter)) ||
-           (a.ip && a.ip.toLowerCase().includes(filter)) ||
-           (a.mac && a.mac.toLowerCase().includes(filter)) ||
-           (a.user && a.user.toLowerCase().includes(filter));
+    const nameMatch = a.hardware_name && a.hardware_name.toLowerCase().includes(filter);
+    const ipMatch = a.ip && a.ip.toLowerCase().includes(filter);
+    const macMatch = a.mac && a.mac.toLowerCase().includes(filter);
+    const userMatch = a.user && a.user.toLowerCase().includes(filter);
+    return nameMatch || ipMatch || macMatch || userMatch;
   });
 
   if (filtered.length === 0) {
-    body.innerHTML = '<div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">Nenhum equipamento encontrado.</div>';
+    body.innerHTML = '<div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">No assets found.</div>';
     return;
   }
 
@@ -82,29 +83,28 @@ function renderAssetsCatalog(filter = '') {
       if (window.currentMicroEditNode) {
         // Modal is open, assign instantly
         const { assignHardwareToNode, renderAssignedHardware } = await import('./explorer.js');
-        await assignHardwareToNode(window.currentMicroEditNode, asset);
+        const updatedData = await assignHardwareToNode(window.currentMicroEditNode, asset);
         
         // Update the modal's assigned hardware list UI
-        const data = window.currentMicroEditNode.getAttr('entityData');
         if (window.renderAssignedHardware) {
-          window.renderAssignedHardware(data);
+          window.renderAssignedHardware(updatedData);
         } else if (renderAssignedHardware) {
-          renderAssignedHardware(data);
+          renderAssignedHardware(updatedData);
         }
         
         // Update the device dropdown to reflect auto-set if needed
-        if (data.layout?.device) {
+        if (updatedData.layout?.device) {
           const deviceSelect = document.getElementById('asset-edit-device');
-          if (deviceSelect) deviceSelect.value = data.layout.device;
+          if (deviceSelect) deviceSelect.value = updatedData.layout.device;
         }
         
         import('./main.js').then(({ notify }) => {
-          if (notify) notify(`${asset.hardware_name || 'Equipamento'} associado com sucesso!`, "success");
+          if (notify) notify(`${asset.hardware_name || 'Asset'} assigned successfully!`, "success");
         });
       } else {
         // Normal mode, show hint
         import('./main.js').then(({ notify }) => {
-          if (notify) notify("Arraste e solte o computador em cima de uma Mesa ou Rack no mapa.", "info");
+          if (notify) notify("Drag and drop the computer onto a Desk or Rack in the map.", "info");
         });
       }
     });
