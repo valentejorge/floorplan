@@ -144,78 +144,9 @@ export function loadMapData(data, isInitial = true) {
     animateMapEntrance();
   }
   
-  populateObjectExplorer(data.assets);
-}
-
-function populateObjectExplorer(assets) {
-  const explorerBody = document.getElementById('explorer-body');
-  if (!explorerBody || !assets) return;
-  
-  const itAssets = assets.filter(a => a.hardware_id);
-  
-  if (itAssets.length === 0) {
-    explorerBody.innerHTML = `<div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">Nenhum equipamento encontrado.</div>`;
-    return;
-  }
-  
-  explorerBody.innerHTML = '';
-  const list = document.createElement('div');
-  list.style.display = 'flex';
-  list.style.flexDirection = 'column';
-  
-  itAssets.forEach(asset => {
-    const item = document.createElement('div');
-    item.className = 'fp-explorer__item';
-    item.dataset.hwId = asset.hardware_id;
-    
-    const dotColor = asset.status === 'offline' ? '#e53e3e' : 
-                     asset.status === 'warning' ? '#d69e2e' : '#5cb85c';
-                     
-    item.innerHTML = `
-      <div class="fp-explorer__item-icon" style="background-color:${dotColor}; width:8px; height:8px; border-radius:50%; box-shadow:0 0 6px ${dotColor}66;"></div>
-      <div class="fp-explorer__item-name">${asset.hardware_name}</div>
-      <div style="color:var(--fp-text-muted);font-size:10px;text-transform:uppercase;">${asset.type}</div>
-    `;
-    
-    item.onclick = () => {
-      if (window.selectAsset) window.selectAsset(asset);
-
-      // Find furniture containing this asset in Konva
-      const group = furnitureLayer.getChildren().find(node => {
-         const entityData = node.getAttr('entityData');
-         if (entityData && entityData.assigned_hardware) {
-             return entityData.assigned_hardware.some(hw => String(hw.hardware_id) === String(asset.id) || String(hw.hardware_id) === String(asset.hardware_id));
-         }
-         return false;
-      });
-      if (group) {
-        import('./engine.js').then(({ stage, getTransformer }) => {
-          // Pulse effect
-          const pulse = new Konva.Circle({
-            x: group.x(), y: group.y(),
-            radius: 30, stroke: '#961B7E', strokeWidth: 2, opacity: 1
-          });
-          furnitureLayer.add(pulse);
-          new Konva.Tween({
-            node: pulse, duration: 1, radius: 100, opacity: 0,
-            onFinish: () => pulse.destroy()
-          }).play();
-          
-          // Select with Transformer if in edit mode
-          const layout = document.getElementById('main-layout');
-          if (layout && layout.classList.contains('is-editing')) {
-            const tr = getTransformer();
-            tr.nodes([group]);
-            tr.getLayer().batchDraw();
-          }
-        });
-      }
-    };
-    
-    list.appendChild(item);
+  import('./explorer.js').then(({ refreshExplorer }) => {
+    refreshExplorer();
   });
-  
-  explorerBody.appendChild(list);
 }
 
 export function renderAssetContent(group, asset, skinManager) {

@@ -88,100 +88,95 @@ export function refreshExplorer() {
   if (!body) return;
 
   body.innerHTML = '';
-
-  LAYER_CONFIG.forEach(({ key, label, color, getter }) => {
-    const layer = getter();
-    if (!layer) return;
-
-    // Group title
-    const title = document.createElement('div');
-    title.className = 'fp-explorer__group-title';
-    title.textContent = label;
-    body.appendChild(title);
-
-    // Collect entities (skip non-entity nodes like grid dots)
-    const nodes = layer.find('Group, Rect, Line, Circle, Image').filter(n => {
-      return n.getAttr('entityData') || n.getAttr('assetData');
-    });
-
-    if (nodes.length === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'fp-explorer__item';
-      empty.style.color = 'var(--fp-chrome-text2)';
-      empty.style.fontStyle = 'italic';
-      empty.textContent = 'Empty';
-      body.appendChild(empty);
-      return;
+  
+  // OCS Inventory Focus: The Object Explorer should ONLY list the IT Assets mapped on this floorplan.
+  // We extract all assigned hardware from the furniture layer.
+  const { getLayerFurniture } = require('./engine.js');
+  const furnitureLayer = getLayerFurniture();
+  if (!furnitureLayer) return;
+  
+  const mappedAssets = [];
+  
+  furnitureLayer.find('Group').forEach(group => {
+    if (group.name() !== 'furniture') return;
+    const data = group.getAttr('entityData');
+    if (data && data.assigned_hardware && data.assigned_hardware.length > 0) {
+      data.assigned_hardware.forEach(hw => {
+        mappedAssets.push({
+          asset: hw,
+          parentGroup: group
+        });
+      });
     }
-
-    nodes.forEach(node => {
-      const data = node.getAttr('entityData') || node.getAttr('assetData') || {};
-      const name = data.name || data.hardware_name || node.id() || 'Unnamed';
-      const nodeId = node.id();
-
-      const item = document.createElement('div');
-      item.className = 'fp-explorer__item';
-      if (nodeId === selectedNodeId) item.classList.add('selected');
-      item.dataset.nodeId = nodeId;
-
-      // Color swatch
-      const swatch = document.createElement('div');
-      swatch.className = 'fp-explorer__item-icon';
-      swatch.style.background = color;
-      item.appendChild(swatch);
-
-      // Name
-      const nameEl = document.createElement('span');
-      nameEl.className = 'fp-explorer__item-name';
-      nameEl.textContent = name;
-      item.appendChild(nameEl);
-
-      // Actions
-      const actions = document.createElement('div');
-      actions.className = 'fp-explorer__item-actions';
-
-      // Visibility toggle
-      const eyeBtn = document.createElement('button');
-      eyeBtn.className = 'fp-explorer__action-btn';
-      eyeBtn.innerHTML = node.visible() ? '👁' : '🚫';
-      eyeBtn.title = 'Toggle visibility';
-      eyeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        node.visible(!node.visible());
-        node.getLayer().batchDraw();
-        refreshExplorer();
-      });
-      actions.appendChild(eyeBtn);
-
-      // Delete
-      const delBtn = document.createElement('button');
-      delBtn.className = 'fp-explorer__action-btn danger';
-      delBtn.innerHTML = '🗑';
-      delBtn.title = 'Delete';
-      delBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (selectedNodeId === nodeId) {
-          getTransformer().nodes([]);
-          selectedNodeId = null;
-        }
-        node.destroy();
-        node.getLayer()?.batchDraw();
-        refreshExplorer();
-        updateProperties(null);
-        commitHistory();
-      });
-      actions.appendChild(delBtn);
-
-      item.appendChild(actions);
-
-      // Click to select
-      item.addEventListener('click', () => {
-        selectNodeById(nodeId);
-      });
-
-      body.appendChild(item);
-    });
   });
+
+  if (mappedAssets.length === 0) {
+    const empty = document.createElement('div');
+    empty.style.padding = '16px';
+    empty.style.textAlign = 'center';
+    empty.style.color = 'var(--fp-text-muted)';
+    empty.style.fontSize = '12px';
+    empty.textContent = 'Nenhum equipamento mapeado.';
+    body.appendChild(empty);
+    return;
+  }
+
+  const list = document.createElement('div');
+  list.style.display = 'flex';
+  list.style.flexDirection = 'column';
+
+  mappedAssets.forEach(({ asset, parentGroup }) => {
+    const item = document.createElement('div');
+    item.className = 'fp-explorer__item';
+    
+    // Status dot
+    const dotColor = asset.status === 'offline' ? '#e53e3e' : 
+                     asset.status === 'warning' ? '#d69e2e' : '#10b981';
+                     
+    const hwName = typeof asset === 'object' ? (asset.hardware_name || 'Unknown') : `ID: ${asset}`;
+    const type = typeof asset === 'object' ? (asset.type || 'ASSET') : 'ASSET';
+                     
+    item.innerHTML = `
+      <div class="fp-explorer__item-icon" style="background-color:${dotColor}; width:8px; height:8px; border-radius:50%; box-shadow:0 0 6px ${dotColor}66;"></div>
+      <div class="fp-explorer__item-name" style="flex:1;">
+        <div style="font-weight:600;font-size:11px;">${hwName}</div>
+      </div>
+      <div style="color:var(--fp-text-muted);font-size:10px;text-transform:uppercase;">${type}</div>
+    `;
+    
+    item.addEventListener('click', () => {
+      // Pulse effect on the parent furniture
+      import('./engine.js').then(({ stage, getTransformer }) => {
+        const pulse = new Konva.Circle({
+          x: parentGroup.x(), y: parentGroup.y(),
+          radius: 30, stroke: '#961B7E', strokeWidth: 2, opacity: 1
+        });
+        furnitureLayer.add(pulse);
+        new Konva.Tween({
+          node: pulse, duration: 1, radius: 100, opacity: 0,
+          onFinish: () => pulse.destroy()
+        }).play();
+        
+        // Select with Transformer if in edit mode
+        const layout = document.getElementById('main-layout');
+        if (layout && layout.classList.contains('is-editing')) {
+          const tr = getTransformer();
+          tr.nodes([parentGroup]);
+          tr.getLayer().batchDraw();
+          
+          // And open properties
+          selectNodeById(parentGroup.id());
+        } else {
+          // If in view mode, just show properties
+          selectNodeById(parentGroup.id());
+        }
+      });
+    });
+    
+    list.appendChild(item);
+  });
+  
+  body.appendChild(list);
 }
 
 /**
@@ -303,6 +298,7 @@ window.openAssetMicroEdit = async function(node) {
   if (!modal) return;
   
   currentMicroEditNode = node;
+  window.currentMicroEditNode = node; // Global exposure
   
   const data = node.getAttr('entityData');
   if (!data.layout) data.layout = { table: data.type };
@@ -329,7 +325,7 @@ window.openAssetMicroEdit = async function(node) {
   modal.classList.add('visible');
 };
 
-async function renderAssignedHardware(data) {
+export async function renderAssignedHardware(data) {
   const listEl = document.getElementById('asset-edit-assigned-list');
   if (!listEl) return;
   listEl.innerHTML = '';
@@ -374,46 +370,24 @@ async function renderAssignedHardware(data) {
     });
   }
 
-  // Populate unmapped select
-  const selectEl = document.getElementById('asset-edit-unmapped-select');
-  if (selectEl) {
-    selectEl.innerHTML = '<option value="">Select computer to assign...</option>';
-    
-    // We import from assets-catalog
-    const { fetchUnmappedAssets } = await import('./assets-catalog.js');
-    const unmapped = fetchUnmappedAssets ? await fetchUnmappedAssets() : [];
-    unmapped.forEach(asset => {
-      const opt = document.createElement('option');
-      opt.value = asset.hardware_id;
-      opt.textContent = asset.hardware_name || `Hardware ${asset.hardware_id}`;
-      opt.dataset.asset = JSON.stringify(asset);
-      selectEl.appendChild(opt);
-    });
-  }
+  // Note: the unmapped select dropdown was removed for scalability
 }
 
 // Global hook for the Add button
 const addBtn = document.getElementById('asset-edit-assign-btn');
 if (addBtn) {
-  addBtn.addEventListener('click', async () => {
-    if (!currentMicroEditNode) return;
-    const selectEl = document.getElementById('asset-edit-unmapped-select');
-    if (!selectEl.value) return;
-    
-    const selectedOption = selectEl.options[selectEl.selectedIndex];
-    const asset = JSON.parse(selectedOption.dataset.asset);
-    
-    // Use the unified pipeline
-    await assignHardwareToNode(currentMicroEditNode, asset);
-    
-    // Update the modal's assigned hardware list
-    const data = currentMicroEditNode.getAttr('entityData');
-    renderAssignedHardware(data);
-    
-    // Update the device dropdown to reflect auto-set
-    if (data.layout?.device) {
-      document.getElementById('asset-edit-device').value = data.layout.device;
+  addBtn.addEventListener('click', () => {
+    // Open the Unmapped Assets sidebar
+    const btnAssets = document.querySelector('.fp-tool-btn[data-tool="assets"]');
+    if (btnAssets) {
+      btnAssets.click();
     }
+    
+    // Optionally bring focus to search
+    setTimeout(() => {
+      const searchInput = document.getElementById('assets-catalog-search');
+      if (searchInput) searchInput.focus();
+    }, 100);
   });
 }
 
@@ -506,12 +480,13 @@ document.getElementById('asset-edit-save')?.addEventListener('click', async () =
   import('./history.js').then(({ commitHistory }) => {
     commitHistory();
   });
-  closeAssetMicroEdit();
+  closeModal();
 });
 
-async function closeAssetMicroEdit() {
+async function closeModal() {
   document.getElementById('asset-edit-modal')?.classList.remove('visible');
   currentMicroEditNode = null;
+  window.currentMicroEditNode = null;
   microEditBackupState = null;
   const { zoomOutToSafe } = await import('./engine.js');
   zoomOutToSafe();

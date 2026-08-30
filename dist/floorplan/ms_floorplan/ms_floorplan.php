@@ -243,12 +243,10 @@ if (file_exists($css_file_path)) {
             <div id="asset-edit-assigned-list" style="display:flex; flex-direction:column; gap:4px; margin-bottom: 8px;">
               <!-- Assigned assets populated here via JS -->
             </div>
-            <div style="display:flex; gap:4px;">
-              <select id="asset-edit-unmapped-select" class="fp-select" style="flex:1;">
-                <option value="">Select computer to assign...</option>
-                <!-- Populated by JS from unmapped list -->
-              </select>
-              <button id="asset-edit-assign-btn" class="fp-btn fp-btn--outline" style="padding:0 8px;">Add</button>
+            <div style="display:flex; gap:4px; margin-top:8px;">
+              <button id="asset-edit-assign-btn" class="fp-btn fp-btn--outline" style="width:100%; justify-content:center;">
+                + Associar Equipamento
+              </button>
             </div>
           </div>
 

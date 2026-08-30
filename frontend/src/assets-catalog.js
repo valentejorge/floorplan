@@ -78,10 +78,35 @@ function renderAssetsCatalog(filter = '') {
     `;
 
     // Click to place at center
-    item.addEventListener('click', () => {
-      import('./main.js').then(({ notify }) => {
-        if (notify) notify("Arraste e solte o computador em cima de uma Mesa ou Rack no mapa.", "info");
-      });
+    item.addEventListener('click', async () => {
+      if (window.currentMicroEditNode) {
+        // Modal is open, assign instantly
+        const { assignHardwareToNode, renderAssignedHardware } = await import('./explorer.js');
+        await assignHardwareToNode(window.currentMicroEditNode, asset);
+        
+        // Update the modal's assigned hardware list UI
+        const data = window.currentMicroEditNode.getAttr('entityData');
+        if (window.renderAssignedHardware) {
+          window.renderAssignedHardware(data);
+        } else if (renderAssignedHardware) {
+          renderAssignedHardware(data);
+        }
+        
+        // Update the device dropdown to reflect auto-set if needed
+        if (data.layout?.device) {
+          const deviceSelect = document.getElementById('asset-edit-device');
+          if (deviceSelect) deviceSelect.value = data.layout.device;
+        }
+        
+        import('./main.js').then(({ notify }) => {
+          if (notify) notify(`${asset.hardware_name || 'Equipamento'} associado com sucesso!`, "success");
+        });
+      } else {
+        // Normal mode, show hint
+        import('./main.js').then(({ notify }) => {
+          if (notify) notify("Arraste e solte o computador em cima de uma Mesa ou Rack no mapa.", "info");
+        });
+      }
     });
 
     // HTML5 Drag and Drop

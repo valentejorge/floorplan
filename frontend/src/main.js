@@ -1689,25 +1689,43 @@ async function populateFurnitureCatalog() {
         const payload = JSON.parse(jsonData);
         if (payload.source === 'assets-catalog' && payload.asset) {
           const asset = payload.asset;
-          const ptr = stage.getPointerPosition();
-          let hitShape = getLayerFurniture().getIntersection(ptr);
           
-          if (!hitShape) {
-            notify("Computers must be dropped onto a desk or rack.", "warning");
+          // 1. Ensure pointers are updated for the drop event
+          const { stage, getRelativePointerPosition, getLayerFurniture } = await import('./engine.js');
+          stage.setPointersPositions(e);
+          const pos = getRelativePointerPosition(); // {x, y} in map coordinates
+          
+          // 2. Find closest furniture (Magnetic Drop)
+          let minGroup = null;
+          let minDist = Infinity;
+          const maxDropRadius = 60; // 60 map units (pixels at 100% zoom)
+          
+          getLayerFurniture().getChildren().forEach(node => {
+            // Find the top-level furniture group
+            let group = node;
+            while (group && group.name() !== 'furniture' && group.parent) {
+              group = group.parent;
+            }
+            if (group && group.name() === 'furniture') {
+              const dx = group.x() - pos.x;
+              const dy = group.y() - pos.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist < minDist) {
+                minDist = dist;
+                minGroup = group;
+              }
+            }
+          });
+          
+          if (!minGroup || minDist > maxDropRadius) {
+            notify("Arraste o computador para mais perto do centro de uma Mesa ou Rack.", "warning");
             return;
           }
           
-          let group = hitShape;
-          while (group && group.name() !== 'furniture' && group.parent) {
-            group = group.parent;
-          }
-          
-          if (group && group.name() === 'furniture') {
-            // Use the unified pipeline
-            const { assignHardwareToNode } = await import('./explorer.js');
-            await assignHardwareToNode(group, asset);
-            notify(`${asset.hardware_name || 'Device'} assigned successfully!`, 'success');
-          }
+          // 3. Use the unified pipeline to assign
+          const { assignHardwareToNode } = await import('./explorer.js');
+          await assignHardwareToNode(minGroup, asset);
+          notify(`${asset.hardware_name || 'Equipamento'} associado com sucesso!`, 'success');
         }
       } catch (err) {
         console.error("Drop asset parse error", err);
