@@ -372,13 +372,26 @@ function bindViewFilters() {
 
 function bindToolbar() {
   const buttons = document.querySelectorAll('.fp-tool-btn[data-tool]');
-  const furniturePanel = document.getElementById('furniture-catalog-panel');
-  const btnCloseFurniture = document.getElementById('btn-close-furniture');
+  
+  const panels = {
+    furniture: document.getElementById('furniture-catalog-panel'),
+    assets: document.getElementById('assets-catalog-panel'),
+    floor: document.getElementById('floor-catalog-panel'),
+    wall: document.getElementById('wall-catalog-panel')
+  };
 
-  btnCloseFurniture?.addEventListener('click', () => {
-    if(furniturePanel) furniturePanel.style.display = 'none';
-    // Remove active state from button
-    document.querySelector('.fp-tool-btn[data-tool="furniture"]')?.classList.remove('active');
+  const closeButtons = {
+    furniture: document.getElementById('btn-close-furniture'),
+    floor: document.getElementById('btn-close-floor'),
+    wall: document.getElementById('btn-close-wall')
+  };
+
+  // Wire up close buttons
+  Object.entries(closeButtons).forEach(([tool, btn]) => {
+    btn?.addEventListener('click', () => {
+      if(panels[tool]) panels[tool].style.display = 'none';
+      document.querySelector(`.fp-tool-btn[data-tool="${tool}"]`)?.classList.remove('active');
+    });
   });
 
   buttons.forEach(btn => {
@@ -388,16 +401,16 @@ function bindToolbar() {
       buttons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
-      if (furniturePanel) {
-        if (tool === 'furniture') {
-          furniturePanel.style.display = 'flex';
-        } else {
-          furniturePanel.style.display = 'none';
-        }
+      // Hide all panels first (except assets which is toggled in assets-catalog.js, but we should hide it when switching tools)
+      Object.values(panels).forEach(p => {
+        if(p && p.id !== 'assets-catalog-panel') p.style.display = 'none';
+        else if (p && p.id === 'assets-catalog-panel' && tool !== 'assets') p.style.display = 'none';
+      });
+
+      // Show the requested panel
+      if (panels[tool] && tool !== 'assets') {
+        panels[tool].style.display = 'flex';
       }
-      
-      document.getElementById('floor-color-picker')?.classList.toggle('visible', tool === 'floor');
-      document.getElementById('wall-type-picker')?.classList.toggle('visible', tool === 'wall');
       
       import('./tools.js').then(({ setActiveTool }) => {
         setActiveTool(tool);
@@ -1611,12 +1624,11 @@ async function populateFurnitureCatalog() {
 
   const container = document.getElementById('floorplan-container');
   container.addEventListener('dragover', (e) => {
-    // Only allow drop if we are in Edit Mode and Furniture tool is selected
     const layout = document.getElementById('main-layout');
     if (!layout?.classList.contains('is-editing')) return;
     
     const activeTool = document.querySelector('.fp-tool-btn.active')?.dataset.tool;
-    if (activeTool !== 'furniture') return;
+    if (activeTool !== 'furniture' && activeTool !== 'assets') return;
     
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
@@ -1627,38 +1639,74 @@ async function populateFurnitureCatalog() {
     if (!layout?.classList.contains('is-editing')) return;
     
     const activeTool = document.querySelector('.fp-tool-btn.active')?.dataset.tool;
-    if (activeTool !== 'furniture') return;
+    if (activeTool !== 'furniture' && activeTool !== 'assets') return;
     
-    const type = e.dataTransfer.getData('furniture-type');
-    if (!type) return;
     e.preventDefault();
 
-    const { stage, getRelativePointerPosition, applySnapOnDragEnd, getLayerFurniture } = await import('./engine.js');
+    const { stage, getRelativePointerPosition, applySnapOnDragEnd, getLayerFurniture, getLayerAssets, GRID_SIZE } = await import('./engine.js');
     stage.setPointersPositions(e);
     let pos = getRelativePointerPosition();
     
-    const { GRID_SIZE } = await import('./engine.js');
     pos.x = Math.round(pos.x / GRID_SIZE) * GRID_SIZE;
     pos.y = Math.round(pos.y / GRID_SIZE) * GRID_SIZE;
     
-    const { buildFurnitureNode } = await import('./furniture.js');
-    const node = buildFurnitureNode({
-      id: 'fur_' + Date.now(),
-      type: type,
-      x: pos.x,
-      y: pos.y,
-      rotation: 0
-    });
-    
-    if (node) {
-      const furnitureLayer = getLayerFurniture();
-      furnitureLayer.add(node);
-      node.draggable(true);
-      applySnapOnDragEnd(node);
-      furnitureLayer.getLayer().batchDraw();
+    const furType = e.dataTransfer.getData('furniture-type');
+    if (furType && activeTool === 'furniture') {
+      const { buildFurnitureNode } = await import('./furniture.js');
+      const node = buildFurnitureNode({
+        id: 'fur_' + Date.now(),
+        type: furType,
+        x: pos.x,
+        y: pos.y,
+        rotation: 0
+      });
       
-      const { commitHistory } = await import('./history.js');
-      commitHistory();
+      if (node) {
+        const furnitureLayer = getLayerFurniture();
+        furnitureLayer.add(node);
+        node.draggable(true);
+        applySnapOnDragEnd(node);
+        furnitureLayer.getLayer().batchDraw();
+        
+        const { commitHistory } = await import('./history.js');
+        commitHistory();
+      }
+      return;
+    }
+
+    const jsonData = e.dataTransfer.getData('application/json');
+    if (jsonData && activeTool === 'assets') {
+      try {
+        const payload = JSON.parse(jsonData);
+        if (payload.source === 'assets-catalog' && payload.asset) {
+          const asset = payload.asset;
+          asset.pos_x = pos.x;
+          asset.pos_y = pos.y;
+          asset.id = asset.hardware_id;
+          asset.type = 'desktop_single';
+          
+          const { createAssetNode } = await import('./tools.js');
+          const node = createAssetNode(asset);
+          if (node) {
+            getLayerAssets().add(node);
+            getLayerAssets().getLayer().batchDraw();
+            
+            const { refreshExplorer, selectNodeById } = await import('./explorer.js');
+            refreshExplorer();
+            selectNodeById(`asset-${asset.id}`);
+            
+            const { commitHistory } = await import('./history.js');
+            commitHistory();
+            
+            const { removeAssetFromCatalog } = await import('./assets-catalog.js');
+            if (removeAssetFromCatalog) {
+              removeAssetFromCatalog(asset.hardware_id);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Drop asset parse error", err);
+      }
     }
   });
 }

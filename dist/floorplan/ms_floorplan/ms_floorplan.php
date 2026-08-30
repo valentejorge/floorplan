@@ -109,7 +109,7 @@ if (file_exists($css_file_path)) {
       <aside class="fp-explorer" id="explorer-panel">
         
         <!-- ── Furniture Catalog Panel ─────────────────────────────────────── -->
-        <div id="furniture-catalog-panel" style="display:none;background:var(--fp-bg-sidebar);border-bottom:1px solid var(--fp-border);flex-direction:column;max-height:100%;z-index:100;pointer-events:auto;">
+        <div id="furniture-catalog-panel" style="display:none;background:var(--fp-bg-sidebar);flex-direction:column;max-height:100%;z-index:100;pointer-events:auto;position:absolute;top:0;left:0;right:0;bottom:0;">
           <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--fp-border);">
             <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Furniture Catalog</h3>
             <button id="btn-close-furniture" style="background:none;border:none;color:var(--fp-text-muted);cursor:pointer;font-size:16px;line-height:1;">&times;</button>
@@ -120,7 +120,7 @@ if (file_exists($css_file_path)) {
         </div>
 
         <!-- ── IT Assets Catalog Panel ─────────────────────────────────────── -->
-        <div id="assets-catalog-panel" style="display:none;background:var(--fp-bg-sidebar);border-bottom:1px solid var(--fp-border);flex-direction:column;max-height:100%;z-index:101;pointer-events:auto;position:absolute;top:0;left:0;right:0;bottom:0;">
+        <div id="assets-catalog-panel" style="display:none;background:var(--fp-bg-sidebar);flex-direction:column;max-height:100%;z-index:101;pointer-events:auto;position:absolute;top:0;left:0;right:0;bottom:0;">
           <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--fp-border);">
             <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Unmapped Assets</h3>
             <button id="btn-close-assets" style="background:none;border:none;color:var(--fp-text-muted);cursor:pointer;font-size:16px;line-height:1;">&times;</button>
@@ -131,6 +131,46 @@ if (file_exists($css_file_path)) {
           <div id="assets-catalog-body" style="flex:1;overflow-y:auto;padding:0;">
             <!-- Fetched from API -->
             <div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">Loading...</div>
+          </div>
+        </div>
+
+        <!-- ── Floor Color Panel ─────────────────────────────────────── -->
+        <div id="floor-catalog-panel" style="display:none;background:var(--fp-bg-sidebar);flex-direction:column;max-height:100%;z-index:102;pointer-events:auto;position:absolute;top:0;left:0;right:0;bottom:0;">
+          <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--fp-border);">
+            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Floor Style</h3>
+            <button id="btn-close-floor" style="background:none;border:none;color:var(--fp-text-muted);cursor:pointer;font-size:16px;line-height:1;">&times;</button>
+          </div>
+          <div id="floor-color-picker" style="flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-content:start;">
+            <div class="fp-color-swatch active" data-color="#9ab8a0" style="background:#9ab8a0;" title="Carpet Green"></div>
+            <div class="fp-color-swatch" data-color="#d4cfc4" style="background:#d4cfc4;" title="Tile Beige"></div>
+            <div class="fp-color-swatch" data-color="#8fa8c8" style="background:#8fa8c8;" title="Corporate Blue"></div>
+            <div class="fp-color-swatch" data-color="#c4b896" style="background:#c4b896;" title="Wood Floor"></div>
+            <div class="fp-color-swatch" data-color="#bbb" style="background:#bbb;" title="Concrete"></div>
+            <div class="fp-color-swatch" data-color="#e8e0d0" style="background:#e8e0d0;" title="White Tile"></div>
+            <div class="fp-color-swatch" data-color="#7a9a8a" style="background:#7a9a8a;" title="Dark Carpet"></div>
+            <div class="fp-color-swatch" data-color="#dbb8a0" style="background:#dbb8a0;" title="Terracotta"></div>
+          </div>
+        </div>
+
+        <!-- ── Wall Type Panel ─────────────────────────────────────── -->
+        <div id="wall-catalog-panel" style="display:none;background:var(--fp-bg-sidebar);flex-direction:column;max-height:100%;z-index:103;pointer-events:auto;position:absolute;top:0;left:0;right:0;bottom:0;">
+          <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--fp-border);">
+            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Wall Type</h3>
+            <button id="btn-close-wall" style="background:none;border:none;color:var(--fp-text-muted);cursor:pointer;font-size:16px;line-height:1;">&times;</button>
+          </div>
+          <div id="wall-type-picker" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;">
+            <div class="fp-wall-option active" data-type="exterior">
+              <div class="fp-wall-option__line" style="background:#6b7a88;height:6px;"></div>
+              Exterior
+            </div>
+            <div class="fp-wall-option" data-type="interior">
+              <div class="fp-wall-option__line" style="background:#8a9aaa;height:3px;"></div>
+              Interior
+            </div>
+            <div class="fp-wall-option" data-type="glass">
+              <div class="fp-wall-option__line" style="background:#5b9ecf;height:2px;border-top:2px dashed #5b9ecf;"></div>
+              Glass
+            </div>
           </div>
         </div>
 
@@ -258,33 +298,7 @@ if (file_exists($css_file_path)) {
         </button>
       </aside>
 
-      <!-- Floor Color Picker -->
-      <div id="floor-color-picker" class="fp-color-picker">
-        <div class="fp-color-swatch active" data-color="#9ab8a0" style="background:#9ab8a0;" title="Carpet Green"></div>
-        <div class="fp-color-swatch" data-color="#d4cfc4" style="background:#d4cfc4;" title="Tile Beige"></div>
-        <div class="fp-color-swatch" data-color="#8fa8c8" style="background:#8fa8c8;" title="Corporate Blue"></div>
-        <div class="fp-color-swatch" data-color="#c4b896" style="background:#c4b896;" title="Wood Floor"></div>
-        <div class="fp-color-swatch" data-color="#bbb" style="background:#bbb;" title="Concrete"></div>
-        <div class="fp-color-swatch" data-color="#e8e0d0" style="background:#e8e0d0;" title="White Tile"></div>
-        <div class="fp-color-swatch" data-color="#7a9a8a" style="background:#7a9a8a;" title="Dark Carpet"></div>
-        <div class="fp-color-swatch" data-color="#dbb8a0" style="background:#dbb8a0;" title="Terracotta"></div>
-      </div>
 
-      <!-- Wall Type Picker -->
-      <div id="wall-type-picker" class="fp-wall-picker">
-        <div class="fp-wall-option active" data-type="exterior">
-          <div class="fp-wall-option__line" style="background:#6b7a88;height:6px;"></div>
-          Exterior
-        </div>
-        <div class="fp-wall-option" data-type="interior">
-          <div class="fp-wall-option__line" style="background:#8a9aaa;height:3px;"></div>
-          Interior
-        </div>
-        <div class="fp-wall-option" data-type="glass">
-          <div class="fp-wall-option__line" style="background:#5b9ecf;height:2px;border-top:2px dashed #5b9ecf;"></div>
-          Glass
-        </div>
-      </div>
 
       <!-- Canvas Area and Explorer were moved above -->
     </div>

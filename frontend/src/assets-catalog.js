@@ -110,7 +110,11 @@ function placeAssetInMap(asset, x, y) {
     commitHistory();
     
     // Remove from unmapped list locally
-    unmappedAssets = unmappedAssets.filter(a => a.hardware_id !== asset.hardware_id);
-    renderAssetsCatalog(document.getElementById('assets-catalog-search')?.value || '');
+    removeAssetFromCatalog(asset.hardware_id);
   }
+}
+
+export function removeAssetFromCatalog(hardwareId) {
+  unmappedAssets = unmappedAssets.filter(a => a.hardware_id !== hardwareId);
+  renderAssetsCatalog(document.getElementById('assets-catalog-search')?.value || '');
 }

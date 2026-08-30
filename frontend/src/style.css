@@ -1395,24 +1395,12 @@ textarea:focus-visible,
 
 /* ── Floor Color Picker ──────────────────────────────────────────── */
 .fp-color-picker {
-  position: absolute;
-  right: calc(var(--fp-explorer-w) + 32px);
-  bottom: 80px;
-  background: #fff;
-  border: 1px solid var(--fp-border);
-  border-radius: 6px;
-  padding: 8px;
-  display: none;
+  display: flex;
   gap: 6px;
   flex-wrap: wrap;
-  width: 130px;
-  z-index: 500;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.fp-color-picker.visible {
-  display: flex;
-}
+
 
 .fp-color-swatch {
   width: 24px;
@@ -1429,24 +1417,12 @@ textarea:focus-visible,
 
 /* ── Wall Type Picker ────────────────────────────────────────────── */
 .fp-wall-picker {
-  position: absolute;
-  right: calc(var(--fp-explorer-w) + 32px);
-  bottom: 80px;
-  background: #fff;
-  border: 1px solid var(--fp-border);
-  border-radius: 6px;
-  padding: 8px;
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: 4px;
-  z-index: 500;
-  width: 160px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.fp-wall-picker.visible {
-  display: flex;
-}
+
 
 .fp-wall-option {
   display: flex;
