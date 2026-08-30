@@ -1298,7 +1298,9 @@ function bindMapNavigator() {
       
       return `
       <div class="fp-room-card" data-bname="${building.name}" data-fname="${floor.name}" data-rname="${r.name}" data-room-id="${r.id}">
-        <div class="fp-room-thumb" style="${r.thumbnail ? `background-image: url(${r.thumbnail}); background-size: contain; background-repeat: no-repeat; background-position: center; border: 1px solid var(--fp-border);` : `background:${r.color};`}">${r.thumbnail ? '' : r.icon}</div>
+        <div class="fp-room-thumb" style="background:${r.thumbnail ? '#f4f5f7' : r.color}; border-bottom: 1px solid var(--fp-border);">
+          ${r.thumbnail ? `<img src="${r.thumbnail}" style="max-width: 100%; max-height: 100%; object-fit: contain; padding: 4px;" alt="Map">` : r.icon}
+        </div>
         ${isEditMapMode ? `
         <div class="fp-room-card-actions">
             <button class="fp-btn-icon fp-btn-rename" data-id="${r.id}" data-name="${r.name}" title="Rename">${pencilSvg}</button>
