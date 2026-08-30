@@ -1,4 +1,4 @@
-import { getLayerFloor, getLayerArchitecture, getLayerFurniture, getLayerAssets } from './engine.js';
+import { getLayerFloor, getLayerArchitecture, getLayerFurniture } from './engine.js';
 
 let historyStack = [];
 let historyIndex = -1;
@@ -60,7 +60,7 @@ export function serializeMapState() {
            data.rotation = node.rotation();
          }
       } else {
-         data = { ...node.getAttr('entityData') };
+         data = JSON.parse(JSON.stringify(node.getAttr('entityData')));
          data.x = node.x();
          data.y = node.y();
          data.rotation = node.rotation();
@@ -83,8 +83,7 @@ export function serializeMapState() {
   return {
     floor_zones: getNodesData(getLayerFloor()),
     walls: getNodesData(getLayerArchitecture()),
-    furniture: getNodesData(getLayerFurniture()),
-    assets: getNodesData(getLayerAssets()),
+    furniture: getNodesData(getLayerFurniture())
   };
 }
 
@@ -94,10 +93,9 @@ function restoreState(state) {
   const layout = document.getElementById('main-layout');
   const isEditing = layout && layout.classList.contains('is-editing');
   
-  import('./renderer.js').then(({ loadMapData, toggleAssetEditMode }) => {
+  import('./renderer.js').then(({ loadMapData }) => {
     // We need to disable the camera pan for undo/redo
     loadMapData(state, false); 
-    toggleAssetEditMode(isEditing);
     
     // Also re-apply editable state if we are in Edit mode
     if (isEditing) {

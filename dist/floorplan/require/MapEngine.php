@@ -263,7 +263,7 @@ class MapEngine
     public function getUnmappedAssets(): array
     {
         $stmt = $this->pdo->query('
-            SELECT h.ID as hardware_id, h.NAME as hardware_name, n.IPADDRESS as ip, n.MACADDR as mac
+            SELECT h.ID as hardware_id, h.NAME as hardware_name, MAX(n.IPADDRESS) as ip, MAX(n.MACADDR) as mac
             FROM hardware h
             LEFT JOIN plugin_floorplan_assets a ON h.ID = a.hardware_id
             LEFT JOIN networks n ON h.ID = n.HARDWARE_ID

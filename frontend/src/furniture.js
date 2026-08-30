@@ -35,7 +35,12 @@ export function buildFurnitureNode(data) {
 
   group.add(node);
   
-  group.setAttr('entityData', { ...data, layer: 'furniture' });
+  group.setAttr('entityData', { 
+    ...data, 
+    assigned_hardware: data.assigned_hardware || [],
+    layout: data.layout || null,
+    layer: 'furniture' 
+  });
   group.setAttr('entityType', type);
   group.draggable(false);
 

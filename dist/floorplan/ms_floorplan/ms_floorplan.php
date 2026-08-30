@@ -236,6 +236,22 @@ if (file_exists($css_file_path)) {
             </select>
           </div>
 
+          <div class="fp-form-group" style="margin-top: 16px; border-top: 1px solid var(--fp-border); padding-top: 12px;">
+            <label style="display:flex; justify-content:space-between;">
+              <span>Assigned IT Assets</span>
+            </label>
+            <div id="asset-edit-assigned-list" style="display:flex; flex-direction:column; gap:4px; margin-bottom: 8px;">
+              <!-- Assigned assets populated here via JS -->
+            </div>
+            <div style="display:flex; gap:4px;">
+              <select id="asset-edit-unmapped-select" class="fp-select" style="flex:1;">
+                <option value="">Select computer to assign...</option>
+                <!-- Populated by JS from unmapped list -->
+              </select>
+              <button id="asset-edit-assign-btn" class="fp-btn fp-btn--outline" style="padding:0 8px;">Add</button>
+            </div>
+          </div>
+
           <div style="display:flex;gap:8px;margin-top:24px;">
             <button class="fp-btn fp-btn--outline" id="asset-edit-cancel" style="flex:1;">
               <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>

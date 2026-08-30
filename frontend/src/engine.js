@@ -6,7 +6,6 @@ export let gridLayer;
 export let zonesLayer;
 export let wallsLayer;
 export let furnitureLayer;
-export let assetsLayer;
 export let overlayLayer;
 export let globalTransformer;
 
@@ -20,7 +19,6 @@ export function getStage() { return stage; }
 export function getLayerFloor() { return zonesLayer; }
 export function getLayerArchitecture() { return wallsLayer; }
 export function getLayerFurniture() { return furnitureLayer; }
-export function getLayerAssets() { return assetsLayer; }
 export function getOverlayLayer() { return overlayLayer; }
 export function getTransformer() { return globalTransformer; }
 
@@ -35,7 +33,7 @@ export function captureThumbnail() {
   
   // Calculate bounding box of all shapes
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  const layers = [wallsLayer, zonesLayer, furnitureLayer, assetsLayer];
+  const layers = [wallsLayer, zonesLayer, furnitureLayer];
   
   layers.forEach(layer => {
     layer.getChildren().forEach(node => {
@@ -138,12 +136,10 @@ export function initEngine(containerId) {
   zonesLayer = new Konva.Group({ listening: false, name: 'zonesLayer' }); 
   wallsLayer = new Konva.Group({ listening: false, name: 'wallsLayer' });
   furnitureLayer = new Konva.Group({ listening: true, name: 'furnitureLayer' });
-  assetsLayer = new Konva.Group({ listening: true, name: 'assetsLayer' }); 
   
   architectureLayer.add(zonesLayer);
   architectureLayer.add(wallsLayer);
   
-  contentLayer.add(assetsLayer);
   contentLayer.add(furnitureLayer);
   
   overlayLayer = new Konva.Layer();
@@ -237,9 +233,9 @@ export function initEngine(containerId) {
     stage.position(newPos);
     
     // Dynamic LOD: hide labels if zoomed out too far
-    if (assetsLayer) {
+    if (furnitureLayer) {
       const isZoomedOut = newScale < 0.65;
-      assetsLayer.getChildren().forEach(group => {
+      furnitureLayer.getChildren().forEach(group => {
         const labelGroup = group.findOne('.asset-label-group');
         if (labelGroup) {
           labelGroup.visible(!isZoomedOut);
@@ -416,9 +412,9 @@ function animateStage(newScale, newX, newY, onFinish) {
     stage.batchDraw();
     
     // Dynamic LOD
-    if (assetsLayer) {
+    if (furnitureLayer) {
       const isZoomedOut = newScale < 0.65;
-      assetsLayer.getChildren().forEach(group => {
+      furnitureLayer.getChildren().forEach(group => {
         const labelGroup = group.findOne('.asset-label-group');
         if (labelGroup) {
           labelGroup.visible(!isZoomedOut);
@@ -444,9 +440,9 @@ function animateStage(newScale, newX, newY, onFinish) {
   stage.position({ x: newX, y: newY });
   
   // Dynamic LOD
-  if (assetsLayer) {
+  if (furnitureLayer) {
     const isZoomedOut = newScale < 0.65;
-    assetsLayer.getChildren().forEach(group => {
+    furnitureLayer.getChildren().forEach(group => {
       const labelGroup = group.findOne('.asset-label-group');
       if (labelGroup) {
         labelGroup.visible(!isZoomedOut);
@@ -590,8 +586,8 @@ export function setEngineEditMode(isEditing) {
     });
   });
 
-  // Assets and Furniture should always be listening for tooltips
-  [getLayerFurniture(), getLayerAssets()].forEach(layer => {
+  // Furniture should always be listening for tooltips
+  [getLayerFurniture()].forEach(layer => {
     layer.listening(true);
     layer.getChildren().forEach(node => {
       // If it's an IT asset with a tooltip, it should always listen

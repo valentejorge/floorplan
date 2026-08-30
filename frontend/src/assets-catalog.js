@@ -1,6 +1,5 @@
 import { api } from './api.js';
 import { createAssetNode } from './tools.js';
-import { getLayerAssets } from './engine.js';
 import { refreshExplorer, selectNodeById } from './explorer.js';
 import { commitHistory } from './history.js';
 
@@ -19,9 +18,8 @@ export function initAssetsCatalog() {
     document.getElementById('assets-catalog-body').innerHTML = '<div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">Buscando equipamentos...</div>';
     
     try {
-      const res = await api('get_unmapped_assets.php');
-      if (res && res.data) {
-        unmappedAssets = res.data;
+      unmappedAssets = await fetchUnmappedAssets();
+      if (unmappedAssets.length > 0) {
         renderAssetsCatalog();
       }
     } catch (e) {
@@ -81,12 +79,15 @@ function renderAssetsCatalog(filter = '') {
 
     // Click to place at center
     item.addEventListener('click', () => {
-      placeAssetInMap(asset, 400, 300);
+      import('./main.js').then(({ notify }) => {
+        if (notify) notify("Arraste e solte o computador em cima de uma Mesa ou Rack no mapa.", "info");
+      });
     });
 
     // HTML5 Drag and Drop
     item.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('application/json', JSON.stringify({ source: 'assets-catalog', asset }));
+      e.dataTransfer.effectAllowed = 'copy';
     });
 
     list.appendChild(item);
@@ -95,26 +96,27 @@ function renderAssetsCatalog(filter = '') {
   body.appendChild(list);
 }
 
-function placeAssetInMap(asset, x, y) {
-  asset.pos_x = x;
-  asset.pos_y = y;
-  asset.id = asset.hardware_id; // Temporary ID for new ones
-  asset.type = 'desktop_single'; // default skin
-  
-  const node = createAssetNode(asset);
-  if (node) {
-    getLayerAssets().add(node);
-    getLayerAssets().getLayer().batchDraw();
-    refreshExplorer();
-    selectNodeById(`asset-${asset.id}`);
-    commitHistory();
-    
-    // Remove from unmapped list locally
-    removeAssetFromCatalog(asset.hardware_id);
-  }
-}
+
 
 export function removeAssetFromCatalog(hardwareId) {
   unmappedAssets = unmappedAssets.filter(a => a.hardware_id !== hardwareId);
   renderAssetsCatalog(document.getElementById('assets-catalog-search')?.value || '');
+}
+
+export function getUnmappedAssetsList() {
+  return unmappedAssets;
+}
+
+export async function fetchUnmappedAssets() {
+  if (unmappedAssets.length === 0) {
+    try {
+      const res = await api('get_unmapped_assets.php');
+      if (res && res.data) {
+        unmappedAssets = res.data;
+      }
+    } catch (e) {
+      console.error("Failed to fetch unmapped assets", e);
+    }
+  }
+  return unmappedAssets;
 }

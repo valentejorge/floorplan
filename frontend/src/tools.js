@@ -7,7 +7,7 @@
 import Konva from 'konva';
 import {
   getStage, getLayerFloor, getLayerArchitecture, getLayerFurniture,
-  getLayerAssets, getOverlayLayer, getTransformer,
+  getOverlayLayer, getTransformer,
   getRelativePointerPosition, snapToGrid, applySnapOnDragEnd, GRID_SIZE,
 } from './engine.js';
 import { buildFurnitureNode } from './furniture.js';
@@ -472,7 +472,12 @@ export function createAssetNode(asset) {
     image: img,
     width: 40,
     height: 40,
-    ...SHADOW_LIGHT,
+    x: -20,
+    y: -20,
+    shadowColor: 'black',
+    shadowBlur: 10,
+    shadowOpacity: 0.1,
+    shadowOffset: { x: 0, y: 5 },
   }));
 
   group.add(new Konva.Text({
@@ -482,8 +487,8 @@ export function createAssetNode(asset) {
     fill: '#333',
     width: 70,
     align: 'center',
-    y: 42,
-    x: -15,
+    y: 22,
+    x: -35,
     listening: false,
   }));
 

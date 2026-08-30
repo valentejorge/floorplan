@@ -1,5 +1,5 @@
 import Konva from 'konva';
-import { zonesLayer, wallsLayer, assetsLayer, furnitureLayer, requestRender, animateMapEntrance } from './engine.js';
+import { zonesLayer, wallsLayer, furnitureLayer, requestRender, animateMapEntrance } from './engine.js';
 import { skinManager } from './skins.js';
 import { buildFurnitureNode } from './furniture.js';
 
@@ -31,7 +31,6 @@ export function loadMapData(data, isInitial = true) {
   
   zonesLayer.destroyChildren();
   wallsLayer.destroyChildren();
-  assetsLayer.destroyChildren();
   furnitureLayer.destroyChildren();
 
   // 1. Render Floor Zones
@@ -118,109 +117,26 @@ export function loadMapData(data, isInitial = true) {
         x: item.x !== undefined ? item.x : (item.pos_x || 0),
         y: item.y !== undefined ? item.y : (item.pos_y || 0),
         rotation: item.rotation !== undefined ? item.rotation : (item.layout?.rotation || 0),
-        name: item.name || 'Furniture'
+        name: item.name || 'Furniture',
+        assigned_hardware: item.assigned_hardware || [],
+        layout: item.layout || null,
+        scaleX: item.scaleX || 1,
+        scaleY: item.scaleY || 1
       });
-      if (fnNode) furnitureLayer.add(fnNode);
+      if (fnNode) {
+        furnitureLayer.add(fnNode);
+        
+        // If this furniture has a layout with device/chair skins, render them
+        const entityData = fnNode.getAttr('entityData');
+        if (entityData.layout && (entityData.layout.device !== 'none' || entityData.layout.chair !== 'none')) {
+          renderAssetContent(fnNode, entityData, skinManager);
+          fnNode.cache();
+        }
+      }
     });
   }
 
-  // 4. Render Parametric Assets (Tables, Chairs, IT Devices)
-  if (data.assets) {
-    data.assets.forEach(asset => {
-      // Support legacy structure where furniture is inside assets
-      if (asset.type === 'furniture') {
-        const type = asset.layout?.table || 'desk_straight';
-        const fnNode = buildFurnitureNode({
-          id: asset.id,
-          type: type,
-          x: asset.pos_x || asset.x,
-          y: asset.pos_y || asset.y,
-          rotation: asset.layout ? (asset.layout.rotation || 0) : 0,
-          name: asset.name || 'Furniture'
-        });
-        if (fnNode) furnitureLayer.add(fnNode);
-        return;
-      }
 
-      const group = new Konva.Group({
-        x: asset.pos_x || asset.x,
-        y: asset.pos_y || asset.y,
-        rotation: asset.layout ? (asset.layout.rotation || 0) : (asset.rotation || 0),
-        id: asset.id,
-        hardware_id: asset.hardware_id,
-        name: 'it-asset',
-        scaleX: asset.scaleX || 1,
-        scaleY: asset.scaleY || 1
-      });
-      group.setAttr('assetData', asset);
-
-      renderAssetContent(group, asset, skinManager);
-
-      // Hover Insights (Tooltip)
-      if (asset.hardware_id) {
-        group.listening(true);
-        group.on('mouseenter', (e) => {
-          document.body.style.cursor = 'pointer';
-          const tooltip = document.getElementById('asset-tooltip');
-          if (!tooltip) return;
-          
-          const mac = asset.mac || `00:1A:2B:3C:4D:${asset.hardware_id.toString().substring(0,2)}`;
-          const user = asset.user || (asset.type === 'desktop' ? 'jorge.silva' : 'system');
-          const desc = asset.description || `Equipamento ${asset.type} padrão`;
-          const dotColor = asset.status === 'offline' ? '#e53e3e' : asset.status === 'warning' ? '#d69e2e' : '#5cb85c';
-          
-          tooltip.innerHTML = `
-            <div class="fp-tooltip__header">
-              <div class="fp-tooltip__title">
-                <div style="width:8px;height:8px;border-radius:50%;background:${dotColor};box-shadow:0 0 8px ${dotColor}80;"></div>
-                ${asset.hardware_name}
-              </div>
-              <div class="fp-tooltip__subtitle">ID: ${asset.hardware_id} • ${asset.type.toUpperCase()}</div>
-            </div>
-            <div class="fp-tooltip__body">
-              <div class="fp-tooltip__row"><span class="fp-tooltip__label">IP Addr</span><span class="fp-tooltip__value">${asset.ip || '—'}</span></div>
-              <div class="fp-tooltip__row"><span class="fp-tooltip__label">MAC Addr</span><span class="fp-tooltip__value">${mac}</span></div>
-              <div class="fp-tooltip__row"><span class="fp-tooltip__label">Assignee</span><span class="fp-tooltip__value">${user}</span></div>
-              <div class="fp-tooltip__row"><span class="fp-tooltip__label">Details</span><span class="fp-tooltip__value" style="font-weight:400;color:#cbd5e1;">${desc}</span></div>
-            </div>
-          `;
-          tooltip.classList.add('visible');
-        });
-        
-        group.on('mousemove', (e) => {
-          const tooltip = document.getElementById('asset-tooltip');
-          if (tooltip && tooltip.classList.contains('visible')) {
-            tooltip.style.left = e.evt.clientX + 'px';
-            tooltip.style.top = e.evt.clientY + 'px';
-          }
-        });
-        
-        group.on('mouseleave', () => {
-          document.body.style.cursor = 'default';
-          const tooltip = document.getElementById('asset-tooltip');
-          if (tooltip) tooltip.classList.remove('visible');
-        });
-        
-        group.on('click tap', () => {
-          if (window.selectAsset) window.selectAsset(asset);
-          
-          const layout = document.getElementById('main-layout');
-          if (layout && layout.classList.contains('is-editing')) {
-            import('./engine.js').then(({ getTransformer }) => {
-              const tr = getTransformer();
-              tr.nodes([group]);
-              tr.getLayer().batchDraw();
-            });
-            import('./explorer.js').then(({ selectNodeById }) => {
-               selectNodeById(group.id());
-            });
-          }
-        });
-      }
-
-      assetsLayer.add(group);
-    });
-  }
 
   requestRender();
   
@@ -264,8 +180,14 @@ function populateObjectExplorer(assets) {
     item.onclick = () => {
       if (window.selectAsset) window.selectAsset(asset);
 
-      // Find asset in Konva
-      const group = assetsLayer.getChildren().find(node => String(node.id()) === String(asset.id));
+      // Find furniture containing this asset in Konva
+      const group = furnitureLayer.getChildren().find(node => {
+         const entityData = node.getAttr('entityData');
+         if (entityData && entityData.assigned_hardware) {
+             return entityData.assigned_hardware.some(hw => String(hw.hardware_id) === String(asset.id) || String(hw.hardware_id) === String(asset.hardware_id));
+         }
+         return false;
+      });
       if (group) {
         import('./engine.js').then(({ stage, getTransformer }) => {
           // Pulse effect
@@ -273,16 +195,19 @@ function populateObjectExplorer(assets) {
             x: group.x(), y: group.y(),
             radius: 30, stroke: '#961B7E', strokeWidth: 2, opacity: 1
           });
-          assetsLayer.add(pulse);
+          furnitureLayer.add(pulse);
           new Konva.Tween({
             node: pulse, duration: 1, radius: 100, opacity: 0,
             onFinish: () => pulse.destroy()
           }).play();
           
-          // Select with Transformer
-          const tr = getTransformer();
-          tr.nodes([group]);
-          tr.getLayer().batchDraw();
+          // Select with Transformer if in edit mode
+          const layout = document.getElementById('main-layout');
+          if (layout && layout.classList.contains('is-editing')) {
+            const tr = getTransformer();
+            tr.nodes([group]);
+            tr.getLayer().batchDraw();
+          }
         });
       }
     };
@@ -291,55 +216,6 @@ function populateObjectExplorer(assets) {
   });
   
   explorerBody.appendChild(list);
-}
-
-export function toggleAssetEditMode(isEditing) {
-  assetsLayer.getChildren().forEach(group => {
-    // Clear the cache to make changes
-    group.clearCache();
-    
-    // Find existing bounding box if any
-    let bbox = group.findOne('.edit-bbox');
-    
-    if (isEditing) {
-      // Enable interaction
-      group.listening(true);
-      group.on('mouseenter', () => {
-        document.body.style.cursor = 'grab';
-      });
-      group.on('mouseleave', () => {
-        document.body.style.cursor = 'default';
-      });
-      
-      if (!bbox) {
-        // Calculate bounds (roughly based on children)
-        const rect = group.getClientRect({ skipTransform: true });
-        bbox = new Konva.Rect({
-          x: rect.x - 2,
-          y: rect.y - 2,
-          width: rect.width + 4,
-          height: rect.height + 4,
-          stroke: '#63b3ed', // Blue
-          strokeWidth: 1.5,
-          dash: [4, 4],
-          name: 'edit-bbox',
-          listening: false
-        });
-        group.add(bbox);
-      }
-      bbox.show();
-    } else {
-      // Disable interaction
-      group.listening(false);
-      group.off('mouseenter mouseleave');
-      if (bbox) bbox.hide();
-    }
-    
-    // Re-cache for performance
-    group.cache();
-  });
-  
-  requestRender();
 }
 
 export function renderAssetContent(group, asset, skinManager) {
@@ -443,8 +319,9 @@ export function renderAssetContent(group, asset, skinManager) {
     group.add(fallback);
   }
 
-  // Only add labels and tooltips if it is an actual IT hardware (has hardware_id)
-  if (asset.hardware_id) {
+  // Only add labels and tooltips if there is assigned IT hardware
+  const firstHw = (asset.assigned_hardware && asset.assigned_hardware.length > 0) ? asset.assigned_hardware[0] : null;
+  if (firstHw) {
     // Check view filters
     const filters = window.viewFilters || {};
     const showHostname = filters['filter-hostname'];
@@ -457,10 +334,15 @@ export function renderAssetContent(group, asset, skinManager) {
     if (showAny) {
       // Build multiline text
       let textLines = [];
-      if (showHostname) textLines.push(asset.hardware_name || 'Unknown');
-      if (showIp) textLines.push(asset.ip || 'No IP');
-      if (showMac) textLines.push(asset.mac || 'No MAC');
-      if (showUser) textLines.push(asset.assignee || 'No User');
+      if (showHostname) textLines.push(firstHw.hardware_name || 'Unknown');
+      if (showIp) textLines.push(firstHw.ip || 'No IP');
+      if (showMac) textLines.push(firstHw.mac || 'No MAC');
+      if (showUser) textLines.push(firstHw.assignee || 'No User');
+      
+      // If multiple hardware assigned, show count
+      if (asset.assigned_hardware.length > 1) {
+        textLines.push(`+${asset.assigned_hardware.length - 1} more`);
+      }
       
       const textContent = textLines.join('\n');
 
@@ -509,8 +391,8 @@ export function renderAssetContent(group, asset, skinManager) {
       labelGroup.add(label);
 
       // Status Dot
-      const dotColor = asset.status === 'offline' ? '#e53e3e' : 
-                       asset.status === 'warning' ? '#d69e2e' : '#10b981'; // Emerald green
+      const dotColor = firstHw.status === 'offline' ? '#e53e3e' : 
+                       firstHw.status === 'warning' ? '#d69e2e' : '#10b981'; // Emerald green
       
       const dotBg = new Konva.Circle({
         radius: 5, fill: '#fff', x: -labelWidth / 2 + 10, y: labelY, perfectDrawEnabled: false
@@ -523,18 +405,83 @@ export function renderAssetContent(group, asset, skinManager) {
 
       group.add(labelGroup);
     }
+    
+    // Hover Insights (Tooltip) — always bind, even without label filters
+    const dotColor = firstHw.status === 'offline' ? '#e53e3e' : 
+                     firstHw.status === 'warning' ? '#d69e2e' : '#10b981';
+    
+    group.listening(true);
+    
+    // Clean up previous listeners to avoid duplicates if re-rendered
+    group.off('mouseenter.tooltip mousemove.tooltip mouseleave.tooltip');
+
+    group.on('mouseenter.tooltip', (e) => {
+      const layoutEl = document.getElementById('main-layout');
+      if (layoutEl && layoutEl.classList.contains('is-editing')) return; // No tooltips in edit mode
+      
+      document.body.style.cursor = 'pointer';
+      const tooltip = document.getElementById('asset-tooltip');
+      if (!tooltip) return;
+
+      // Build tooltip for all assigned hardware
+      let hwRows = '';
+      asset.assigned_hardware.forEach(hw => {
+        const mac = hw.mac || '—';
+        const user = hw.assignee || 'system';
+        const hwDotColor = hw.status === 'offline' ? '#e53e3e' : hw.status === 'warning' ? '#d69e2e' : '#10b981';
+        hwRows += `
+          <div class="fp-tooltip__row" style="border-top:1px solid rgba(255,255,255,0.1);padding-top:6px;margin-top:4px;">
+            <span class="fp-tooltip__label" style="display:flex;align-items:center;gap:4px;">
+              <span style="width:6px;height:6px;border-radius:50%;background:${hwDotColor};display:inline-block;"></span>
+              ${hw.hardware_name || 'Unknown'}
+            </span>
+            <span class="fp-tooltip__value">${hw.ip || '—'}</span>
+          </div>
+          <div class="fp-tooltip__row"><span class="fp-tooltip__label">MAC</span><span class="fp-tooltip__value">${mac}</span></div>
+          <div class="fp-tooltip__row"><span class="fp-tooltip__label">Assignee</span><span class="fp-tooltip__value">${user}</span></div>
+        `;
+      });
+
+      tooltip.innerHTML = `
+        <div class="fp-tooltip__header">
+          <div class="fp-tooltip__title">
+            <div style="width:8px;height:8px;border-radius:50%;background:${dotColor};box-shadow:0 0 8px ${dotColor}80;"></div>
+            ${firstHw.hardware_name || 'Unknown'}
+          </div>
+          <div class="fp-tooltip__subtitle">${asset.assigned_hardware.length} device(s) assigned</div>
+        </div>
+        <div class="fp-tooltip__body">
+          ${hwRows}
+        </div>
+      `;
+      tooltip.classList.add('visible');
+    });
+
+    group.on('mousemove.tooltip', (e) => {
+      const tooltip = document.getElementById('asset-tooltip');
+      if (tooltip && tooltip.classList.contains('visible')) {
+        tooltip.style.left = e.evt.clientX + 'px';
+        tooltip.style.top = e.evt.clientY + 'px';
+      }
+    });
+
+    group.on('mouseleave.tooltip', () => {
+      document.body.style.cursor = 'default';
+      const tooltip = document.getElementById('asset-tooltip');
+      if (tooltip) tooltip.classList.remove('visible');
+    });
   }
 }
 
 export function forceRenderLabels() {
-  if (!assetsLayer) return;
+  if (!furnitureLayer) return;
   
-  // Re-render only the contents of all assets without moving them
-  assetsLayer.getChildren().forEach(group => {
-    const asset = group.getAttr('assetData');
-    if (asset) {
+  // Re-render only the contents of all furniture without moving them
+  furnitureLayer.getChildren().forEach(group => {
+    const data = group.getAttr('entityData');
+    if (data) {
       group.clearCache();
-      renderAssetContent(group, asset, skinManager);
+      renderAssetContent(group, data, skinManager);
       // Re-add cache if in edit mode
       const layout = document.getElementById('main-layout');
       if (layout && layout.classList.contains('is-editing')) {
@@ -542,5 +489,5 @@ export function forceRenderLabels() {
       }
     }
   });
-  assetsLayer.getLayer().batchDraw();
+  furnitureLayer.getLayer().batchDraw();
 }

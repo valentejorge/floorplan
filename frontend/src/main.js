@@ -239,12 +239,19 @@ function bindModeToggle() {
               furniture: state.furniture || [],
               doors: state.doors || []
             },
-            assets: (state.assets || []).map(a => ({
-              hardware_id: a.hardware_id,
-              pos_x: a.pos_x !== undefined ? a.pos_x : a.x,
-              pos_y: a.pos_y !== undefined ? a.pos_y : a.y,
-              rotation: a.rotation || (a.layout ? a.layout.rotation : 0) || 0
-            }))
+            assets: (state.furniture || []).reduce((acc, f) => {
+              if (f.assigned_hardware && f.assigned_hardware.length > 0) {
+                f.assigned_hardware.forEach(hw => {
+                  acc.push({
+                    hardware_id: hw.hardware_id,
+                    pos_x: f.x,
+                    pos_y: f.y,
+                    rotation: f.rotation || 0
+                  });
+                });
+              }
+              return acc;
+            }, [])
           };
 
           const apiModule = await import('./api.js');
@@ -300,9 +307,7 @@ function bindModeToggle() {
     // Now that animation is done, we can do the heavy DOM/Cache blocking operations
     setEngineEditMode(mode === 'edit');
     
-    import('./renderer.js').then(({ toggleAssetEditMode }) => {
-      toggleAssetEditMode(mode === 'edit');
-    });
+
   }
 
   btnEdit.addEventListener('click', () => setMode('edit'));
@@ -515,17 +520,24 @@ function bindSearch() {
                       
                       // After load, we must focus the asset! Wait a tick for rendering.
                       setTimeout(() => {
-                        import('./engine.js').then(({ stage, assetsLayer, getTransformer }) => {
+                        import('./engine.js').then(({ stage, getLayerFurniture, getTransformer }) => {
                           const hwId = el.dataset.hwId;
-                          const group = assetsLayer.getChildren().find(node => String(node.getAttr('hardware_id')) === String(hwId) || String(node.id()) === String(assetId));
+                          const furnitureLayer = getLayerFurniture();
+                          const group = furnitureLayer.getChildren().find(node => {
+                            const data = node.getAttr('entityData');
+                            if (data && data.assigned_hardware) {
+                              return data.assigned_hardware.some(hw => String(hw.hardware_id) === String(hwId) || String(hw.hardware_id) === String(assetId));
+                            }
+                            return false;
+                          });
                           
                           if (group) {
-                            // Pulse effect on the found asset
+                            // Pulse effect on the found furniture
                             const pulse = new Konva.Circle({
                               x: group.x(), y: group.y(),
                               radius: 30, stroke: '#961B7E', strokeWidth: 2, opacity: 1
                             });
-                            assetsLayer.add(pulse);
+                            furnitureLayer.add(pulse);
                             new Konva.Tween({
                               node: pulse, duration: 1, radius: 100, opacity: 0,
                               onFinish: () => pulse.destroy()
@@ -1638,12 +1650,9 @@ async function populateFurnitureCatalog() {
     const layout = document.getElementById('main-layout');
     if (!layout?.classList.contains('is-editing')) return;
     
-    const activeTool = document.querySelector('.fp-tool-btn.active')?.dataset.tool;
-    if (activeTool !== 'furniture' && activeTool !== 'assets') return;
-    
     e.preventDefault();
 
-    const { stage, getRelativePointerPosition, applySnapOnDragEnd, getLayerFurniture, getLayerAssets, GRID_SIZE } = await import('./engine.js');
+    const { stage, getRelativePointerPosition, applySnapOnDragEnd, getLayerFurniture, GRID_SIZE } = await import('./engine.js');
     stage.setPointersPositions(e);
     let pos = getRelativePointerPosition();
     
@@ -1651,7 +1660,7 @@ async function populateFurnitureCatalog() {
     pos.y = Math.round(pos.y / GRID_SIZE) * GRID_SIZE;
     
     const furType = e.dataTransfer.getData('furniture-type');
-    if (furType && activeTool === 'furniture') {
+    if (furType) {
       const { buildFurnitureNode } = await import('./furniture.js');
       const node = buildFurnitureNode({
         id: 'fur_' + Date.now(),
@@ -1675,33 +1684,29 @@ async function populateFurnitureCatalog() {
     }
 
     const jsonData = e.dataTransfer.getData('application/json');
-    if (jsonData && activeTool === 'assets') {
+    if (jsonData) {
       try {
         const payload = JSON.parse(jsonData);
         if (payload.source === 'assets-catalog' && payload.asset) {
           const asset = payload.asset;
-          asset.pos_x = pos.x;
-          asset.pos_y = pos.y;
-          asset.id = asset.hardware_id;
-          asset.type = 'desktop_single';
+          const ptr = stage.getPointerPosition();
+          let hitShape = getLayerFurniture().getIntersection(ptr);
           
-          const { createAssetNode } = await import('./tools.js');
-          const node = createAssetNode(asset);
-          if (node) {
-            getLayerAssets().add(node);
-            getLayerAssets().getLayer().batchDraw();
-            
-            const { refreshExplorer, selectNodeById } = await import('./explorer.js');
-            refreshExplorer();
-            selectNodeById(`asset-${asset.id}`);
-            
-            const { commitHistory } = await import('./history.js');
-            commitHistory();
-            
-            const { removeAssetFromCatalog } = await import('./assets-catalog.js');
-            if (removeAssetFromCatalog) {
-              removeAssetFromCatalog(asset.hardware_id);
-            }
+          if (!hitShape) {
+            notify("Computers must be dropped onto a desk or rack.", "warning");
+            return;
+          }
+          
+          let group = hitShape;
+          while (group && group.name() !== 'furniture' && group.parent) {
+            group = group.parent;
+          }
+          
+          if (group && group.name() === 'furniture') {
+            // Use the unified pipeline
+            const { assignHardwareToNode } = await import('./explorer.js');
+            await assignHardwareToNode(group, asset);
+            notify(`${asset.hardware_name || 'Device'} assigned successfully!`, 'success');
           }
         }
       } catch (err) {
