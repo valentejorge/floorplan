@@ -258,6 +258,35 @@ class MapEngine
     }
 
     /**
+     * GET /api/unmapped logic
+     */
+    public function getUnmappedAssets(): array
+    {
+        $stmt = $this->pdo->query('
+            SELECT h.ID as hardware_id, h.NAME as hardware_name, n.IPADDRESS as ip, n.MACADDR as mac
+            FROM hardware h
+            LEFT JOIN plugin_floorplan_assets a ON h.ID = a.hardware_id
+            LEFT JOIN networks n ON h.ID = n.HARDWARE_ID
+            WHERE a.hardware_id IS NULL
+            GROUP BY h.ID
+            ORDER BY h.NAME ASC
+            LIMIT 100
+        ');
+        
+        $assets = [];
+        while ($row = $stmt->fetch()) {
+            $assets[] = [
+                'hardware_id' => (int)$row['hardware_id'],
+                'hardware_name' => $row['hardware_name'] ?: 'Unknown',
+                'ip' => $row['ip'],
+                'mac' => $row['mac'],
+                'status' => 'online'
+            ];
+        }
+        return $assets;
+    }
+
+    /**
      * Rename a location
      */
     public function renameLocation(int $id, string $newName): void

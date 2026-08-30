@@ -1396,8 +1396,8 @@ textarea:focus-visible,
 /* ── Floor Color Picker ──────────────────────────────────────────── */
 .fp-color-picker {
   position: absolute;
-  left: calc(var(--fp-toolbar-w) + 8px);
-  top: 130px;
+  right: calc(var(--fp-explorer-w) + 32px);
+  bottom: 80px;
   background: #fff;
   border: 1px solid var(--fp-border);
   border-radius: 6px;
@@ -1430,8 +1430,8 @@ textarea:focus-visible,
 /* ── Wall Type Picker ────────────────────────────────────────────── */
 .fp-wall-picker {
   position: absolute;
-  left: calc(var(--fp-toolbar-w) + 8px);
-  top: 175px;
+  right: calc(var(--fp-explorer-w) + 32px);
+  bottom: 80px;
   background: #fff;
   border: 1px solid var(--fp-border);
   border-radius: 6px;
