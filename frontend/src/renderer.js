@@ -7,7 +7,9 @@ export let currentAssets = [];
 export let currentRoomData = null;
 
 export function repopulateAssetsExplorer() {
-  populateObjectExplorer(currentAssets);
+  import('./explorer.js').then(({ refreshExplorer }) => {
+    refreshExplorer();
+  });
 }
 
 export function loadMapData(data, isInitial = true) {
@@ -104,6 +106,7 @@ export function loadMapData(data, isInitial = true) {
         perfectDrawEnabled: false,
         listening: false
       });
+      rect.setAttr('entityData', { id: door.id, name: 'Door', layer: 'architecture' });
       wallsLayer.add(rect);
     });
   }

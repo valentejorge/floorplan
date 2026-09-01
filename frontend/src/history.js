@@ -51,7 +51,7 @@ export function serializeMapState() {
       // If it's an IT asset, we pull the assetData
       if (node.getAttr('assetData')) {
          // Deep clone to avoid mutating the original reference
-         data = JSON.parse(JSON.stringify(node.getAttr('assetData')));
+         data = JSON.parse(JSON.stringify(node.getAttr('assetData') || {}));
          data.pos_x = node.x();
          data.pos_y = node.y();
          if (data.layout) {
@@ -60,7 +60,7 @@ export function serializeMapState() {
            data.rotation = node.rotation();
          }
       } else {
-         data = JSON.parse(JSON.stringify(node.getAttr('entityData')));
+         data = JSON.parse(JSON.stringify(node.getAttr('entityData') || {}));
          data.x = node.x();
          data.y = node.y();
          data.rotation = node.rotation();
