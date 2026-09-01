@@ -146,12 +146,14 @@ export function initEngine(containerId) {
   
   globalTransformer = new Konva.Transformer({
     nodes: [],
-    padding: 5,
-    borderStroke: '#63b3ed',
-    anchorStroke: '#63b3ed',
-    anchorFill: '#fff',
+    padding: 0,
+    borderStroke: '#0d99ff',
+    borderStrokeWidth: 1.5,
+    anchorStroke: '#0d99ff',
+    anchorStrokeWidth: 1.5,
+    anchorFill: '#ffffff',
     anchorSize: 8,
-    borderDash: [5, 5],
+    anchorCornerRadius: 1, // slight rounding like Figma
     rotationSnaps: [0, 45, 90, 135, 180, 225, 270, 315],
   });
   overlayLayer.add(globalTransformer);

@@ -201,6 +201,14 @@ export function refreshExplorer() {
         item.innerHTML = `
           <div class="fp-explorer__item-icon" style="background-color: ${color}"></div>
           <div class="fp-explorer__item-name">${name}</div>
+          <div class="fp-layer-actions">
+            <button class="fp-layer-btn" title="Toggle Visibility">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+            <button class="fp-layer-btn" title="Lock Layer">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </button>
+          </div>
         `;
 
         item.addEventListener('click', () => {
@@ -288,37 +296,103 @@ function updateProperties(node) {
   if (!panel) return;
 
   if (!node) {
-    panel.innerHTML = '<div class="fp-properties__title">Properties</div><div style="color:var(--fp-chrome-text2);font-size:11px;">No selection</div>';
+    panel.innerHTML = '<div class="fp-panel-header"><h3 class="fp-panel-title">Properties</h3></div><div class="fp-empty-state">No selection</div>';
     return;
   }
 
   const data = node.getAttr('entityData') || node.getAttr('assetData') || {};
   const name = data.name || data.hardware_name || node.id();
 
+  // Create a stunning Figma-style property grid using the Design System
   let rows = `
-    <div class="fp-properties__title">Properties</div>
-    <div class="fp-properties__row"><span>Name</span><span>${name}</span></div>
-    <div class="fp-properties__row"><span>X</span><span>${Math.round(node.x())}</span></div>
-    <div class="fp-properties__row"><span>Y</span><span>${Math.round(node.y())}</span></div>
-    <div class="fp-properties__row"><span>Rotation</span><span>${Math.round(node.rotation())}°</span></div>
-  `;
+    <div style="margin-bottom:16px;">
+      <div class="fp-text-label" style="margin-bottom:12px;">Design</div>
+      
+      <!-- Details Row -->
+      <div class="fp-flex-col fp-gap-1" style="margin-bottom:16px;">
+        <div class="fp-prop-row">
+          <span class="fp-text-muted">Name</span>
+          <span class="fp-text-body">${name}</span>
+        </div>
+        ${data.type ? `<div class="fp-prop-row"><span class="fp-text-muted">Type</span><span class="fp-text-body">${data.type}</span></div>` : ''}
+        ${data.ip ? `<div class="fp-prop-row"><span class="fp-text-muted">IP</span><span class="fp-text-body">${data.ip}</span></div>` : ''}
+        ${data.mac ? `<div class="fp-prop-row"><span class="fp-text-muted">MAC</span><span class="fp-text-body">${data.mac}</span></div>` : ''}
+      </div>
 
-  if (data.ip) rows += `<div class="fp-properties__row"><span>IP</span><span>${data.ip}</span></div>`;
-  if (data.mac) rows += `<div class="fp-properties__row"><span>MAC</span><span>${data.mac}</span></div>`;
-  if (data.type) rows += `<div class="fp-properties__row"><span>Type</span><span>${data.type}</span></div>`;
+      <!-- Geometry Grid -->
+      <div class="fp-prop-grid" style="margin-bottom:16px;">
+        <div class="fp-input-group">
+          <span class="fp-input-prefix">X</span>
+          <input type="number" id="prop-x" value="${Math.round(node.x())}" class="fp-input-field" />
+        </div>
+        <div class="fp-input-group">
+          <span class="fp-input-prefix">Y</span>
+          <input type="number" id="prop-y" value="${Math.round(node.y())}" class="fp-input-field" />
+        </div>
+        <div class="fp-input-group">
+          <span class="fp-input-prefix">W</span>
+          <input type="number" id="prop-w" value="${Math.round(node.width() * node.scaleX())}" class="fp-input-field" />
+        </div>
+        <div class="fp-input-group">
+          <span class="fp-input-prefix">H</span>
+          <input type="number" id="prop-h" value="${Math.round(node.height() * node.scaleY())}" class="fp-input-field" />
+        </div>
+        <div class="fp-input-group" style="grid-column: span 2;">
+          <span class="fp-input-prefix">°</span>
+          <input type="number" id="prop-r" value="${Math.round(node.rotation())}" class="fp-input-field" />
+        </div>
+      </div>
+    </div>
+  `;
 
   const isEditable = !!node.getAttr('entityData') && node.getAttr('entityData').layer === 'furniture';
   if (isEditable && document.getElementById('main-layout')?.classList.contains('is-editing')) {
     rows += `
-      <div style="margin-top:16px;">
+      <div style="margin-top:8px;">
         <button class="fp-btn fp-btn--outline" id="btn-edit-asset-layout" style="width:100%; font-size:11px;">
-          Configurar Layout
+          Configure Layout
         </button>
       </div>
     `;
   }
 
   panel.innerHTML = rows;
+
+  // Bind input events
+  const bindInput = (id, prop) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    
+    // Add nice focus ring effect to parent
+    el.addEventListener('focus', () => el.parentElement.style.borderColor = '#0d99ff');
+    el.addEventListener('blur', () => el.parentElement.style.borderColor = 'var(--fp-border)');
+
+    el.addEventListener('change', async (e) => {
+      const val = parseFloat(e.target.value);
+      if (isNaN(val)) return;
+      
+      if (prop === 'w') {
+        const origW = node.width() || 1;
+        node.scaleX(val / origW);
+      } else if (prop === 'h') {
+        const origH = node.height() || 1;
+        node.scaleY(val / origH);
+      } else {
+        node[prop](val);
+      }
+      
+      const { requestRender } = await import('./engine.js');
+      const { commitHistory } = await import('./history.js');
+      requestRender();
+      commitHistory();
+    });
+  };
+
+  bindInput('prop-x', 'x');
+  bindInput('prop-y', 'y');
+  bindInput('prop-w', 'w');
+  bindInput('prop-h', 'h');
+  bindInput('prop-r', 'rotation');
 
   if (isEditable) {
     const btn = document.getElementById('btn-edit-asset-layout');
