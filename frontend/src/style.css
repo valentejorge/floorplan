@@ -371,7 +371,6 @@ body {
   top: 16px;
   left: 16px;
   height: calc(100% - 32px);
-  /* 16px gap top and bottom */
   background: rgba(255, 255, 255, 0.90);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -383,15 +382,41 @@ body {
   width: var(--fp-explorer-w);
   display: flex;
   flex-direction: column;
-  /* View Mode: sitting on the left */
   transform: translateX(0);
   animation: slideInLeft 0.5s cubic-bezier(0.2, 0, 0, 1) backwards;
   animation-delay: 0.2s;
 }
 
 .fp-layout.is-editing .fp-explorer {
-  /* Edit Mode: travels right. Total container width minus its width, minus 32px (left margin + right margin) */
+  /* Edit Mode: travels right */
   transform: translateX(calc(100cqw - var(--fp-explorer-w) - 32px));
+}
+
+.fp-left-sidebar {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  height: calc(100% - 32px);
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 49;
+  overflow: hidden;
+  width: var(--fp-explorer-w);
+  display: flex;
+  flex-direction: column;
+  /* View Mode: hidden offscreen left */
+  transform: translateX(-300px);
+  pointer-events: none;
+}
+
+.fp-layout.is-editing .fp-left-sidebar {
+  /* Edit Mode: slides in from left */
+  transform: translateX(0);
+  pointer-events: auto;
 }
 
 /* ── Toolbar Panel (Starts offscreen bottom, Moves into bottom center) ──────── */

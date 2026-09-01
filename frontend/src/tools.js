@@ -12,7 +12,7 @@ import {
 } from './engine.js';
 import { buildFurnitureNode } from './furniture.js';
 import { skinManager } from './skins.js';
-import { commitHistory } from './history.js';
+import { commitHistory, undo, redo } from './history.js';
 import { refreshExplorer, selectNodeById, clearSelection } from './explorer.js';
 
 // ── Tool enum ──────────────────────────────────────────────────────
@@ -99,10 +99,22 @@ export function bindToolsToStage() {
     handleStageDblClick(e);
   });
 
+  let clipboard = [];
+
   // Global key listener
   document.addEventListener('keydown', (e) => {
     const layout = document.getElementById('main-layout');
     if (!layout || !layout.classList.contains('is-editing')) return;
+    
+    // Ignore if typing in an input
+    if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+    // Hand Tool (Spacebar)
+    if (e.code === 'Space' && activeTool !== TOOLS.SELECT) {
+      getStage().draggable(true);
+      getStage().container().style.cursor = 'grab';
+      return;
+    }
 
     if (e.key === 'Enter') {
       if (activeTool === TOOLS.WALL) {
@@ -118,10 +130,84 @@ export function bindToolsToStage() {
       return;
     }
 
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-      // Don't delete if user is typing in an input
-      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+    // Ctrl / Cmd Shortcuts
+    const isCmd = e.ctrlKey || e.metaKey;
 
+    if (isCmd) {
+      if (e.key.toLowerCase() === 'z') {
+        if (e.shiftKey) {
+          redo();
+          refreshExplorer();
+        } else {
+          undo();
+          refreshExplorer();
+        }
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'c') {
+        // Copy
+        const tr = getTransformer();
+        const nodes = tr.nodes();
+        clipboard = nodes.map(node => {
+          const data = JSON.parse(JSON.stringify(node.getAttr('assetData') || node.getAttr('entityData') || {}));
+          data.type = node.getAttr('entityType') || data.type;
+          return data;
+        });
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'v') {
+        // Paste
+        if (clipboard.length > 0) {
+          clearSelection();
+          const newNodes = [];
+          
+          clipboard.forEach((data, index) => {
+            const newData = { ...data, id: 'copy-' + Date.now() + '-' + index };
+            newData.x = (newData.x || newData.pos_x || 0) + 20; // offset paste
+            newData.y = (newData.y || newData.pos_y || 0) + 20;
+            
+            // We always try to build it as a furniture node. 
+            // If it's a zone or wall, that requires a different builder (which we can add in Phase 4).
+            // For now, assume it's furniture/asset if it has a type.
+            if (newData.type || newData.layer === 'furniture') {
+              const node = buildFurnitureNode(newData);
+              if (node) {
+                getLayerFurniture().add(node);
+                newNodes.push(node);
+              }
+            }
+          });
+          
+          if (newNodes.length > 0) {
+            getLayerFurniture().getLayer().batchDraw();
+            const tr = getTransformer();
+            tr.nodes(newNodes);
+            tr.getLayer().batchDraw();
+            refreshExplorer();
+            commitHistory();
+          }
+        }
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'a') {
+        // Select All
+        const layer = getLayerFurniture();
+        const allNodes = layer.getChildren().filter(n => n.name() === 'furniture' || n.name() === 'it-asset');
+        const tr = getTransformer();
+        tr.nodes(allNodes);
+        tr.getLayer().batchDraw();
+        e.preventDefault();
+        return;
+      }
+    }
+
+    if (e.key === 'Delete' || e.key === 'Backspace') {
       const tr = getTransformer();
       const nodes = tr.nodes();
       if (nodes.length > 0) {
@@ -135,8 +221,19 @@ export function bindToolsToStage() {
       }
     }
   });
-}
 
+  document.addEventListener('keyup', (e) => {
+    if (e.code === 'Space' && activeTool !== TOOLS.SELECT) {
+      getStage().draggable(false);
+      // Reset cursor based on active tool
+      const cursor = activeTool === TOOLS.FLOOR ? 'crosshair'
+        : activeTool === TOOLS.WALL ? 'crosshair'
+        : activeTool === TOOLS.FURNITURE ? 'copy'
+        : 'default';
+      getStage().container().style.cursor = cursor;
+    }
+  });
+}
 export function handleStageMouseDown(e) {
   // Ignore if clicking on a transformer anchor
   if (e.target.getParent()?.className === 'Transformer') return;
@@ -152,6 +249,8 @@ export function handleStageMouseDown(e) {
 
 export function handleStageMouseMove() {
   switch (activeTool) {
+    case TOOLS.SELECT:
+    case TOOLS.ASSETS:  handleSelectMove();  break;
     case TOOLS.FLOOR: handleFloorMove(); break;
     case TOOLS.WALL:  handleWallMove();  break;
   }
@@ -159,6 +258,8 @@ export function handleStageMouseMove() {
 
 export function handleStageMouseUp() {
   switch (activeTool) {
+    case TOOLS.SELECT:
+    case TOOLS.ASSETS:  handleSelectUp();  break;
     case TOOLS.FLOOR: handleFloorUp(); break;
     case TOOLS.WALL:  break; // Walls are click-to-point, no drag-up behavior needed
   }
@@ -220,13 +321,34 @@ function handleFurnitureDown(e) {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// SELECT Tool
+// SELECT Tool (with Box Selection)
 // ════════════════════════════════════════════════════════════════════
 
+let selectionRect = null;
+let x1, y1, x2, y2;
+
 function handleSelectDown(e) {
-  // Click on empty = deselect
-  if (e.target === getStage()) {
+  // If clicking on a transformer or an already selected node while shifting, let Konva handle it or handle multi-select logic here.
+  // But for simple box selection, if we click on empty space:
+  if (e.target === getStage() || e.target.getAttr('gridDot')) {
     clearSelection();
+    
+    // Start box selection
+    const pos = getRelativePointerPosition();
+    x1 = pos.x;
+    y1 = pos.y;
+    x2 = pos.x;
+    y2 = pos.y;
+    
+    selectionRect = new Konva.Rect({
+      fill: 'rgba(0,0,255,0.1)',
+      stroke: 'rgba(0,0,255,0.5)',
+      strokeWidth: 1,
+      visible: false,
+      listening: false
+    });
+    
+    getOverlayLayer().add(selectionRect);
     return;
   }
 
@@ -238,9 +360,87 @@ function handleSelectDown(e) {
   }
 
   if (node && node.id()) {
-    selectNodeById(node.id());
+    if (e.evt && e.evt.shiftKey) {
+      // Add to current selection
+      const tr = getTransformer();
+      const currentNodes = tr.nodes();
+      if (!currentNodes.includes(node)) {
+        tr.nodes([...currentNodes, node]);
+        tr.getLayer().batchDraw();
+      } else {
+        // Toggle off if already selected
+        tr.nodes(currentNodes.filter(n => n !== node));
+        tr.getLayer().batchDraw();
+      }
+    } else {
+      selectNodeById(node.id());
+    }
   } else {
     clearSelection();
+  }
+}
+
+function handleSelectMove(e) {
+  if (!selectionRect) return;
+  
+  const pos = getRelativePointerPosition();
+  x2 = pos.x;
+  y2 = pos.y;
+  
+  selectionRect.setAttrs({
+    visible: true,
+    x: Math.min(x1, x2),
+    y: Math.min(y1, y2),
+    width: Math.abs(x2 - x1),
+    height: Math.abs(y2 - y1)
+  });
+  
+  getOverlayLayer().batchDraw();
+}
+
+function handleSelectUp(e) {
+  if (!selectionRect) return;
+  
+  if (!selectionRect.visible()) {
+    selectionRect.destroy();
+    selectionRect = null;
+    return;
+  }
+
+  // Intersect with all nodes
+  const box = selectionRect.getClientRect();
+  const selectedNodes = [];
+  
+  const layers = [getLayerFurniture(), getLayerArchitecture(), getLayerFloor()];
+  layers.forEach(layer => {
+    if (!layer) return;
+    
+    layer.getChildren().forEach(node => {
+      // Ignore grids, pulses, etc.
+      if (!node.getAttr('entityData') && !node.getAttr('assetData')) return;
+      
+      const nodeRect = node.getClientRect();
+      // Only select if it is fully inside or intersecting. Let's use intersection.
+      if (Konva.Util.haveIntersection(box, nodeRect)) {
+        selectedNodes.push(node);
+      }
+    });
+  });
+
+  selectionRect.destroy();
+  selectionRect = null;
+  getOverlayLayer().batchDraw();
+
+  if (selectedNodes.length > 0) {
+    const tr = getTransformer();
+    tr.nodes(selectedNodes);
+    
+    // Enable moving and deleting for bulk selection
+    tr.enabledAnchors([]);
+    tr.resizeEnabled(false);
+    tr.rotateEnabled(false); // Only allow move for bulk
+    
+    tr.getLayer().batchDraw();
   }
 }
 
@@ -448,7 +648,7 @@ function cancelDraw() {
 
 
 export function createAssetNode(asset) {
-  const img = skinManager.getImage(asset.type);
+  const skinData = skinManager.getImage(asset.type);
 
   const group = new Konva.Group({
     x: asset.pos_x,
@@ -468,17 +668,19 @@ export function createAssetNode(asset) {
     layer: 'assets',
   });
 
-  group.add(new Konva.Image({
-    image: img,
-    width: 40,
-    height: 40,
-    x: -20,
-    y: -20,
-    shadowColor: 'black',
-    shadowBlur: 10,
-    shadowOpacity: 0.1,
-    shadowOffset: { x: 0, y: 5 },
-  }));
+  if (skinData) {
+    group.add(new Konva.Image({
+      image: skinData.image,
+      width: skinData.width,
+      height: skinData.height,
+      x: -skinData.width / 2,
+      y: -skinData.height / 2,
+      shadowColor: 'black',
+      shadowBlur: 10,
+      shadowOpacity: 0.1,
+      shadowOffset: { x: 0, y: 5 },
+    }));
+  }
 
   group.add(new Konva.Text({
     text: asset.hardware_name,

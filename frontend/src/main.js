@@ -381,23 +381,9 @@ function bindToolbar() {
   const panels = {
     furniture: document.getElementById('furniture-catalog-panel'),
     assets: document.getElementById('assets-catalog-panel'),
-    floor: document.getElementById('floor-catalog-panel'),
-    wall: document.getElementById('wall-catalog-panel')
+    floor: document.getElementById('floor-color-picker'),
+    wall: document.getElementById('wall-type-picker')
   };
-
-  const closeButtons = {
-    furniture: document.getElementById('btn-close-furniture'),
-    floor: document.getElementById('btn-close-floor'),
-    wall: document.getElementById('btn-close-wall')
-  };
-
-  // Wire up close buttons
-  Object.entries(closeButtons).forEach(([tool, btn]) => {
-    btn?.addEventListener('click', () => {
-      if(panels[tool]) panels[tool].style.display = 'none';
-      document.querySelector(`.fp-tool-btn[data-tool="${tool}"]`)?.classList.remove('active');
-    });
-  });
 
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -406,13 +392,18 @@ function bindToolbar() {
       buttons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
-      // Hide all panels first (except assets which is toggled in assets-catalog.js, but we should hide it when switching tools)
-      Object.values(panels).forEach(p => {
-        if(p && p.id !== 'assets-catalog-panel') p.style.display = 'none';
-        else if (p && p.id === 'assets-catalog-panel' && tool !== 'assets') p.style.display = 'none';
+      // Hide all left-sidebar panels
+      ['furniture', 'floor', 'wall'].forEach(k => {
+        if (panels[k]) panels[k].style.display = 'none';
       });
+      // Assets panel is an overlay on the right, handle separately if needed
+      if (tool === 'assets' && panels.assets) {
+         // handled by assets-catalog.js mostly, but we can ensure it opens
+      } else if (panels.assets) {
+         panels.assets.style.display = 'none';
+      }
 
-      // Show the requested panel
+      // Show the requested left-sidebar panel
       if (panels[tool] && tool !== 'assets') {
         panels[tool].style.display = 'flex';
       }
@@ -423,9 +414,9 @@ function bindToolbar() {
     });
   });
 
-  document.querySelectorAll('.fp-color-swatch').forEach(s => {
+  document.querySelectorAll('.fp-floor-option').forEach(s => {
     s.addEventListener('click', () => {
-      document.querySelectorAll('.fp-color-swatch').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.fp-floor-option').forEach(x => x.classList.remove('active'));
       s.classList.add('active');
       setFloorColor(s.dataset.color);
     });
@@ -1624,22 +1615,34 @@ async function populateFurnitureCatalog() {
   const panel = document.getElementById('furniture-catalog-body');
   if (!panel) return;
   
-  const { SVG_TABLES, SVG_CHAIRS } = await import('./skins.js');
+  const { SVG_ARCH, SVG_TABLES, SVG_CHAIRS } = await import('./skins.js');
   
   const items = [
-    { type: 'desk_straight', label: 'Mesa Reta', svg: SVG_TABLES.desk_straight },
-    { type: 'desk_small', label: 'Mesa Pequena', svg: SVG_TABLES.desk_small },
-    { type: 'desk_l', label: 'Mesa L', svg: SVG_TABLES.desk_l },
-    { type: 'desk_round', label: 'Mesa Reunião', svg: SVG_TABLES.desk_round },
-    { type: 'rack_cabinet', label: 'Rack Servidor', svg: SVG_TABLES.rack_cabinet },
-    { type: 'office_partition_80', label: 'Divisória 80', svg: SVG_TABLES.office_partition_80 },
-    { type: 'office_partition_160', label: 'Divisória 160', svg: SVG_TABLES.office_partition_160 },
-    { type: 'sofa', label: 'Sofá', svg: SVG_TABLES.sofa },
-    { type: 'office_chair', label: 'Cadeira', svg: SVG_TABLES.office_chair },
-    { type: 'executive_chair', label: 'Cadeira Exec.', svg: SVG_TABLES.executive_chair },
-    { type: 'meeting_chairs_4', label: 'Cadeiras (x4)', svg: SVG_CHAIRS.meeting_chairs_4 },
-    { type: 'water_cooler', label: 'Bebedouro', svg: SVG_TABLES.water_cooler },
-    { type: 'plant', label: 'Planta', svg: SVG_TABLES.plant }
+    // Architecture
+    { type: 'door', label: 'Door', svg: SVG_ARCH.door },
+    { type: 'window', label: 'Window', svg: SVG_ARCH.window },
+    
+    // Desks & Tables
+    { type: 'desk_straight', label: 'Straight Desk', svg: SVG_TABLES.desk_straight },
+    { type: 'desk_small', label: 'Small Desk', svg: SVG_TABLES.desk_small },
+    { type: 'desk_l', label: 'L-Desk', svg: SVG_TABLES.desk_l },
+    { type: 'desk_round', label: 'Round Table', svg: SVG_TABLES.desk_round },
+    { type: 'meeting_table', label: 'Meeting Table', svg: SVG_TABLES.meeting_table },
+    
+    // Chairs
+    { type: 'office_chair', label: 'Chair', svg: SVG_CHAIRS.office_chair },
+    { type: 'executive_chair', label: 'Executive Chair', svg: SVG_CHAIRS.executive_chair },
+    { type: 'meeting_chairs_4', label: 'Chairs (x4)', svg: SVG_CHAIRS.meeting_chairs_4 },
+    { type: 'meeting_chairs_6', label: 'Chairs (x6)', svg: SVG_CHAIRS.meeting_chairs_6 },
+    
+    // Decor & Utilities
+    { type: 'rack_cabinet', label: 'Server Rack', svg: SVG_TABLES.rack_cabinet },
+    { type: 'office_partition_80', label: 'Partition 80', svg: SVG_TABLES.office_partition_80 },
+    { type: 'office_partition_160', label: 'Partition 160', svg: SVG_TABLES.office_partition_160 },
+    { type: 'sofa', label: 'Sofa', svg: SVG_TABLES.sofa },
+    { type: 'ac_unit', label: 'AC Unit', svg: SVG_TABLES.ac_unit },
+    { type: 'water_cooler', label: 'Water Cooler', svg: SVG_TABLES.water_cooler },
+    { type: 'plant', label: 'Plant', svg: SVG_TABLES.plant }
   ];
 
   panel.innerHTML = items.map(it => `

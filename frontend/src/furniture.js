@@ -5,8 +5,8 @@ export function buildFurnitureNode(data) {
   const type = data.type;
   
   // Try to find image
-  const imgObj = skinManager.getImage(type);
-  if (!imgObj) {
+  const skinData = skinManager.getImage(type);
+  if (!skinData) {
     console.warn(`[furniture] Unknown SVG type or not loaded: ${type}`);
     // Return a fallback rectangle
     const group = new Konva.Group({
@@ -24,11 +24,11 @@ export function buildFurnitureNode(data) {
   });
 
   const node = new Konva.Image({
-    image: imgObj,
-    width: imgObj.width,
-    height: imgObj.height,
-    x: -imgObj.width / 2,
-    y: -imgObj.height / 2,
+    image: skinData.image,
+    width: skinData.width,
+    height: skinData.height,
+    x: -skinData.width / 2,
+    y: -skinData.height / 2,
     perfectDrawEnabled: false,
     shadowColor: 'rgba(0,0,0,0.15)', shadowBlur: 10, shadowOffsetX: 0, shadowOffsetY: 4
   });

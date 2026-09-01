@@ -319,9 +319,14 @@ function getSafeArea() {
   safeH = h - topOffset - margin;
   
   if (isEditing) {
-    safeX = toolbarW;
-    safeW = w - toolbarW - explorerW;
+    // Both left and right sidebars are open
+    safeX = explorerW;
+    safeW = w - (explorerW * 2) - margin;
+    // Toolbar is at bottom
+    const toolbarH = 48 + margin;
+    safeH = h - topOffset - margin - toolbarH;
   } else {
+    // Only left sidebar (IT assets) is open
     safeX = explorerW;
     safeW = w - explorerW - margin;
   }

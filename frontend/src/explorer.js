@@ -85,98 +85,142 @@ export function onExplorerSelect(cb) {
  */
 export function refreshExplorer() {
   const body = document.getElementById('explorer-body');
+  const layersBody = document.getElementById('layers-body');
   if (!body) return;
 
   body.innerHTML = '';
+  if (layersBody) layersBody.innerHTML = '';
   
-  // OCS Inventory Focus: The Object Explorer should ONLY list the IT Assets mapped on this floorplan.
-  // We extract all assigned hardware from the furniture layer.
+  const isEditMode = document.getElementById('main-layout')?.classList.contains('is-editing');
+  
+  // ALWAYS render mapped IT Assets in explorer-body
   const { getLayerFurniture } = require('./engine.js');
   const furnitureLayer = getLayerFurniture();
-  if (!furnitureLayer) return;
-  
-  const mappedAssets = [];
-  
-  furnitureLayer.find('Group').forEach(group => {
-    if (group.name() !== 'furniture') return;
-    const data = group.getAttr('entityData');
-    if (data && data.assigned_hardware && data.assigned_hardware.length > 0) {
-      data.assigned_hardware.forEach(hw => {
-        mappedAssets.push({
-          asset: hw,
-          parentGroup: group
-        });
-      });
-    }
-  });
-
-  if (mappedAssets.length === 0) {
-    const empty = document.createElement('div');
-    empty.style.padding = '16px';
-    empty.style.textAlign = 'center';
-    empty.style.color = 'var(--fp-text-muted)';
-    empty.style.fontSize = '12px';
-    empty.textContent = 'No mapped assets.';
-    body.appendChild(empty);
-    return;
-  }
-
-  const list = document.createElement('div');
-  list.style.display = 'flex';
-  list.style.flexDirection = 'column';
-
-  mappedAssets.forEach(({ asset, parentGroup }) => {
-    const item = document.createElement('div');
-    item.className = 'fp-explorer__item';
+  if (furnitureLayer) {
+    const mappedAssets = [];
     
-    // Status dot
-    const dotColor = asset.status === 'offline' ? '#e53e3e' : 
-                     asset.status === 'warning' ? '#d69e2e' : '#10b981';
-                     
-    const hwName = typeof asset === 'object' ? (asset.hardware_name || 'Unknown') : `ID: ${asset}`;
-    const type = typeof asset === 'object' ? (asset.type || 'ASSET') : 'ASSET';
-                     
-    item.innerHTML = `
-      <div class="fp-explorer__item-icon" style="background-color:${dotColor}; width:8px; height:8px; border-radius:50%; box-shadow:0 0 6px ${dotColor}66;"></div>
-      <div class="fp-explorer__item-name" style="flex:1;">
-        <div style="font-weight:600;font-size:11px;">${hwName}</div>
-      </div>
-      <div style="color:var(--fp-text-muted);font-size:10px;text-transform:uppercase;">${type}</div>
-    `;
-    
-    item.addEventListener('click', () => {
-      // Pulse effect on the parent furniture
-      import('./engine.js').then(({ stage, getTransformer }) => {
-        const pulse = new Konva.Circle({
-          x: parentGroup.x(), y: parentGroup.y(),
-          radius: 30, stroke: '#961B7E', strokeWidth: 2, opacity: 1
+    furnitureLayer.find('Group').forEach(group => {
+      if (group.name() !== 'furniture') return;
+      const data = group.getAttr('entityData');
+      if (data && data.assigned_hardware && data.assigned_hardware.length > 0) {
+        data.assigned_hardware.forEach(hw => {
+          mappedAssets.push({
+            asset: hw,
+            parentGroup: group
+          });
         });
-        furnitureLayer.add(pulse);
-        new Konva.Tween({
-          node: pulse, duration: 1, radius: 100, opacity: 0,
-          onFinish: () => pulse.destroy()
-        }).play();
-        
-        // Select with Transformer if in edit mode
-        const layout = document.getElementById('main-layout');
-        if (layout && layout.classList.contains('is-editing')) {
-          const tr = getTransformer();
-          tr.nodes([parentGroup]);
-          tr.getLayer().batchDraw();
-          
-          // And open properties
-          selectNodeById(parentGroup.id());
-        } else {
-          // If in view mode, just show properties
-          selectNodeById(parentGroup.id());
-        }
-      });
+      }
     });
-    
-    list.appendChild(item);
-  });
+
+    if (mappedAssets.length === 0) {
+      const empty = document.createElement('div');
+      empty.style.padding = '16px';
+      empty.style.textAlign = 'center';
+      empty.style.color = 'var(--fp-text-muted)';
+      empty.style.fontSize = '12px';
+      empty.textContent = 'No mapped assets.';
+      body.appendChild(empty);
+    } else {
+      const list = document.createElement('div');
+      list.style.display = 'flex';
+      list.style.flexDirection = 'column';
+
+      mappedAssets.forEach(({ asset, parentGroup }) => {
+        const item = document.createElement('div');
+        item.className = 'fp-explorer__item';
+        
+        const dotColor = asset.status === 'offline' ? '#e53e3e' : 
+                         asset.status === 'warning' ? '#d69e2e' : '#10b981';
+                         
+        const hwName = typeof asset === 'object' ? (asset.hardware_name || 'Unknown') : `ID: ${asset}`;
+        const type = typeof asset === 'object' ? (asset.type || 'ASSET') : 'ASSET';
+                         
+        item.innerHTML = `
+          <div class="fp-explorer__item-icon" style="background-color:${dotColor}; width:8px; height:8px; border-radius:50%; box-shadow:0 0 6px ${dotColor}66;"></div>
+          <div class="fp-explorer__item-name" style="flex:1;">
+            <div style="font-weight:600;font-size:11px;">${hwName}</div>
+          </div>
+          <div style="color:var(--fp-text-muted);font-size:10px;text-transform:uppercase;">${type}</div>
+        `;
+        
+        item.addEventListener('click', () => {
+          import('./engine.js').then(({ stage, getTransformer }) => {
+            const pulse = new Konva.Circle({
+              x: parentGroup.x(), y: parentGroup.y(),
+              radius: 30, stroke: '#961B7E', strokeWidth: 2, opacity: 1
+            });
+            furnitureLayer.add(pulse);
+            new Konva.Tween({
+              node: pulse, duration: 1, radius: 100, opacity: 0,
+              onFinish: () => pulse.destroy()
+            }).play();
+            
+            const layout = document.getElementById('main-layout');
+            if (layout && layout.classList.contains('is-editing')) {
+              const tr = getTransformer();
+              tr.nodes([parentGroup]);
+              tr.getLayer().batchDraw();
+            }
+            selectNodeById(parentGroup.id());
+          });
+        });
+        
+        list.appendChild(item);
+      });
+      
+      body.appendChild(list);
+    }
+  }
   
-  body.appendChild(list);
+  // EDIT MODE: Render Layers tree in left sidebar
+  if (isEditMode && layersBody) {
+    LAYER_CONFIG.forEach(({ key, label, color, getter }) => {
+      const layer = getter();
+      if (!layer) return;
+
+      const nodes = layer.getChildren(node => node.hasName('zone') || node.hasName('wall') || node.hasName('furniture') || node.hasName('asset'));
+      if (nodes.length === 0) return;
+
+      const catHead = document.createElement('div');
+      catHead.className = 'fp-explorer__category';
+      catHead.innerHTML = `
+        <div class="fp-explorer__category-dot" style="background-color: ${color}"></div>
+        ${label}
+      `;
+      layersBody.appendChild(catHead);
+
+      const list = document.createElement('div');
+      nodes.forEach(node => {
+        const data = node.getAttr('entityData') || node.getAttr('assetData') || {};
+        const id = node.id();
+        const name = data.name || data.hardware_name || id;
+
+        const item = document.createElement('div');
+        item.className = 'fp-explorer__item' + (id === selectedNodeId ? ' active' : '');
+        item.dataset.id = id;
+        item.innerHTML = `
+          <div class="fp-explorer__item-icon" style="background-color: ${color}"></div>
+          <div class="fp-explorer__item-name">${name}</div>
+        `;
+
+        item.addEventListener('click', () => {
+          const layout = document.getElementById('main-layout');
+          if (layout && layout.classList.contains('is-editing')) {
+            import('./engine.js').then(({ getTransformer }) => {
+              const tr = getTransformer();
+              tr.nodes([node]);
+              tr.getLayer().batchDraw();
+            });
+          }
+          selectNodeById(id);
+        });
+
+        list.appendChild(item);
+      });
+
+      layersBody.appendChild(list);
+    });
+  }
 }
 
 /**

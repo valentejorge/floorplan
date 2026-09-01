@@ -160,16 +160,16 @@ export function renderAssetContent(group, asset, skinManager) {
   if (asset.layout) {
     // Render Table Layer
     if (asset.layout.table && asset.layout.table !== 'none') {
-      const imgObj = skinManager.getImage(asset.layout.table);
-      if (imgObj) {
-        tw = Math.max(tw, imgObj.width);
-        th = Math.max(th, imgObj.height);
+      const imgData = skinManager.getImage(asset.layout.table);
+      if (imgData) {
+        tw = Math.max(tw, imgData.width);
+        th = Math.max(th, imgData.height);
         const tableNode = new Konva.Image({
-          image: imgObj,
-          width: imgObj.width,
-          height: imgObj.height,
-          x: -imgObj.width / 2,
-          y: -imgObj.height / 2,
+          image: imgData.image,
+          width: imgData.width,
+          height: imgData.height,
+          x: -imgData.width / 2,
+          y: -imgData.height / 2,
           perfectDrawEnabled: false,
           shadowColor: 'rgba(0,0,0,0.15)', shadowBlur: 10, shadowOffsetX: 0, shadowOffsetY: 4
         });
@@ -212,16 +212,16 @@ export function renderAssetContent(group, asset, skinManager) {
 
     // Render Chair Layer
     if (asset.layout.chair && asset.layout.chair !== 'none') {
-      const imgObj = skinManager.getImage(asset.layout.chair);
-      if (imgObj) {
+      const imgData = skinManager.getImage(asset.layout.chair);
+      if (imgData) {
         const chairNode = new Konva.Image({
-          image: imgObj,
-          width: imgObj.width,
-          height: imgObj.height,
+          image: imgData.image,
+          width: imgData.width,
+          height: imgData.height,
           perfectDrawEnabled: false
         });
         const chairGroup = new Konva.Group({ x: cx, y: cy, rotation: cr });
-        chairNode.position({ x: -imgObj.width / 2, y: -imgObj.height / 2 });
+        chairNode.position({ x: -imgData.width / 2, y: -imgData.height / 2 });
         chairGroup.add(chairNode);
         group.add(chairGroup);
       }
@@ -229,16 +229,16 @@ export function renderAssetContent(group, asset, skinManager) {
 
     // Render Device Layer
     if (asset.layout.device && asset.layout.device !== 'none') {
-      const imgObj = skinManager.getImage(asset.layout.device);
-      if (imgObj) {
+      const imgData = skinManager.getImage(asset.layout.device);
+      if (imgData) {
         const deviceNode = new Konva.Image({
-          image: imgObj,
-          width: imgObj.width,
-          height: imgObj.height,
+          image: imgData.image,
+          width: imgData.width,
+          height: imgData.height,
           perfectDrawEnabled: false
         });
         const deviceGroup = new Konva.Group({ x: dx, y: dy, rotation: dr });
-        deviceNode.position({ x: -imgObj.width / 2, y: -imgObj.height / 2 });
+        deviceNode.position({ x: -imgData.width / 2, y: -imgData.height / 2 });
         deviceGroup.add(deviceNode);
         group.add(deviceGroup);
       }

@@ -160,19 +160,78 @@
         </div>
       </div>
 
-      <!-- Right/Left Explorer Panel -->
-      <aside class="fp-explorer" id="explorer-panel">
-        
-        <!-- ── Furniture Catalog Panel ─────────────────────────────────────── -->
-        <div id="furniture-catalog-panel" style="display:none;background:var(--fp-bg-sidebar);border-bottom:1px solid var(--fp-border);flex-direction:column;max-height:100%;z-index:100;pointer-events:auto;">
+      <!-- Left Sidebar (Edit Mode Only) -->
+      <aside class="fp-left-sidebar" id="left-sidebar">
+        <!-- ── Furniture & Architecture Catalog ─────────────────────────────────────── -->
+        <div id="furniture-catalog-panel" style="display:flex;flex-direction:column;height:100%;">
           <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--fp-border);">
-            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Furniture Catalog</h3>
-            <button id="btn-close-furniture" style="background:none;border:none;color:var(--fp-text-muted);cursor:pointer;font-size:16px;line-height:1;">&times;</button>
+            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Catalog & Layers</h3>
           </div>
           <div id="furniture-catalog-body" style="flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start;">
             <!-- SVGs will be injected here via JS -->
           </div>
         </div>
+        
+        <!-- Floor Zone Picker -->
+        <div id="floor-color-picker" class="fp-wall-picker" style="display:none; flex-direction:column; height:100%;">
+          <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--fp-border);">
+            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Floor Styles</h3>
+          </div>
+          <div style="padding:12px; display:flex; flex-direction:column; gap:8px;">
+            <div class="fp-floor-option active" data-color="#9ab8a0">
+              <div class="fp-wall-option__line" style="background:#9ab8a0;height:12px;border-radius:2px;"></div>
+              Carpet Green
+            </div>
+            <div class="fp-floor-option" data-color="#d4cfc4">
+              <div class="fp-wall-option__line" style="background:#d4cfc4;height:12px;border-radius:2px;"></div>
+              Tile Beige
+            </div>
+            <div class="fp-floor-option" data-color="#8fa8c8">
+              <div class="fp-wall-option__line" style="background:#8fa8c8;height:12px;border-radius:2px;"></div>
+              Corporate Blue
+            </div>
+            <div class="fp-floor-option" data-color="#c4b896">
+              <div class="fp-wall-option__line" style="background:#c4b896;height:12px;border-radius:2px;"></div>
+              Wood Floor
+            </div>
+            <div class="fp-floor-option" data-color="#bbb">
+              <div class="fp-wall-option__line" style="background:#bbb;height:12px;border-radius:2px;"></div>
+              Concrete
+            </div>
+          </div>
+        </div>
+
+        <!-- Wall Type Picker -->
+        <div id="wall-type-picker" class="fp-wall-picker" style="display:none; flex-direction:column; height:100%;">
+          <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--fp-border);">
+            <h3 style="margin:0;font-size:12px;font-weight:700;color:var(--fp-text);text-transform:uppercase;letter-spacing:0.8px;">Wall Styles</h3>
+          </div>
+          <div style="padding:12px; display:flex; flex-direction:column; gap:8px;">
+            <div class="fp-wall-option active" data-type="exterior">
+              <div class="fp-wall-option__line" style="background:#6b7a88;height:6px;"></div>
+              Exterior
+            </div>
+            <div class="fp-wall-option" data-type="interior">
+              <div class="fp-wall-option__line" style="background:#8a9aaa;height:3px;"></div>
+              Interior
+            </div>
+            <div class="fp-wall-option" data-type="glass">
+              <div class="fp-wall-option__line" style="background:#5b9ecf;height:2px;border-top:2px dashed #5b9ecf;"></div>
+              Glass
+            </div>
+          </div>
+        </div>
+
+        <div class="fp-explorer__header" style="margin-top:auto; border-top:1px solid var(--fp-border);">Layers</div>
+        <div id="layers-body" class="fp-explorer__body" style="flex:1; overflow-y:auto; max-height: 40%;">
+          <div style="padding:16px;text-align:center;color:var(--fp-text-muted);font-size:12px;">
+            No Layers
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right/Left Explorer Panel (IT Assets & Properties) -->
+      <aside class="fp-explorer" id="explorer-panel">
 
         <!-- ── IT Assets Catalog Panel ─────────────────────────────────────── -->
         <div id="assets-catalog-panel" style="display:none;background:var(--fp-bg-sidebar);border-bottom:1px solid var(--fp-border);flex-direction:column;max-height:100%;z-index:101;pointer-events:auto;position:absolute;top:0;left:0;right:0;bottom:0;">
@@ -212,6 +271,7 @@
               <option value="desk_straight">Straight Desk</option>
               <option value="desk_l">L-Desk</option>
               <option value="desk_round">Round Table</option>
+              <option value="meeting_table">Meeting Table</option>
               <option value="rack_cabinet">Server Rack</option>
             </select>
           </div>
@@ -238,6 +298,7 @@
               <option value="office_chair">Office Chair</option>
               <option value="executive_chair">Executive Chair</option>
               <option value="meeting_chairs_4">Meeting Chairs (x4)</option>
+              <option value="meeting_chairs_6">Meeting Chairs (x6)</option>
             </select>
           </div>
 
@@ -259,34 +320,6 @@
       </aside>
 
 
-
-      <!-- Floor Color Picker -->
-      <div id="floor-color-picker" class="fp-color-picker">
-        <div class="fp-color-swatch active" data-color="#9ab8a0" style="background:#9ab8a0;" title="Carpet Green"></div>
-        <div class="fp-color-swatch" data-color="#d4cfc4" style="background:#d4cfc4;" title="Tile Beige"></div>
-        <div class="fp-color-swatch" data-color="#8fa8c8" style="background:#8fa8c8;" title="Corporate Blue"></div>
-        <div class="fp-color-swatch" data-color="#c4b896" style="background:#c4b896;" title="Wood Floor"></div>
-        <div class="fp-color-swatch" data-color="#bbb" style="background:#bbb;" title="Concrete"></div>
-        <div class="fp-color-swatch" data-color="#e8e0d0" style="background:#e8e0d0;" title="White Tile"></div>
-        <div class="fp-color-swatch" data-color="#7a9a8a" style="background:#7a9a8a;" title="Dark Carpet"></div>
-        <div class="fp-color-swatch" data-color="#dbb8a0" style="background:#dbb8a0;" title="Terracotta"></div>
-      </div>
-
-      <!-- Wall Type Picker -->
-      <div id="wall-type-picker" class="fp-wall-picker">
-        <div class="fp-wall-option active" data-type="exterior">
-          <div class="fp-wall-option__line" style="background:#6b7a88;height:6px;"></div>
-          Exterior
-        </div>
-        <div class="fp-wall-option" data-type="interior">
-          <div class="fp-wall-option__line" style="background:#8a9aaa;height:3px;"></div>
-          Interior
-        </div>
-        <div class="fp-wall-option" data-type="glass">
-          <div class="fp-wall-option__line" style="background:#5b9ecf;height:2px;border-top:2px dashed #5b9ecf;"></div>
-          Glass
-        </div>
-      </div>
 
       <!-- Canvas Area and Explorer were moved above -->
     </div>
