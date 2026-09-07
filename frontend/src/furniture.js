@@ -5,7 +5,7 @@ import { skinManager } from './skins.js';
 // Real-world approximate heights in cm for each asset type.
 // Used by getShadowProps() to compute realistic drop shadows.
 // Desk surface ~75cm, chairs ~100cm (backrest), server rack ~180cm, etc.
-const ASSET_HEIGHT_CM = {
+export const ASSET_HEIGHT_CM = {
   // Furniture
   desk_small:             75,
   desk_straight:          75,
@@ -40,7 +40,7 @@ const ASSET_HEIGHT_CM = {
   window:                 120,
 };
 
-const DEFAULT_HEIGHT_CM = 75; // fallback for unknown types
+export const DEFAULT_HEIGHT_CM = 75; // fallback for unknown types
 
 // ── Shadow Utility ────────────────────────────────────────────────────────────
 /**
@@ -58,11 +58,12 @@ export function getShadowProps(heightCm) {
   const t = Math.min(heightCm, 200) / 200;
 
   return {
-    shadowColor:   'rgba(15, 23, 42, 1)',  // --fp-text-dark equivalent
-    shadowBlur:    4 + t * 20,             // 4px (flat) → 24px (tall rack)
-    shadowOffsetX: 1 + t * 6,             // 1px → 7px
-    shadowOffsetY: 2 + t * 10,            // 2px → 12px
-    shadowOpacity: 0.10 + t * 0.18,       // 10% → 28%
+    shadowColor:   'rgba(15, 23, 42, 1)',
+    shadowBlur:    8 + t * 22,             // 8px (flat) → 30px (tall rack)
+    shadowOffsetX: 4 + t * 18,             // 4px (flat) → 22px (tall rack)
+    shadowOffsetY: 6 + t * 24,             // 6px (flat) → 30px (tall rack)
+    shadowOpacity: 0.18 + t * 0.22,        // 18% → 40% opacity
+    shadowEnabled: true,
   };
 }
 

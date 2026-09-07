@@ -1,7 +1,7 @@
 import Konva from 'konva';
 import { zonesLayer, wallsLayer, furnitureLayer, requestRender, animateMapEntrance } from './engine.js';
 import { skinManager } from './skins.js';
-import { buildFurnitureNode } from './furniture.js';
+import { buildFurnitureNode, getShadowProps, ASSET_HEIGHT_CM, DEFAULT_HEIGHT_CM } from './furniture.js';
 
 export let currentAssets = [];
 export let currentRoomData = null;
@@ -85,7 +85,13 @@ export function loadMapData(data, isInitial = true) {
         perfectDrawEnabled: false,
         listening: false,
         scaleX: wall.scaleX || 1,
-        scaleY: wall.scaleY || 1
+        scaleY: wall.scaleY || 1,
+        shadowColor: 'rgba(15, 23, 42, 1)',
+        shadowBlur: 16,
+        shadowOffsetX: 8,
+        shadowOffsetY: 12,
+        shadowOpacity: 0.25,
+        shadowEnabled: true
       });
       line.setAttr('entityData', { id: wall.id, name: wall.name || 'Wall', wallType: wall.wallType, layer: 'architecture' });
       wallsLayer.add(line);
@@ -133,7 +139,6 @@ export function loadMapData(data, isInitial = true) {
         const entityData = fnNode.getAttr('entityData');
         if (entityData.layout && (entityData.layout.device !== 'none' || entityData.layout.chair !== 'none')) {
           renderAssetContent(fnNode, entityData, skinManager);
-          fnNode.cache();
         }
       }
     });
@@ -164,6 +169,8 @@ export function renderAssetContent(group, asset, skinManager) {
       if (imgData) {
         tw = Math.max(tw, imgData.width);
         th = Math.max(th, imgData.height);
+        const tableType = asset.layout.table || asset.type || 'desk_straight';
+        const tableHeight = ASSET_HEIGHT_CM[tableType] ?? DEFAULT_HEIGHT_CM;
         const tableNode = new Konva.Image({
           image: imgData.image,
           width: imgData.width,
@@ -171,7 +178,7 @@ export function renderAssetContent(group, asset, skinManager) {
           x: -imgData.width / 2,
           y: -imgData.height / 2,
           perfectDrawEnabled: false,
-          shadowColor: 'rgba(0,0,0,0.15)', shadowBlur: 10, shadowOffsetX: 0, shadowOffsetY: 4
+          ...getShadowProps(tableHeight)
         });
         group.add(tableNode);
       }
@@ -214,11 +221,14 @@ export function renderAssetContent(group, asset, skinManager) {
     if (asset.layout.chair && asset.layout.chair !== 'none') {
       const imgData = skinManager.getImage(asset.layout.chair);
       if (imgData) {
+        const chairType = asset.layout.chair;
+        const chairHeight = ASSET_HEIGHT_CM[chairType] ?? 100;
         const chairNode = new Konva.Image({
           image: imgData.image,
           width: imgData.width,
           height: imgData.height,
-          perfectDrawEnabled: false
+          perfectDrawEnabled: false,
+          ...getShadowProps(chairHeight)
         });
         const chairGroup = new Konva.Group({ x: cx, y: cy, rotation: cr });
         chairNode.position({ x: -imgData.width / 2, y: -imgData.height / 2 });
@@ -231,11 +241,14 @@ export function renderAssetContent(group, asset, skinManager) {
     if (asset.layout.device && asset.layout.device !== 'none') {
       const imgData = skinManager.getImage(asset.layout.device);
       if (imgData) {
+        const deviceType = asset.layout.device;
+        const deviceHeight = ASSET_HEIGHT_CM[deviceType] ?? 45;
         const deviceNode = new Konva.Image({
           image: imgData.image,
           width: imgData.width,
           height: imgData.height,
-          perfectDrawEnabled: false
+          perfectDrawEnabled: false,
+          ...getShadowProps(deviceHeight)
         });
         const deviceGroup = new Konva.Group({ x: dx, y: dy, rotation: dr });
         deviceNode.position({ x: -imgData.width / 2, y: -imgData.height / 2 });
@@ -416,11 +429,6 @@ export function forceRenderLabels() {
     if (data) {
       group.clearCache();
       renderAssetContent(group, data, skinManager);
-      // Re-add cache if in edit mode
-      const layout = document.getElementById('main-layout');
-      if (layout && layout.classList.contains('is-editing')) {
-        group.cache();
-      }
     }
   });
   furnitureLayer.getLayer().batchDraw();
