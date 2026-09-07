@@ -13,8 +13,9 @@
 
 ## 3. Canvas Drop Shadows
 
-- [x] 3.1 Add `getShadowProps(z)` to `furniture.js` that returns Konva shadow config proportional to `z`, verifying with a unit-style console.assert check in dev.
-- [x] 3.2 Apply `getShadowProps` in `buildFurnitureNode()` to all rendered Konva nodes, verifying that rack cabinets (z=96) visually have a noticeably larger shadow than desks (z=28) after a deploy + visual check.
+- [x] 3.1 Add `getShadowProps(heightCm)` and `ASSET_HEIGHT_CM` height table to `furniture.js` returning 45° top-left Konva shadow config (`shadowOffsetX: 4..22px`, `shadowOffsetY: 6..30px`, `shadowBlur: 8..30px`, `shadowOpacity: 18%..40%`).
+- [x] 3.2 Apply `getShadowProps` in `renderer.js` to `tableNode`, `chairNode`, `deviceNode` sub-layers and add 45° drop shadows to wall `Konva.Line` elements.
+- [x] 3.3 Remove `group.cache()` on furniture nodes to prevent offscreen canvas bounding box shadow clipping.
 
 ## 4. Properties Panel & Explorer
 

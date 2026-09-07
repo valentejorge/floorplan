@@ -11,9 +11,9 @@ The focus of this change is: **make what we already have clean, consistent, and 
 - **DONE**: Clean `api.js` to production-only mode — calls live OCS PHP backend directly.
 - **DONE**: Add `deploy-local.sh` — builds the frontend and pushes straight to the running Docker container in one command.
 - **DONE**: Fix `vite.config.js` to exclude `public/ajax/` mock files from production builds.
-- **TODO**: Consolidate all remaining inline styles in `index.html` and `explorer.js` into CSS variables from the design system.
-- **TODO**: Refactor `explorer.js` and `properties panel` to be properly modular and reuse design system classes.
-- **TODO**: Apply consistent drop shadows to Konva nodes using the asset `z` (height) property.
+- **DONE**: Consolidate all remaining inline styles in `index.html` and `explorer.js` into CSS variables from the design system.
+- **DONE**: Refactor `explorer.js` and `properties panel` to be properly modular and read-only in View Mode.
+- **DONE**: Apply realistic 45° top-left drop shadows per-sublayer (`tableNode`, `chairNode`, `deviceNode`) and architectural walls (`Konva.Line`), scaling with real-world height (`ASSET_HEIGHT_CM`) without `group.cache()` shadow clipping.
 
 ## Capabilities
 
