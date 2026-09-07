@@ -7,14 +7,14 @@
 
 ## 2. Design System
 
-- [ ] 2.1 Audit `index.html` and list every `style="..."` inline attribute — verify at least 20 occurrences that need migration.
-- [ ] 2.2 Create `.fp-panel`, `.fp-label`, `.fp-badge`, `.fp-separator` CSS classes in `style.css` and verify each matches the existing visual appearance.
-- [ ] 2.3 Replace all inline color/layout styles in `index.html` with `.fp-*` classes, verifying zero `style="color:"`, `style="background:"` remain after the migration.
+- [x] 2.1 Audit `index.html` and list every `style="..."` inline attribute — verify at least 20 occurrences that need migration.
+- [x] 2.2 Create `.fp-panel`, `.fp-label`, `.fp-badge`, `.fp-separator` CSS classes in `style.css` and verify each matches the existing visual appearance.
+- [x] 2.3 Replace all inline color/layout styles in `index.html` with `.fp-*` classes, verifying zero `style="color:"`, `style="background:"` remain after the migration.
 
 ## 3. Canvas Drop Shadows
 
-- [ ] 3.1 Add `getShadowProps(z)` to `furniture.js` that returns Konva shadow config proportional to `z`, verifying with a unit-style console.assert check in dev.
-- [ ] 3.2 Apply `getShadowProps` in `buildFurnitureNode()` to all rendered Konva nodes, verifying that rack cabinets (z=96) visually have a noticeably larger shadow than desks (z=28) after a deploy + visual check.
+- [x] 3.1 Add `getShadowProps(z)` to `furniture.js` that returns Konva shadow config proportional to `z`, verifying with a unit-style console.assert check in dev.
+- [x] 3.2 Apply `getShadowProps` in `buildFurnitureNode()` to all rendered Konva nodes, verifying that rack cabinets (z=96) visually have a noticeably larger shadow than desks (z=28) after a deploy + visual check.
 
 ## 4. Properties Panel & Explorer
 
