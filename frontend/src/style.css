@@ -22,32 +22,31 @@
   --fp-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
 
-  /* Light palette */
-  --fp-bg: #f4f6f9;
-  --fp-bg-sidebar: #ffffff;
-  --fp-border: #dee2e6;
-  --fp-text: #212529;
-  --fp-text-muted: #6c757d;
+  /* Minimalist / Visio palette */
+  --fp-bg: #F4F6F9;
+  --fp-bg-sidebar: #FFFFFF;
+  --fp-border: #E2E8F0;
+  --fp-text: #1E293B;
+  --fp-text-muted: #64748B;
 
-  /* OCS accent */
+  /* OCS accent (Lilac) */
   --fp-primary: #961B7E;
-  --fp-primary-hover: #B22396;
-  --fp-primary-soft: rgba(150, 27, 126, 0.1);
+  --fp-primary-hover: #751462;
+  --fp-primary-soft: rgba(150, 27, 126, 0.08);
 
   /* Canvas */
-  --fp-canvas-bg: #e8e8e8;
+  --fp-canvas-bg: #F1F5F9;
 
-  /* Status */
-  --fp-success: #5cb85c;
-  --fp-warning: #f0ad4e;
-  --fp-danger: #d9534f;
+  /* Status FX */
+  --fp-success: #10B981;
+  --fp-warning: #F59E0B;
+  --fp-danger: #EF4444;
 
   /* Layout - Compact/Adaptive for Notebooks */
   --fp-toolbar-w: 48px;
   --fp-explorer-w: 240px;
   --fp-topbar-h: 40px;
 }
-
 body {
   font-family: var(--fp-font);
   font-size: 12px;
@@ -130,7 +129,7 @@ body {
 /* ── Topbar ──────────────────────────────────────────────────────── */
 .fp-topbar {
   height: var(--fp-topbar-h);
-  background: #fff;
+  background: var(--fp-bg-sidebar);
   border-bottom: 1px solid var(--fp-border);
   display: flex;
   align-items: center;
@@ -142,8 +141,7 @@ body {
 }
 
 .fp-layout.is-editing .fp-topbar {
-  background: #faf5f9;
-  /* Super pale purple */
+  background: var(--fp-bg-sidebar);
   border-bottom: 1px solid var(--fp-primary);
 }
 
@@ -268,7 +266,10 @@ body {
 .fp-canvas-area #floorplan-container {
   width: 100%;
   height: 100%;
+  /* Force explicit min-height for Quirks Mode (OCS Inventory no DOCTYPE) */
+  min-height: calc(100vh - 80px);
 }
+
 
 /* Focus Vignette / Border for Edit Mode */
 .fp-canvas-area::after {
@@ -371,11 +372,10 @@ body {
   top: 16px;
   left: 16px;
   height: calc(100% - 32px);
-  background: rgba(255, 255, 255, 0.90);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--fp-bg-sidebar);
+  border: 1px solid var(--fp-border);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 50;
   overflow: hidden;
@@ -397,11 +397,10 @@ body {
   top: 16px;
   left: 16px;
   height: calc(100% - 32px);
-  background: rgba(255, 255, 255, 0.90);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--fp-bg-sidebar);
+  border: 1px solid var(--fp-border);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 49;
   overflow: hidden;

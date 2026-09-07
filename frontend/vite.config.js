@@ -4,11 +4,14 @@ import fs from 'fs';
 
 const root = import.meta.dirname;
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   build: {
     // Output compiled bundle directly to the extension dist folder
     outDir: resolve(root, '../dist/floorplan/ms_floorplan/assets'),
     emptyOutDir: false,
+    // Never copy the public/ directory in production builds.
+    // The public/ folder contains dev-only mock JSON files that
+    // don't belong in the OCS Inventory dist.
     rollupOptions: {
       input: resolve(root, 'src/main.js'),
       output: {
@@ -19,6 +22,8 @@ export default defineConfig({
       },
     },
   },
+  // Serve public/ only in dev (Vite default). In build, exclude it.
+  publicDir: command === 'serve' ? 'public' : false,
   server: {
     port: 5173,
     open: false,
@@ -64,4 +69,4 @@ export default defineConfig({
       }
     }
   ]
-});
+}));
