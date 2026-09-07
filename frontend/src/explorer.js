@@ -303,10 +303,13 @@ function updateProperties(node) {
   const data = node.getAttr('entityData') || node.getAttr('assetData') || {};
   const name = data.name || data.hardware_name || node.id();
 
+  const isEditing = document.getElementById('main-layout')?.classList.contains('is-editing');
+  const disabledAttr = isEditing ? '' : 'disabled';
+
   // Create a stunning Figma-style property grid using the Design System
   let rows = `
     <div style="margin-bottom:16px;">
-      <div class="fp-text-label" style="margin-bottom:12px;">Design</div>
+      <div class="fp-text-label" style="margin-bottom:12px;">Design ${!isEditing ? '<span class="fp-text-muted">(View Only)</span>' : ''}</div>
       
       <!-- Details Row -->
       <div class="fp-flex-col fp-gap-1" style="margin-bottom:16px;">
@@ -323,23 +326,23 @@ function updateProperties(node) {
       <div class="fp-prop-grid" style="margin-bottom:16px;">
         <div class="fp-input-group">
           <span class="fp-input-prefix">X</span>
-          <input type="number" id="prop-x" value="${Math.round(node.x())}" class="fp-input-field" />
+          <input type="number" id="prop-x" value="${Math.round(node.x())}" class="fp-input-field" ${disabledAttr} />
         </div>
         <div class="fp-input-group">
           <span class="fp-input-prefix">Y</span>
-          <input type="number" id="prop-y" value="${Math.round(node.y())}" class="fp-input-field" />
+          <input type="number" id="prop-y" value="${Math.round(node.y())}" class="fp-input-field" ${disabledAttr} />
         </div>
         <div class="fp-input-group">
           <span class="fp-input-prefix">W</span>
-          <input type="number" id="prop-w" value="${Math.round(node.width() * node.scaleX())}" class="fp-input-field" />
+          <input type="number" id="prop-w" value="${Math.round(node.width() * node.scaleX())}" class="fp-input-field" ${disabledAttr} />
         </div>
         <div class="fp-input-group">
           <span class="fp-input-prefix">H</span>
-          <input type="number" id="prop-h" value="${Math.round(node.height() * node.scaleY())}" class="fp-input-field" />
+          <input type="number" id="prop-h" value="${Math.round(node.height() * node.scaleY())}" class="fp-input-field" ${disabledAttr} />
         </div>
         <div class="fp-input-group" style="grid-column: span 2;">
           <span class="fp-input-prefix">°</span>
-          <input type="number" id="prop-r" value="${Math.round(node.rotation())}" class="fp-input-field" />
+          <input type="number" id="prop-r" value="${Math.round(node.rotation())}" class="fp-input-field" ${disabledAttr} />
         </div>
       </div>
     </div>
@@ -368,6 +371,7 @@ function updateProperties(node) {
     el.addEventListener('blur', () => el.parentElement.style.borderColor = 'var(--fp-border)');
 
     el.addEventListener('change', async (e) => {
+      if (!document.getElementById('main-layout')?.classList.contains('is-editing')) return;
       const val = parseFloat(e.target.value);
       if (isNaN(val)) return;
       

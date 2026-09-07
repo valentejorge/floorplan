@@ -18,5 +18,5 @@
 
 ## 4. Properties Panel & Explorer
 
-- [ ] 4.1 Audit `explorer.js` for any remaining Konva API calls that use deprecated patterns (`.getAttr`, `.setAttr` on non-Konva nodes) — list them.
-- [ ] 4.2 Ensure the Properties Panel only enables editing controls when `is-editing` class is active on `#main-layout`, verifying that in View Mode all inputs are read-only or hidden.
+- [x] 4.1 Audit `explorer.js` for any remaining Konva API calls that use deprecated patterns (`.getAttr`, `.setAttr` on non-Konva nodes) — list them.
+- [x] 4.2 Ensure the Properties Panel only enables editing controls when `is-editing` class is active on `#main-layout`, verifying that in View Mode all inputs are read-only or hidden.
