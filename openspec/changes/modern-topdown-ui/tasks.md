@@ -1,17 +1,22 @@
-## 1. Cleanup and Mock Setup
+## 1. Already Done (committed)
 
-- [x] 1.1 Remove `isoMath.js` and `theme.js` completely, verifying no orphaned imports remain in the codebase.
-- [x] 1.2 ~~Refactor `api.js` to intercept calls~~ (PIVOT): Create `deploy-local.sh` and revert `api.js` to use the live OCS Docker backend without mocks.
-- [x] 1.3 Clean up `style.css` and `index.html` to remove all Cyberpunk/Pixel theming logic, establishing a clean white/gray minimalist palette and verifying the UI shell looks like the Canva/Visio mockup.
+- [x] 1.1 Remove `isoMath.js` and `theme.js` — no orphaned imports remain.
+- [x] 1.2 Clean `api.js` to production-only mode — no mocks, calls live OCS backend.
+- [x] 1.3 Remove Cyberpunk/Pixel/Blueprint themes from `style.css` and `index.html`. Minimalist palette active.
+- [x] 1.4 Add `deploy-local.sh` — build + docker cp in one command. Fix vite.config.js to exclude public from builds.
 
-## 2. PixiJS Integration
+## 2. Design System
 
-- [x] 2.1 Replace KonvaJS dependency with `pixi.js` and `@pixi/filter-drop-shadow` in `package.json`, verifying installation succeeds (`npm install`).
-- [x] 2.2 Rewrite `engine.js` to initialize a `PIXI.Application` with a 2D Orthogonal camera, grid, and panning/zooming logic, verifying the canvas renders a base grid without errors.
-- [x] 2.3 Implement the `DropShadowFilter` utility that accepts a `z` (height) value and returns a configured filter, verifying it compiles and is ready for use in the renderer.
+- [ ] 2.1 Audit `index.html` and list every `style="..."` inline attribute — verify at least 20 occurrences that need migration.
+- [ ] 2.2 Create `.fp-panel`, `.fp-label`, `.fp-badge`, `.fp-separator` CSS classes in `style.css` and verify each matches the existing visual appearance.
+- [ ] 2.3 Replace all inline color/layout styles in `index.html` with `.fp-*` classes, verifying zero `style="color:"`, `style="background:"` remain after the migration.
 
-## 3. Rendering Pipeline
+## 3. Canvas Drop Shadows
 
-- [x] 3.1 Rewrite `renderer.js` to draw floors, walls, and doors using `PIXI.Graphics` instead of Konva shapes, verifying the base architecture renders correctly.
-- [x] 3.2 Implement PixiJS sprite/graphics rendering for furniture and IT assets in `furniture.js`, applying the drop shadow filter dynamically based on their height, verifying they render with the 3D depth illusion.
-- [ ] 3.3 Re-implement the editing tools (drag and drop, magnet snapping) to work with PixiJS interactive events, verifying the user can still place and move assets in the new engine.
+- [ ] 3.1 Add `getShadowProps(z)` to `furniture.js` that returns Konva shadow config proportional to `z`, verifying with a unit-style console.assert check in dev.
+- [ ] 3.2 Apply `getShadowProps` in `buildFurnitureNode()` to all rendered Konva nodes, verifying that rack cabinets (z=96) visually have a noticeably larger shadow than desks (z=28) after a deploy + visual check.
+
+## 4. Properties Panel & Explorer
+
+- [ ] 4.1 Audit `explorer.js` for any remaining Konva API calls that use deprecated patterns (`.getAttr`, `.setAttr` on non-Konva nodes) — list them.
+- [ ] 4.2 Ensure the Properties Panel only enables editing controls when `is-editing` class is active on `#main-layout`, verifying that in View Mode all inputs are read-only or hidden.

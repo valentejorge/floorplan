@@ -56,6 +56,240 @@ body {
   height: 100vh;
 }
 
+/* ── Utility Classes ─────────────────────────────────────────────── */
+
+/* Layout utilities */
+.fp-relative       { position: relative; }
+.fp-flex-spacer    { flex: 1; }
+.fp-full-w         { width: 100%; }
+.fp-full-h         { height: 100%; }
+.fp-mb-24          { margin-bottom: 24px; }
+.fp-mt-auto        { margin-top: auto; }
+
+/* Search wrapper — positions the results dropdown relative to this container */
+.fp-search-wrapper {
+  position: relative;
+  display: flex;
+  gap: 4px;
+}
+
+/* Topbar search input — overrides generic input styles */
+.fp-topbar__input {
+  width: 360px;
+  padding: 6px 12px;
+  border: 1px solid var(--fp-border);
+  border-radius: 4px;
+}
+
+/* Dropdown panel (View Filters, etc.) */
+.fp-dropdown {
+  position: relative;
+  margin-right: 8px;
+}
+.fp-dropdown__panel {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--fp-bg-sidebar);
+  border: 1px solid var(--fp-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  width: 180px;
+  z-index: 9999;
+}
+.fp-dropdown__panel.is-open { display: block; }
+
+/* Filter label row (checkbox + text) */
+.fp-filter-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+.fp-filter-label input[type="checkbox"] {
+  accent-color: var(--fp-primary);
+}
+
+/* Ghost button for clear/reset actions */
+.fp-btn-clear {
+  background: none;
+  border: none;
+  color: var(--fp-primary);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* SVG icon sizing inside inline SVGs */
+.fp-icon-sm { width: 18px; height: 18px; }
+
+/* Empty-state SVG spacing */
+.fp-empty-icon { margin-bottom: 16px; }
+
+/* Color swatch preview strip (floor/wall pickers) */
+.fp-swatch-strip {
+  height: 12px;
+  border-radius: 2px;
+}
+
+/* Wall swatch strip (thinner, no border-radius) */
+.fp-wall-strip-exterior { background: #6b7a88; height: 6px; }
+.fp-wall-strip-interior { background: #8a9aaa; height: 3px; }
+.fp-wall-strip-glass    { background: #5b9ecf; height: 2px; border-top: 2px dashed #5b9ecf; }
+
+/* Panel with flex-col body filling available space */
+.fp-panel-fill {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Scrollable catalog/list body */
+.fp-catalog-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-content: start;
+}
+
+/* Generic scrollable list (explorer tree, layers) */
+.fp-list-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Floor-zone/wall picker body */
+.fp-picker-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Modal form row with flex children */
+.fp-form-row {
+  display: flex;
+  gap: 8px;
+}
+.fp-form-row > * { flex: 1; }
+
+/* Generic text input (used inside modals / panels) */
+.fp-input {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--fp-border);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--fp-text);
+  background: var(--fp-bg-sidebar);
+}
+.fp-input:focus {
+  outline: none;
+  border-color: var(--fp-primary);
+}
+.fp-input::placeholder { color: var(--fp-text-muted); }
+
+/* Navigator search input (inside modal sidebar) */
+.fp-nav-search {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--fp-border);
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: inherit;
+}
+
+/* Modal header h2 */
+.fp-modal-h2 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fp-text);
+}
+
+/* Navigator header spacer already handled by fp-flex-spacer */
+
+/* Navigator "New Map" button (compact) */
+.fp-btn--compact {
+  padding: 4px 12px;
+  font-size: 11px;
+  margin-right: 12px;
+}
+
+/* Assets overlay panel (absolute, covers full explorer) */
+.fp-overlay-panel {
+  display: none;
+  background: var(--fp-bg-sidebar);
+  border-bottom: 1px solid var(--fp-border);
+  flex-direction: column;
+  max-height: 100%;
+  z-index: 101;
+  pointer-events: auto;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+
+/* Panel-header separator with top border */
+.fp-panel-header--border-top {
+  margin-top: auto;
+  border-top: 1px solid var(--fp-border);
+}
+
+/* Properties panel empty state */
+.fp-prop-empty {
+  color: var(--fp-text-muted);
+  font-size: 11px;
+}
+
+/* Asset-edit modal header (no bottom border, transparent) */
+.fp-asset-edit-header {
+  margin-bottom: 16px;
+  border-bottom: none;
+  background: transparent;
+  padding: 0;
+}
+
+/* Action row at bottom of asset-edit modal */
+.fp-action-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+}
+.fp-action-row > button { flex: 1; }
+
+/* Navigator sidebar: flex column */
+.fp-nav-sidebar {
+  display: flex;
+  flex-direction: column;
+}
+.fp-nav-sidebar-search {
+  padding: 10px;
+  border-bottom: 1px solid var(--fp-border);
+}
+.fp-nav-sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Navigator grid empty state */
+.fp-nav-empty {
+  padding: 40px;
+  text-align: center;
+  color: var(--fp-text-muted);
+  grid-column: 1 / -1;
+}
+
 /* ── Buttons ─────────────────────────────────────────────────────── */
 .fp-btn {
   display: inline-flex;

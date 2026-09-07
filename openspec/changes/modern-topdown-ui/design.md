@@ -1,31 +1,41 @@
 ## Context
 
-See proposal.md - Why. We need to decouple the frontend from OCS Inventory's PHP backend for rapid UI iteration, and rewrite the rendering engine using PixiJS to deliver a top-down Visio-style interface with rich drop shadows.
+See proposal.md — Why. KonvaJS stays as the canvas engine. PixiJS was trialled and abandoned due to hard incompatibilities with OCS Inventory's Quirks Mode HTML environment (no DOCTYPE, no guaranteed WebGL, jQuery conflicts). KonvaJS is Canvas2D-based and works reliably in this context.
+
+The deploy workflow is now: edit → `./deploy-local.sh` → refresh browser. No Docker rebuilds needed.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- Completely replace KonvaJS with PixiJS.
-- Achieve a 2D Orthogonal perspective that relies on dynamic WebGL drop shadows (`@pixi/filter-drop-shadow`) to create the illusion of 3D depth based on asset height.
-- Mock all backend PHP calls so the frontend can be developed and served via Vite (`npm run dev`) with zero backend dependencies.
-- Re-style the UI shell to be minimalist and standard, removing dark mode themes.
+- Enforce a single CSS variable design system across all UI components. No inline styles in production code.
+- Apply Konva drop shadows per-asset using the `z` (height) property from `FURNITURE_SIZE` to create visual depth.
+- Refactor the Properties Panel to only be interactive in Edit Mode.
+- Make `explorer.js` and the Object Explorer panel fully modular and design-system-native.
 
 **Non-Goals:**
-- Any form of isometric, 2.5D, or 3D rotation logic.
-- Rewriting backend PHP logic (all mock endpoints must mirror existing payload structures).
+- Switching canvas engine (KonvaJS is final).
+- Isometric projection (abandoned, removed).
+- Dark mode / theme switching (single minimalist palette only).
+- Mocking the backend (we use the live Docker OCS container for all testing).
 
 ## Decisions
 
-**PixiJS over KonvaJS:** 
-- *Rationale*: PixiJS offers a robust WebGL pipeline and built-in filter system (`pixi-filters`), which allows us to apply a high-quality drop shadow filter natively to our sprites, mimicking the provided reference image. Konva is fundamentally Canvas2D-first and struggles with complex multi-pass filters at 60fps.
+**KonvaJS over PixiJS (final):**
+- *Rationale*: PixiJS v8 requires WebGL. OCS Inventory renders in Quirks Mode (no DOCTYPE) and the WebGL context was lost in every test. KonvaJS uses Canvas2D which works reliably in all browser environments.
 
-**Drop Shadow Depth Calculation:**
-- *Rationale*: We will use the `z` property (height) defined in `FURNITURE_SIZE` to calculate the `distance` and `blur` parameters of the `DropShadowFilter`. A rack cabinet (Z=96) will cast a long, blurry shadow, while a small desk (Z=28) will cast a tight, sharp shadow. 
+**Drop shadows via Konva `shadowColor`:**
+- *Rationale*: Konva's native `shadowColor`, `shadowBlur`, `shadowOffsetX/Y` on `Konva.Image` nodes is sufficient for the visual depth effect. Scale the blur and offset from the asset's `z` height.
 
-**Vite Proxy / MSW for API Mocking:**
-- *Rationale*: We will intercept `fetch` calls in `api.js` when `NODE_ENV !== 'production'` (or via a URL flag) and return hardcoded JSON objects that mimic `get_unmapped_assets.php`, `get_map.php`, etc. This avoids setting up a complex local PHP/Docker environment just to iterate on the UI.
+**`deploy-local.sh` as the dev loop:**
+- *Rationale*: `npm run build && docker cp dist/floorplan/. container:/extensions/floorplan/` is the fastest and most reliable way to test changes in the real OCS environment without mocks or a proxy server.
+
+**Single minimalist palette (no themes):**
+- *Rationale*: Theme switching added complexity with zero user value. A single clean light palette (white sidebars, light gray canvas) is easier to maintain and aligns with the Visio-style product direction.
 
 ## Risks / Trade-offs
 
-- [Risk] PixiJS DropShadowFilter can be expensive if applied to hundreds of objects individually.
-  - *Mitigation*: If performance dips, we will group static elements (like desks) into a single PixiJS Container and apply the filter to the container, or bake the shadows into the static textures where dynamic depth isn't strictly necessary.
+- [Risk] Konva canvas might have performance limits with many assets (hundreds of Konva nodes).
+  - *Mitigation*: Use `perfectDrawEnabled: false` and `listening: false` on static geometry layers. Group non-interactive elements. This was already done in the previous version.
+
+- [Risk] Inline styles in `index.html` are hard to maintain and grow over time.
+  - *Mitigation*: This change explicitly removes them, migrating to `.fp-*` CSS classes as part of the design system task.

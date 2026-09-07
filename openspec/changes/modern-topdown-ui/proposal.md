@@ -1,30 +1,30 @@
 ## Why
 
-The current frontend architecture became a mix of inline styles and duplicated code without a proper design system. The previous idea to use an isometric (2.5D) projection and dark-mode themes (Cyberpunk) was overly complex for a CAD tool and detracted from usability. 
+The frontend grew organically into a tangle of inline styles, duplicate code, and zero design system. Themes (Cyberpunk, Pixel, Blueprint) cluttered the CSS without improving usability. The isometric projection experiment was abandoned. KonvaJS is working well as the canvas engine and will be kept — it proved far more compatible with the OCS Inventory environment (Quirks Mode, no WebGL guarantees) than alternatives.
 
-We need to pivot to a **Modern Minimalist Top-Down** approach (Visio style), leveraging PixiJS to render crisp 2D maps with beautiful, dynamic drop shadows (`@pixi/filter-drop-shadow`) to create a premium 3D depth illusion. Furthermore, to accelerate UI development and testing, we need to completely decouple the frontend from the OCS Inventory backend by mocking the API layer. This allows rapid UI iteration without requiring constant Docker deployments.
+The focus of this change is: **make what we already have clean, consistent, and premium-looking.** That means a real design system enforced across the codebase, a production-first API layer with `deploy-local.sh` for fast iteration, and the visual quality of a Visio-style tool rather than a developer prototype.
 
 ## What Changes
 
-- **BREAKING**: Remove all isometric projection logic (`isoMath.js`) and 2.5D asset constraints.
-- **BREAKING**: Remove `theme.js` and all Cyberpunk/Pixel CSS theme definitions.
-- **New Architecture**: 
-  - Standardize `style.css` into a clean, minimalist design system (Figma/Canva style) using native CSS variables.
-  - Implement PixiJS as the rendering engine for a top-down Orthogonal 2D view.
-  - Apply `DropShadowFilter` in PixiJS based on the `z` (height) of assets to create depth.
-- **Decoupling**: Implement an API Mocking layer in the frontend to serve static JSON (rooms, assets, layouts) so the frontend can run independently in a local Vite dev server without PHP/Docker.
+- **DONE**: Remove `isoMath.js`, `theme.js`, and all isometric projection code.
+- **DONE**: Remove Cyberpunk/Pixel/Blueprint CSS themes. Single minimalist palette (light mode, Visio-style).
+- **DONE**: Clean `api.js` to production-only mode — calls live OCS PHP backend directly.
+- **DONE**: Add `deploy-local.sh` — builds the frontend and pushes straight to the running Docker container in one command.
+- **DONE**: Fix `vite.config.js` to exclude `public/ajax/` mock files from production builds.
+- **TODO**: Consolidate all remaining inline styles in `index.html` and `explorer.js` into CSS variables from the design system.
+- **TODO**: Refactor `explorer.js` and `properties panel` to be properly modular and reuse design system classes.
+- **TODO**: Apply consistent drop shadows to Konva nodes using the asset `z` (height) property.
 
 ## Capabilities
 
-### New Capabilities
-- `mock-api`: Local mocking layer for OCS endpoints to enable decoupled frontend development.
-- `pixijs-renderer`: Top-down 2D rendering engine with dynamic drop shadows.
-
 ### Modified Capabilities
+- `design-system`: Single CSS variable system enforced across all components. No more one-off inline styles.
+- `canvas-engine`: KonvaJS stays. Drop shadows applied per-asset based on Z height.
+- `properties-panel`: Full refactor — only editable in Edit Mode, not in View Mode.
 
 ## Impact
 
-- `frontend/src/isoMath.js` and `frontend/src/theme.js` will be deleted.
-- `frontend/src/api.js` will be modified to intercept requests and return mock data when running in dev mode.
-- `frontend/src/engine.js` and `frontend/src/renderer.js` will be entirely rewritten to use PixiJS instead of KonvaJS.
-- `frontend/src/style.css` and `frontend/index.html` will be cleaned up to enforce the new minimalist design system.
+- `frontend/src/style.css`: Design system tokens — single source of truth.
+- `frontend/index.html`: Inline styles migrated to CSS classes.
+- `frontend/src/explorer.js`: Modular, using design system only.
+- `deploy-local.sh`: New helper for build + deploy cycle.
