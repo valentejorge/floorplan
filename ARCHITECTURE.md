@@ -6,9 +6,9 @@ OCS Inventory plugin that adds an interactive spatial visualization layer (floor
 
 ## Core Architecture Rules
 
-1. **Language:** All code, user interface text, variables, comments, and structure MUST be written in English. This ensures future compatibility with OCS Inventory's multi-language translation dictionaries.
+1. **Language:** All code, user interface text, variables, comments, commit messages, and documentation MUST be written in English. This ensures future compatibility with OCS Inventory's multi-language translation dictionaries.
 2. **Frameworks:** Vanilla JS (Frontend) + PHP (Backend).
-3. **Canvas:** Konva.js for rendering the 2D floorplan.
+3. **Canvas:** Fabric.js for rendering the 2D floorplan.
 4. **Integration:** Plugs directly into OCS Inventory as a standard extension.
 
 ## 2. Visual Identity (Native OCS Integration)
@@ -26,7 +26,7 @@ We adopt a strict separation during development:
 
 ## 4. Plugin Directory Structure (OCS Standard)
 
-The final distribution package must follow this tree:
+The final distribution package follows this structure:
 
 ```
 /
@@ -35,17 +35,34 @@ The final distribution package must follow this tree:
 ├── uninstall.sql               # Cleanup queries
 ├── /require/MapEngine.php      # Business logic and PDO queries
 ├── /ajax/                      # Internal API endpoints (get_map.php, batch_update_assets.php, etc.)
+├── /frontend/                  # Vite-powered frontend source
+│   ├── index.html              # Main HTML entrypoint (development / standalone)
+│   └── /src/                   # Modular ES source files
+│       ├── main.js             # Entrypoint orchestrator
+│       ├── event-bus.js        # Decoupled pub/sub event bus
+│       ├── map-navigator.js    # Canvas viewport, pan/zoom & Fabric.js interaction
+│       ├── furniture-catalog.js# Furniture catalog & drag-and-drop
+│       ├── edit-mode.js        # Canvas edit mode state management
+│       ├── view-filters.js     # Map layer visibility controls
+│       ├── toolbar.js          # Main toolbar UI logic
+│       ├── search.js           # Asset search & canvas focus
+│       ├── explorer.js         # Unified Explorer tree & inspector logic
+│       ├── create-map.js       # Map creation modal & wizard
+│       ├── modal.js            # Modal dialog utilities
+│       ├── notify.js           # Toast notifications
+│       └── api.js              # Intercepted fetch API wrapper
 └── /assets/
     ├── /css/floorplan.css      # Custom styling complementing native OCS CSS
-    └── /js/map-bundle.js       # Compiled Vite bundle (Konva.js)
+    └── /js/map-bundle.js       # Compiled Vite bundle (Fabric.js)
 ```
 
-## 5. Frontend Golden Rules (Konva.js)
+## 5. Frontend Golden Rules (Fabric.js & Modular ES Architecture)
 
-1.  **Layer Isolation:** Separate layers for static elements (walls/doors with `listening: false` for optimal performance), assets (PCs, printers), and overlays (tooltips, drag indicators).
-2.  **Performance Target (60 FPS):** Visual updates occur in browser local memory instantaneously.
-3.  **Snap to Grid & Explicit Saving (Batch Save):** Drag-and-drop actions snap to an invisible grid (e.g., 20px). To preserve inventory integrity and prevent accidental changes, there is NO autosave. The canvas features an "Edit Mode" enabling draggability. Position updates remain in local Canvas state until the user clicks "Save", triggering a single batch payload to the API.
-4.  **Grouping:** Nested elements (e.g., a PC on top of a desk) inherit positioning via `Konva.Group`.
+1. **Modular Architecture:** Keep modules focused and single-purpose. Communicate between UI components and canvas engines via the central `event-bus.js` (`eventBus.on()`, `eventBus.emit()`) rather than attaching transient state to global `window.*` variables.
+2. **Layer Isolation:** Maintain separate logical groups for static elements (walls/doors), inventory assets (PCs, printers), and interactive overlays.
+3. **Performance Target (60 FPS):** Visual updates occur in browser local memory instantaneously using Fabric.js.
+4. **Snap to Grid & Explicit Saving (Batch Save):** Drag-and-drop actions snap to a grid (e.g., 20px). To preserve inventory integrity and prevent accidental changes, there is NO autosave. The canvas features an "Edit Mode" enabling draggability. Position updates remain in local Canvas state until the user clicks "Save", triggering a single batch payload to the API.
+5. **Grouping & Object Positioning:** Nested elements (e.g., a PC on top of a desk) inherit relative positioning using native Fabric.js object grouping and hierarchy.
 
 ## 6. Auditing & Versioning (Time Travel)
 
@@ -53,3 +70,4 @@ To maintain compliance and traceability across IT operations, the system preserv
 
 *   **Table `plugin_map_revisions`:** Defined in `install.sql`, containing `id` (PK), `map_id` (FK), `user_id` (VARCHAR, logged-in OCS user), `created_at` (DATETIME), and `map_snapshot` (JSON).
 *   **Snapshot Trigger:** Whenever the batch save endpoint commits asset changes, it captures the updated map state and creates a new entry in the revisions table.
+
