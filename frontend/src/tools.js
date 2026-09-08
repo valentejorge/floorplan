@@ -74,9 +74,32 @@ export function bindToolsToStage() {
   if (!stage) return;
   
   stage.on('mousedown touchstart', (e) => {
-    // Ignore if not in edit mode
     const layout = document.getElementById('main-layout');
-    if (!layout || !layout.classList.contains('is-editing')) return;
+    const isEditing = layout && layout.classList.contains('is-editing');
+    
+    if (!isEditing) {
+      // In view mode, allow clicking on assets to select them in the Hosts panel
+      if (e.target === stage || e.target.getAttr('gridDot')) {
+        import('./explorer.js').then(exp => exp.clearSelection());
+        return;
+      }
+      
+      let node = e.target;
+      while (node && !node.getAttr('entityData') && !node.getAttr('assetData')) {
+        node = node.getParent();
+        if (node === getStage()) { node = null; break; }
+      }
+      
+      if (node && node.id()) {
+        import('./explorer.js').then(exp => {
+          // Clear transformer if not editing, just use the logic in selectNodeById
+          exp.selectNodeById(node.id());
+        });
+      } else {
+        import('./explorer.js').then(exp => exp.clearSelection());
+      }
+      return;
+    }
     
     handleStageMouseDown(e);
   });

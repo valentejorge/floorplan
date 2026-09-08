@@ -210,6 +210,8 @@ function bindModeToggle() {
       });
       
       layout.classList.add('is-editing');
+      const panelTitle = document.getElementById('right-panel-title');
+      if (panelTitle) panelTitle.textContent = 'Layers';
       btnEdit.style.display = 'none';
       btnCancel.style.display = 'flex';
       btnSave.style.display = 'flex';
@@ -284,6 +286,8 @@ function bindModeToggle() {
       }
 
       layout.classList.remove('is-editing');
+      const panelTitle = document.getElementById('right-panel-title');
+      if (panelTitle) panelTitle.textContent = 'Hosts';
       btnEdit.style.display = 'flex';
       btnCancel.style.display = 'none';
       btnSave.style.display = 'none';

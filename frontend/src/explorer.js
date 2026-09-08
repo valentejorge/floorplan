@@ -198,10 +198,15 @@ export function refreshExplorer() {
         const item = document.createElement('div');
         item.className = 'fp-explorer__item' + (id === selectedNodeId ? ' active' : '');
         item.dataset.id = id;
-        item.innerHTML = `
-          <div class="fp-explorer__item-icon" style="background-color: ${color}"></div>
-          <div class="fp-explorer__item-name">${name}</div>
+        const isFurniture = node.hasName('furniture');
+        
+        let actionsHtml = `
           <div class="fp-layer-actions">
+            ${isFurniture ? `
+            <button class="fp-layer-btn fp-layer-btn-edit" title="Edit Furniture Configuration">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+            </button>
+            ` : ''}
             <button class="fp-layer-btn" title="Toggle Visibility">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             </button>
@@ -211,7 +216,21 @@ export function refreshExplorer() {
           </div>
         `;
 
-        item.addEventListener('click', () => {
+        item.innerHTML = `
+          <div class="fp-explorer__item-icon" style="background-color: ${color}"></div>
+          <div class="fp-explorer__item-name">${name}</div>
+          ${actionsHtml}
+        `;
+
+        item.addEventListener('click', (e) => {
+          // If edit button was clicked, trigger edit modal
+          if (e.target.closest('.fp-layer-btn-edit')) {
+            if (typeof window.openAssetMicroEdit === 'function') {
+              window.openAssetMicroEdit(node);
+            }
+            return;
+          }
+
           const layout = document.getElementById('main-layout');
           if (layout && layout.classList.contains('is-editing')) {
             import('./engine.js').then(({ getTransformer }) => {
@@ -289,6 +308,45 @@ export function getSelectedNodeId() {
 }
 
 /**
+ * Render host details in the bottom properties panel (View Mode).
+ */
+export function renderHostDetails(hw, panel) {
+  if (!panel) panel = document.getElementById('properties-panel');
+  if (!panel) return;
+
+  if (!hw) {
+    panel.innerHTML = '<div class="fp-properties__title">Details</div><div class="fp-empty-state" style="color:var(--fp-text-muted);font-size:11px;padding:8px 0;">Select a host to view details</div>';
+    return;
+  }
+
+  const hostname = hw.hardware_name || hw.name || hw.hostname || 'Unknown';
+  const description = hw.description || hw.meta?.description || hw.osname || 'N/A';
+  const user = hw.user || hw.username || hw.workgroup || 'N/A';
+  const ip = hw.ip || hw.ipaddr || 'N/A';
+  const mac = hw.mac || 'N/A';
+  const systemId = hw.hardware_id || hw.id || '';
+
+  panel.innerHTML = `
+    <div class="fp-properties__title">Details</div>
+    <div class="fp-props-container">
+      <table class="fp-props-table">
+        <tr><th>Hostname:</th><td>${hostname}</td></tr>
+        <tr><th>Description:</th><td>${description}</td></tr>
+        <tr><th>User:</th><td>${user}</td></tr>
+        <tr><th>IP:</th><td>${ip}</td></tr>
+        <tr><th>MAC:</th><td>${mac}</td></tr>
+      </table>
+      ${systemId ? `
+      <div class="fp-props-actions">
+        <a href="/index.php?function=computer&head=1&systemid=${systemId}" target="_blank" class="fp-btn fp-btn--secondary fp-btn--sm fp-full-w">
+          View in OCS Inventory
+        </a>
+      </div>` : ''}
+    </div>
+  `;
+}
+
+/**
  * Update the properties panel with node info.
  */
 function updateProperties(node) {
@@ -296,34 +354,48 @@ function updateProperties(node) {
   if (!panel) return;
 
   if (!node) {
-    panel.innerHTML = '<div class="fp-panel-header"><h3 class="fp-panel-title">Properties</h3></div><div class="fp-empty-state">No selection</div>';
+    renderHostDetails(null, panel);
     return;
   }
 
-  const data = node.getAttr('entityData') || node.getAttr('assetData') || {};
-  const name = data.name || data.hardware_name || node.id();
-
   const isEditing = document.getElementById('main-layout')?.classList.contains('is-editing');
-  const disabledAttr = isEditing ? '' : 'disabled';
+  const data = node.getAttr('entityData') || node.getAttr('assetData') || {};
 
-  // Create a stunning Figma-style property grid using the Design System
-  let rows = `
-    <div style="margin-bottom:16px;">
-      <div class="fp-text-label" style="margin-bottom:12px;">Design ${!isEditing ? '<span class="fp-text-muted">(View Only)</span>' : ''}</div>
-      
-      <!-- Details Row -->
-      <div class="fp-flex-col fp-gap-1" style="margin-bottom:16px;">
-        <div class="fp-prop-row">
-          <span class="fp-text-muted">Name</span>
-          <span class="fp-text-body">${name}</span>
+  if (!isEditing) {
+    // VIEW MODE: Show Host details cleanly without scrolling
+    const hw = (data.assigned_hardware && data.assigned_hardware.length > 0)
+      ? data.assigned_hardware[0]
+      : (data.hardware_id || data.hardware_name || data.ip ? data : null);
+
+    if (hw) {
+      renderHostDetails(hw, panel);
+    } else {
+      const name = data.name || node.id();
+      panel.innerHTML = `
+        <div class="fp-properties__title">Details</div>
+        <div class="fp-props-container">
+          <table class="fp-props-table">
+            <tr><th>Name:</th><td>${name}</td></tr>
+            ${data.type ? `<tr><th>Type:</th><td>${data.type}</td></tr>` : ''}
+          </table>
         </div>
-        ${data.type ? `<div class="fp-prop-row"><span class="fp-text-muted">Type</span><span class="fp-text-body">${data.type}</span></div>` : ''}
-        ${data.ip ? `<div class="fp-prop-row"><span class="fp-text-muted">IP</span><span class="fp-text-body">${data.ip}</span></div>` : ''}
-        ${data.mac ? `<div class="fp-prop-row"><span class="fp-text-muted">MAC</span><span class="fp-text-body">${data.mac}</span></div>` : ''}
-      </div>
+      `;
+    }
+    return;
+  }
 
-      <!-- Geometry Grid -->
-      <div class="fp-prop-grid" style="margin-bottom:16px;">
+  // EDIT MODE: Geometry Grid and Configure Layout button
+  const name = data.name || data.hardware_name || node.id();
+  const disabledAttr = '';
+  let rows = `
+    <div class="fp-properties__title">Properties</div>
+    <div style="padding:0;">
+      <div class="fp-text-label" style="margin-bottom:8px;">Design</div>
+      <div class="fp-prop-row" style="margin-bottom:8px;">
+        <span class="fp-text-muted">Name</span>
+        <span class="fp-text-body">${name}</span>
+      </div>
+      <div class="fp-prop-grid" style="margin-bottom:12px;">
         <div class="fp-input-group">
           <span class="fp-input-prefix">X</span>
           <input type="number" id="prop-x" value="${Math.round(node.x())}" class="fp-input-field" ${disabledAttr} />
@@ -349,7 +421,7 @@ function updateProperties(node) {
   `;
 
   const isEditable = !!node.getAttr('entityData') && node.getAttr('entityData').layer === 'furniture';
-  if (isEditable && document.getElementById('main-layout')?.classList.contains('is-editing')) {
+  if (isEditable) {
     rows += `
       <div style="margin-top:8px;">
         <button class="fp-btn fp-btn--outline" id="btn-edit-asset-layout" style="width:100%; font-size:11px;">
@@ -361,30 +433,19 @@ function updateProperties(node) {
 
   panel.innerHTML = rows;
 
-  // Bind input events
   const bindInput = (id, prop) => {
     const el = document.getElementById(id);
     if (!el) return;
-    
-    // Add nice focus ring effect to parent
-    el.addEventListener('focus', () => el.parentElement.style.borderColor = '#0d99ff');
-    el.addEventListener('blur', () => el.parentElement.style.borderColor = 'var(--fp-border)');
-
     el.addEventListener('change', async (e) => {
-      if (!document.getElementById('main-layout')?.classList.contains('is-editing')) return;
       const val = parseFloat(e.target.value);
       if (isNaN(val)) return;
-      
       if (prop === 'w') {
-        const origW = node.width() || 1;
-        node.scaleX(val / origW);
+        node.scaleX(val / (node.width() || 1));
       } else if (prop === 'h') {
-        const origH = node.height() || 1;
-        node.scaleY(val / origH);
+        node.scaleY(val / (node.height() || 1));
       } else {
         node[prop](val);
       }
-      
       const { requestRender } = await import('./engine.js');
       const { commitHistory } = await import('./history.js');
       requestRender();

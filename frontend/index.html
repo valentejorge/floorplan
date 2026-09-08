@@ -216,12 +216,7 @@
           </div>
         </div>
 
-        <div class="fp-panel-header fp-panel-header--border-top">
-          <h3 class="fp-panel-title">Layers</h3>
-        </div>
-        <div id="layers-body" class="fp-explorer__body" style="flex:1; overflow-y:auto; max-height: 40%;">
-          <div class="fp-nav-empty">No Layers</div>
-        </div>
+
       </aside>
 
       <!-- Right Explorer Panel (IT Assets & Properties) -->
@@ -243,14 +238,17 @@
         </div>
 
         <div class="fp-panel-header fp-explorer__header">
-          <h3 class="fp-panel-title">Object Explorer</h3>
+          <h3 class="fp-panel-title" id="right-panel-title">Hosts</h3>
         </div>
         <div id="explorer-body" class="fp-explorer__body">
           <div class="fp-nav-empty">Loading IT Assets...</div>
         </div>
-        <div id="properties-panel" class="fp-properties">
+        <div id="layers-body" class="fp-explorer__body" style="display: none;">
+          <div class="fp-nav-empty">No Layers</div>
+        </div>
+        <div id="properties-panel" class="fp-properties fp-host-details">
           <div class="fp-panel-header">
-            <h3 class="fp-panel-title">Properties</h3>
+            <h3 class="fp-panel-title" id="properties-title">Details</h3>
           </div>
           <div class="fp-prop-empty">No selection</div>
         </div>
