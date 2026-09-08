@@ -183,7 +183,7 @@ if (file_exists($css_file_path)) {
         <div id="layers-body" class="fp-explorer__body" style="display: none;">
           <div class="fp-nav-empty">No Layers</div>
         </div>
-        <div id="properties-panel" class="fp-properties fp-host-details">
+        <div id="properties-panel" class="fp-properties fp-host-details is-hidden" style="display:none;">
           <div class="fp-properties__title" id="properties-title">Details</div>
           <div style="color:var(--fp-text-muted);font-size:11px;">No selection</div>
         </div>

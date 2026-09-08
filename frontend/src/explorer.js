@@ -175,13 +175,32 @@ export function refreshExplorer() {
     }
   }
   
-  // EDIT MODE: Render Layers tree in left sidebar
+  // EDIT MODE: Render Layers tree in single right dock (.fp-explorer)
   if (isEditMode && layersBody) {
     LAYER_CONFIG.forEach(({ key, label, color, getter }) => {
       const layer = getter();
       if (!layer) return;
 
-      const nodes = layer.getChildren(node => node.hasName('zone') || node.hasName('wall') || node.hasName('furniture') || node.hasName('asset'));
+      // Extract all children, unpacking sub-groups like wallsLayer/zonesLayer
+      const rawNodes = typeof layer.getChildren === 'function' ? layer.getChildren() : [];
+      const nodes = [];
+
+      rawNodes.forEach(child => {
+        if (!child) return;
+        const name = child.name() || '';
+        const className = child.className || '';
+        if (name === 'transformer' || name === 'gridLayer' || name === 'pulse' || className === 'Transformer') return;
+
+        // If it's a sub-container group (like wallsLayer or zonesLayer inside architectureLayer), unpack its children!
+        if (className === 'Group' && (name === 'wallsLayer' || name === 'zonesLayer' || name === 'architectureLayer')) {
+          child.getChildren().forEach(sub => {
+            if (sub && sub.name() !== 'transformer') nodes.push(sub);
+          });
+        } else {
+          nodes.push(child);
+        }
+      });
+
       if (nodes.length === 0) return;
 
       const catHead = document.createElement('div');
@@ -195,38 +214,42 @@ export function refreshExplorer() {
       const list = document.createElement('div');
       nodes.forEach(node => {
         const data = node.getAttr('entityData') || node.getAttr('assetData') || {};
-        const id = node.id();
-        const name = data.name || data.hardware_name || id;
+        const id = node.id() || ('node_' + Math.random().toString(36).substr(2, 6));
+        
+        let displayName = data.name || data.hardware_name;
+        if (!displayName || displayName === 'Wall') {
+          if (data.wallType) displayName = `${data.wallType.charAt(0).toUpperCase() + data.wallType.slice(1)} Wall`;
+          else if (node.name() === 'furniture') displayName = 'Furniture Desk';
+          else if (node.name() === 'door') displayName = 'Door';
+          else displayName = label.replace(/s$/, '');
+        }
 
         const item = document.createElement('div');
         item.className = 'fp-explorer__item' + (id === selectedNodeId ? ' active' : '');
         item.dataset.id = id;
-        const isFurniture = node.hasName('furniture');
+        const isFurniture = node.name() === 'furniture' || data.layer === 'furniture' || !!data.assigned_hardware || !!data.layout;
         
         let actionsHtml = `
-          <div class="fp-layer-actions">
+          <div class="fp-layer-actions" style="display:flex;align-items:center;gap:6px;">
             ${isFurniture ? `
-            <button class="fp-layer-btn fp-layer-btn-edit" title="Edit Furniture Configuration">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+            <button class="fp-btn fp-btn--primary fp-btn--sm fp-layer-btn-edit" style="padding: 2px 8px; font-size: 10px; height: auto;" title="Configure Layout">
+              Configure
             </button>
             ` : ''}
             <button class="fp-layer-btn" title="Toggle Visibility">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            </button>
-            <button class="fp-layer-btn" title="Lock Layer">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             </button>
           </div>
         `;
 
         item.innerHTML = `
           <div class="fp-explorer__item-icon" style="background-color: ${color}"></div>
-          <div class="fp-explorer__item-name">${name}</div>
+          <div class="fp-explorer__item-name" style="flex:1;font-weight:500;">${displayName}</div>
           ${actionsHtml}
         `;
 
         item.addEventListener('click', (e) => {
-          // If edit button was clicked, trigger edit modal
+          // If Configure button was clicked, open micro edit modal
           if (e.target.closest('.fp-layer-btn-edit')) {
             if (typeof window.openAssetMicroEdit === 'function') {
               window.openAssetMicroEdit(node);
@@ -343,7 +366,7 @@ export function renderHostDetails(hw, panel) {
       </table>
       ${systemId ? `
       <div class="fp-props-actions">
-        <a href="/index.php?function=computer&head=1&systemid=${systemId}" target="_blank" class="fp-btn fp-btn--secondary fp-btn--sm fp-full-w">
+        <a href="/index.php?function=computer&head=1&systemid=${systemId}" target="_blank" class="fp-btn fp-btn--primary fp-btn--sm fp-full-w">
           View in OCS Inventory
         </a>
       </div>` : ''}

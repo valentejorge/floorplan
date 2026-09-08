@@ -71,28 +71,25 @@ js: import "konva/skia-backend";
             <div style="font-weight:600;font-size:11px;">${typeof e==`object`?e.hardware_name||`Unknown`:`ID: ${e}`}</div>
           </div>
           <div style="color:var(--fp-text-muted);font-size:10px;text-transform:uppercase;">${typeof e==`object`&&e.type||`ASSET`}</div>
-        `,r.addEventListener(`click`,()=>{G(async()=>{let{stage:e,getTransformer:t}=await Promise.resolve().then(()=>(Z(),rc));return{stage:e,getTransformer:t}},void 0).then(({stage:e,getTransformer:n})=>{let r=new Konva.Circle({x:t.x(),y:t.y(),radius:30,stroke:`#961B7E`,strokeWidth:2,opacity:1});i.add(r),new Konva.Tween({node:r,duration:1,radius:100,opacity:0,onFinish:()=>r.destroy()}).play();let a=document.getElementById(`main-layout`);if(a&&a.classList.contains(`is-editing`)){let e=n();e.nodes([t]),e.getLayer().batchDraw()}Us(t.id())})}),n.appendChild(r)}),e.appendChild(n)}}n&&t&&$s.forEach(({key:e,label:n,color:r,getter:i})=>{let a=i();if(!a)return;let o=a.getChildren(e=>e.hasName(`zone`)||e.hasName(`wall`)||e.hasName(`furniture`)||e.hasName(`asset`));if(o.length===0)return;let s=document.createElement(`div`);s.className=`fp-explorer__category`,s.innerHTML=`
+        `,r.addEventListener(`click`,()=>{G(async()=>{let{stage:e,getTransformer:t}=await Promise.resolve().then(()=>(Z(),rc));return{stage:e,getTransformer:t}},void 0).then(({stage:e,getTransformer:n})=>{let r=new Konva.Circle({x:t.x(),y:t.y(),radius:30,stroke:`#961B7E`,strokeWidth:2,opacity:1});i.add(r),new Konva.Tween({node:r,duration:1,radius:100,opacity:0,onFinish:()=>r.destroy()}).play();let a=document.getElementById(`main-layout`);if(a&&a.classList.contains(`is-editing`)){let e=n();e.nodes([t]),e.getLayer().batchDraw()}Us(t.id())})}),n.appendChild(r)}),e.appendChild(n)}}n&&t&&$s.forEach(({key:e,label:n,color:r,getter:i})=>{let a=i();if(!a)return;let o=typeof a.getChildren==`function`?a.getChildren():[],s=[];if(o.forEach(e=>{if(!e)return;let t=e.name()||``,n=e.className||``;t!==`transformer`&&t!==`gridLayer`&&t!==`pulse`&&n!==`Transformer`&&(n===`Group`&&(t===`wallsLayer`||t===`zonesLayer`||t===`architectureLayer`)?e.getChildren().forEach(e=>{e&&e.name()!==`transformer`&&s.push(e)}):s.push(e))}),s.length===0)return;let c=document.createElement(`div`);c.className=`fp-explorer__category`,c.innerHTML=`
         <div class="fp-explorer__category-dot" style="background-color: ${r}"></div>
         ${n}
-      `,t.appendChild(s);let c=document.createElement(`div`);o.forEach(e=>{let t=e.getAttr(`entityData`)||e.getAttr(`assetData`)||{},n=e.id(),i=t.name||t.hardware_name||n,a=document.createElement(`div`);a.className=`fp-explorer__item`+(n===Zs?` active`:``),a.dataset.id=n,a.innerHTML=`
-          <div class="fp-explorer__item-icon" style="background-color: ${r}"></div>
-          <div class="fp-explorer__item-name">${i}</div>
-          ${`
-          <div class="fp-layer-actions">
-            ${e.hasName(`furniture`)?`
-            <button class="fp-layer-btn fp-layer-btn-edit" title="Edit Furniture Configuration">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+      `,t.appendChild(c);let l=document.createElement(`div`);s.forEach(e=>{let t=e.getAttr(`entityData`)||e.getAttr(`assetData`)||{},i=e.id()||`node_`+Math.random().toString(36).substr(2,6),a=t.name||t.hardware_name;(!a||a===`Wall`)&&(a=t.wallType?`${t.wallType.charAt(0).toUpperCase()+t.wallType.slice(1)} Wall`:e.name()===`furniture`?`Furniture Desk`:e.name()===`door`?`Door`:n.replace(/s$/,``));let o=document.createElement(`div`);o.className=`fp-explorer__item`+(i===Zs?` active`:``),o.dataset.id=i;let s=`
+          <div class="fp-layer-actions" style="display:flex;align-items:center;gap:6px;">
+            ${e.name()===`furniture`||t.layer===`furniture`||t.assigned_hardware||t.layout?`
+            <button class="fp-btn fp-btn--primary fp-btn--sm fp-layer-btn-edit" style="padding: 2px 8px; font-size: 10px; height: auto;" title="Configure Layout">
+              Configure
             </button>
             `:``}
             <button class="fp-layer-btn" title="Toggle Visibility">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             </button>
-            <button class="fp-layer-btn" title="Lock Layer">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-            </button>
           </div>
-        `}
-        `,a.addEventListener(`click`,t=>{if(t.target.closest(`.fp-layer-btn-edit`)){typeof window.openAssetMicroEdit==`function`&&window.openAssetMicroEdit(e);return}let r=document.getElementById(`main-layout`);r&&r.classList.contains(`is-editing`)&&G(async()=>{let{getTransformer:e}=await Promise.resolve().then(()=>(Z(),rc));return{getTransformer:e}},void 0).then(({getTransformer:t})=>{let n=t();n.nodes([e]),n.getLayer().batchDraw()}),Us(n)}),c.appendChild(a)}),t.appendChild(c)})}function Us(e){Zs=e;let t=null;for(let{getter:n}of $s){let r=n();if(r&&(t=r.findOne(`#`+e),t))break}if(t){let e=t.getAttr(`entityData`)||{},n=t.getAttr(`assetData`),r=lc(),i=e.layer===`furniture`,a=!!n||e.layer===`assets`,o=!!e.wallType||e.name===`Wall`||e.name===`New Wall`;i||a||o?(r.enabledAnchors([]),r.resizeEnabled(!1)):(r.enabledAnchors([`top-left`,`top-center`,`top-right`,`middle-right`,`bottom-right`,`bottom-center`,`bottom-left`,`middle-left`]),r.resizeEnabled(!0)),r.nodes([t]),r.getLayer().batchDraw(),qs(t),Qs&&Qs(t)}Hs()}function Ws(){Zs=null,lc().nodes([]),lc().getLayer().batchDraw(),qs(null),Hs()}function Gs(){return Zs}function Ks(e,t){if(t||=document.getElementById(`properties-panel`),!t)return;if(!e){t.classList.add(`is-hidden`),t.innerHTML=``;return}t.classList.remove(`is-hidden`);let n=e.hardware_name||e.name||e.hostname||`Unknown`,r=e.description||e.meta?.description||e.osname||`N/A`,i=e.user||e.username||e.workgroup||`N/A`,a=e.ip||e.ipaddr||`N/A`,o=e.mac||`N/A`,s=e.hardware_id||e.id||``;t.innerHTML=`
+        `;o.innerHTML=`
+          <div class="fp-explorer__item-icon" style="background-color: ${r}"></div>
+          <div class="fp-explorer__item-name" style="flex:1;font-weight:500;">${a}</div>
+          ${s}
+        `,o.addEventListener(`click`,t=>{if(t.target.closest(`.fp-layer-btn-edit`)){typeof window.openAssetMicroEdit==`function`&&window.openAssetMicroEdit(e);return}let n=document.getElementById(`main-layout`);n&&n.classList.contains(`is-editing`)&&G(async()=>{let{getTransformer:e}=await Promise.resolve().then(()=>(Z(),rc));return{getTransformer:e}},void 0).then(({getTransformer:t})=>{let n=t();n.nodes([e]),n.getLayer().batchDraw()}),Us(i)}),l.appendChild(o)}),t.appendChild(l)})}function Us(e){Zs=e;let t=null;for(let{getter:n}of $s){let r=n();if(r&&(t=r.findOne(`#`+e),t))break}if(t){let e=t.getAttr(`entityData`)||{},n=t.getAttr(`assetData`),r=lc(),i=e.layer===`furniture`,a=!!n||e.layer===`assets`,o=!!e.wallType||e.name===`Wall`||e.name===`New Wall`;i||a||o?(r.enabledAnchors([]),r.resizeEnabled(!1)):(r.enabledAnchors([`top-left`,`top-center`,`top-right`,`middle-right`,`bottom-right`,`bottom-center`,`bottom-left`,`middle-left`]),r.resizeEnabled(!0)),r.nodes([t]),r.getLayer().batchDraw(),qs(t),Qs&&Qs(t)}Hs()}function Ws(){Zs=null,lc().nodes([]),lc().getLayer().batchDraw(),qs(null),Hs()}function Gs(){return Zs}function Ks(e,t){if(t||=document.getElementById(`properties-panel`),!t)return;if(!e){t.classList.add(`is-hidden`),t.innerHTML=``;return}t.classList.remove(`is-hidden`);let n=e.hardware_name||e.name||e.hostname||`Unknown`,r=e.description||e.meta?.description||e.osname||`N/A`,i=e.user||e.username||e.workgroup||`N/A`,a=e.ip||e.ipaddr||`N/A`,o=e.mac||`N/A`,s=e.hardware_id||e.id||``;t.innerHTML=`
     <div class="fp-properties__title">Details</div>
     <div class="fp-props-container">
       <table class="fp-props-table">
@@ -104,7 +101,7 @@ js: import "konva/skia-backend";
       </table>
       ${s?`
       <div class="fp-props-actions">
-        <a href="/index.php?function=computer&head=1&systemid=${s}" target="_blank" class="fp-btn fp-btn--secondary fp-btn--sm fp-full-w">
+        <a href="/index.php?function=computer&head=1&systemid=${s}" target="_blank" class="fp-btn fp-btn--primary fp-btn--sm fp-full-w">
           View in OCS Inventory
         </a>
       </div>`:``}

@@ -325,16 +325,15 @@ body {
 }
 
 .fp-btn--secondary {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--fp-primary, #961b7e);
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--fp-primary-hover, #7b1667);
   font-weight: 600;
 }
 
 .fp-btn--secondary:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--fp-primary-hover, #7b1667);
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .fp-btn--danger {
@@ -956,21 +955,20 @@ body {
   color: #fff;
 }
 
-/* ── Floating Card Header System ───────────────────────────────────── */
+/* ── Clean Panel Header ───────────────────────────────────────────── */
 .fp-explorer__header {
-  margin: 10px 10px 6px 10px;
-  padding: 8px 12px;
-  background: var(--fp-bg-card, rgba(0, 0, 0, 0.04));
-  border: 1px solid var(--fp-border);
-  border-radius: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--fp-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
+  background: transparent;
 }
 
 /* ── Properties Panel ────────────────────────────────────────────── */
-.fp-properties.is-hidden {
+.fp-properties.is-hidden,
+.is-editing #properties-panel {
   display: none !important;
 }
 
