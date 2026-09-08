@@ -22,20 +22,21 @@ export function bindToolbar() {
       buttons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
-      // Hide all left-sidebar panels
-      ['furniture', 'floor', 'wall'].forEach(k => {
+      const titleEl = document.getElementById('right-panel-title');
+      const isEditing = document.getElementById('main-layout')?.classList.contains('is-editing');
+
+      // Hide all overlay sub-views inside .fp-explorer
+      ['furniture', 'floor', 'wall', 'assets'].forEach(k => {
         if (panels[k]) panels[k].style.display = 'none';
       });
-      // Assets panel is an overlay on the right, handle separately if needed
-      if (tool === 'assets' && panels.assets) {
-         // handled by assets-catalog.js mostly, but we can ensure it opens
-      } else if (panels.assets) {
-         panels.assets.style.display = 'none';
-      }
 
-      // Show the requested left-sidebar panel
-      if (panels[tool] && tool !== 'assets') {
+      // Show the requested overlay sub-view or reset title
+      if (panels[tool]) {
         panels[tool].style.display = 'flex';
+      } else {
+        if (titleEl) {
+          titleEl.textContent = isEditing ? 'Layers' : 'Hosts';
+        }
       }
       
       import('./tools.js').then(({ setActiveTool }) => {

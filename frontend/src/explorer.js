@@ -129,14 +129,17 @@ export function refreshExplorer() {
         const item = document.createElement('div');
         item.className = 'fp-explorer__item';
         
-        const dotColor = asset.status === 'offline' ? '#e53e3e' : 
-                         asset.status === 'warning' ? '#d69e2e' : '#10b981';
-                         
         const hwName = typeof asset === 'object' ? (asset.hardware_name || 'Unknown') : `ID: ${asset}`;
         const type = typeof asset === 'object' ? (asset.type || 'ASSET') : 'ASSET';
                          
         item.innerHTML = `
-          <div class="fp-explorer__item-icon" style="background-color:${dotColor}; width:8px; height:8px; border-radius:50%; box-shadow:0 0 6px ${dotColor}66;"></div>
+          <div class="fp-explorer__item-icon" style="display:flex;align-items:center;margin-right:6px;color:var(--fp-primary,#961b7e);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
           <div class="fp-explorer__item-name" style="flex:1;">
             <div style="font-weight:600;font-size:11px;">${hwName}</div>
           </div>
@@ -315,9 +318,11 @@ export function renderHostDetails(hw, panel) {
   if (!panel) return;
 
   if (!hw) {
-    panel.innerHTML = '<div class="fp-properties__title">Details</div><div class="fp-empty-state" style="color:var(--fp-text-muted);font-size:11px;padding:8px 0;">Select a host to view details</div>';
+    panel.classList.add('is-hidden');
+    panel.innerHTML = '';
     return;
   }
+  panel.classList.remove('is-hidden');
 
   const hostname = hw.hardware_name || hw.name || hw.hostname || 'Unknown';
   const description = hw.description || hw.meta?.description || hw.osname || 'N/A';

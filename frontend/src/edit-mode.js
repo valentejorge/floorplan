@@ -45,12 +45,11 @@ export function handleAssetSelect(assetData) {
   if (!panel) return;
   
   if (!assetData) {
-    panel.innerHTML = `
-      <div class="fp-properties__title">Properties</div>
-      <div style="color:var(--fp-text-muted);font-size:11px;">No selection</div>
-    `;
+    panel.classList.add('is-hidden');
+    panel.innerHTML = '';
     return;
   }
+  panel.classList.remove('is-hidden');
 
   const mac = assetData.mac || `00:1A:2B:3C:4D:${assetData.hardware_id.toString().substring(0,2)}`;
   const user = assetData.user || (assetData.type === 'desktop' ? 'jorge.silva' : 'system');

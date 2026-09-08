@@ -154,21 +154,37 @@
         </div>
       </div>
 
-      <!-- Left Sidebar (Edit Mode Only) -->
-      <aside class="fp-left-sidebar" id="left-sidebar">
-        <!-- ── Furniture & Architecture Catalog ─────────────────────────────────────── -->
-        <div id="furniture-catalog-panel" class="fp-panel-fill">
-          <div class="fp-panel-header">
-            <h3 class="fp-panel-title">Catalog &amp; Layers</h3>
+      <!-- Single Right Inspector Dock (.fp-explorer) -->
+      <aside class="fp-explorer" id="explorer-panel">
+
+        <!-- ── IT Assets Catalog Panel ─────────────────────────────────────── -->
+        <div id="assets-catalog-panel" class="fp-overlay-panel">
+          <div class="fp-panel-header fp-explorer__header">
+            <h3 class="fp-panel-title">Unmapped Assets</h3>
+            <button id="btn-close-assets" class="fp-panel-close">&times;</button>
           </div>
-          <div id="furniture-catalog-body" class="fp-catalog-body">
-            <!-- SVGs will be injected here via JS -->
+          <div class="fp-nav-sidebar-search" style="background:var(--fp-bg);">
+             <input type="text" id="assets-catalog-search" placeholder="Filter assets..." class="fp-input-field fp-full-w">
+          </div>
+          <div id="assets-catalog-body" class="fp-list-body">
+            <!-- Fetched from API -->
+            <div class="fp-nav-empty">Loading...</div>
           </div>
         </div>
 
-        <!-- Floor Zone Picker -->
-        <div id="floor-color-picker" class="fp-wall-picker fp-panel-fill" style="display:none;">
-          <div class="fp-panel-header">
+        <!-- ── Furniture Catalog Panel ─────────────────────────────────────── -->
+        <div id="furniture-catalog-panel" class="fp-overlay-panel" style="display:none;">
+          <div class="fp-panel-header fp-explorer__header">
+            <h3 class="fp-panel-title">Furniture Catalog</h3>
+          </div>
+          <div id="furniture-catalog-body" class="fp-catalog-body">
+            <!-- SVGs injected via JS -->
+          </div>
+        </div>
+
+        <!-- ── Floor Zone Picker ─────────────────────────────────────────── -->
+        <div id="floor-color-picker" class="fp-overlay-panel" style="display:none;">
+          <div class="fp-panel-header fp-explorer__header">
             <h3 class="fp-panel-title">Floor Styles</h3>
           </div>
           <div class="fp-picker-body">
@@ -195,9 +211,9 @@
           </div>
         </div>
 
-        <!-- Wall Type Picker -->
-        <div id="wall-type-picker" class="fp-wall-picker fp-panel-fill" style="display:none;">
-          <div class="fp-panel-header">
+        <!-- ── Wall Type Picker ─────────────────────────────────────────── -->
+        <div id="wall-type-picker" class="fp-overlay-panel" style="display:none;">
+          <div class="fp-panel-header fp-explorer__header">
             <h3 class="fp-panel-title">Wall Styles</h3>
           </div>
           <div class="fp-picker-body">
@@ -216,36 +232,22 @@
           </div>
         </div>
 
-
-      </aside>
-
-      <!-- Right Explorer Panel (IT Assets & Properties) -->
-      <aside class="fp-explorer" id="explorer-panel">
-
-        <!-- ── IT Assets Catalog Panel ─────────────────────────────────────── -->
-        <div id="assets-catalog-panel" class="fp-overlay-panel">
-          <div class="fp-panel-header">
-            <h3 class="fp-panel-title">Unmapped Assets</h3>
-            <button id="btn-close-assets" class="fp-panel-close">&times;</button>
-          </div>
-          <div class="fp-nav-sidebar-search" style="background:var(--fp-bg);">
-             <input type="text" id="assets-catalog-search" placeholder="Filter assets..." class="fp-input-field fp-full-w">
-          </div>
-          <div id="assets-catalog-body" class="fp-list-body">
-            <!-- Fetched from API -->
-            <div class="fp-nav-empty">Loading...</div>
-          </div>
-        </div>
-
-        <div class="fp-panel-header fp-explorer__header">
+        <!-- Main Explorer Header (Hosts in View Mode / Layers in Edit Mode) -->
+        <div class="fp-panel-header fp-explorer__header" id="explorer-main-header">
           <h3 class="fp-panel-title" id="right-panel-title">Hosts</h3>
         </div>
+
+        <!-- View Mode: IT Hosts List -->
         <div id="explorer-body" class="fp-explorer__body">
           <div class="fp-nav-empty">Loading IT Assets...</div>
         </div>
+
+        <!-- Edit Mode Default: Layers Tree -->
         <div id="layers-body" class="fp-explorer__body" style="display: none;">
           <div class="fp-nav-empty">No Layers</div>
         </div>
+
+        <!-- Dynamic Details / Inspector Panel -->
         <div id="properties-panel" class="fp-properties fp-host-details is-hidden">
           <div class="fp-panel-header fp-explorer__header">
             <h3 class="fp-panel-title" id="properties-title">Details</h3>
