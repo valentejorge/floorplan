@@ -1,26 +1,30 @@
 ## Why
 
-When the user enters "Edit Map" mode, they need a comprehensive view of all elements on the canvas (Walls, Floors, Furniture) grouped logically, much like the Layers panel in Figma or Canva. This allows them to quickly find, lock, hide, or edit specific objects.
+When the user enters "Edit Map" mode, having sidebars pop up on both the left and right sides squeezes the canvas and clutters the workspace. To maximize canvas visibility and create a clean, Figma/CAD-style editing experience, the entire left side will remain 100% free and uncluttered. 
 
-Currently, the right-side panel statically displays the "IT Hosts" list regardless of mode, and the Layers list is rendered inside the left sidebar. We will move the Layers list to the right panel in Edit Mode to act as the primary structural navigator, replacing the Hosts list. 
+Instead of a left sidebar, all secondary views (Wall Styles, Floor Styles, Furniture Catalog, Unmapped IT Assets, and the Layers Tree) will dock into a **Single Right Inspector Panel** (`.fp-explorer`). The bottom floating Toolbar serves as the master controller, dynamically swapping the active sub-view in the right dock based on the active tool.
 
 ## What Changes
 
-- **Preserved Animations**: The smooth `transform: translateX` slide-in animations for the UI panels will remain untouched.
-- **Dual-Purpose Right Panel**: 
-  - **View Mode**: The right panel remains the "IT Explorer" (Hosts list + IT Details).
-  - **Edit Mode**: The right panel transforms into the "Layers Tree" (Scene Graph).
-- **DOM Restructuring**: The `#layers-body` HTML container will be moved from `.fp-left-sidebar` to the right `.fp-explorer` panel. CSS will toggle its visibility with `#explorer-body` based on `.is-editing`.
-- **Quick Edit Action**: A pencil icon will be added to Furniture nodes in the Layers list to instantly open the Layout Configuration modal for host assignment.
-- **Floating Card Header System**: Refactor panel headers (`.fp-explorer__header`) into reusable floating card components with rounded corners and a top gap from the panel rim.
-- **Dynamic Details Panel**: Hide `#properties-panel` completely when no host or element is selected, expanding list viewport area.
-- **Computer SVG Host Icons**: Replace artificial online status dots on host items with clean computer SVG icons aligned with OCS inventory design.
+- **Clean Canvas Area**: Eliminate the `.fp-left-sidebar` to keep the left side completely unobstructed.
+- **Single Right Docking Area (`.fp-explorer`)**:
+  - **View Mode**: Displays the "IT Hosts" list.
+  - **Edit Mode**: Dynamically displays the active tool view driven by the bottom Toolbar:
+    - *Select Tool / Default*: Layers Tree (Scene Graph with quick edit action for furniture).
+    - *Walls Tool*: Wall Styles picker (Exterior, Interior, Glass).
+    - *Floors Tool*: Floor Styles picker.
+    - *Furniture Tool*: Furniture Catalog & Drag-and-Drop.
+    - *Unmapped Assets Tool*: Unmapped IT Assets list.
+- **Floating Card Header System**: Standardize panel headers inside `.fp-explorer` with a top gap margin and rounded corners for a modern, elevated UI.
+- **Compact & Dynamic Details Panel**: Hide `#properties-panel` completely (`display: none`) when no item is selected, giving 100% vertical space to the active list. When an item is selected, display `#properties-panel` below with a tight, well-proportioned gap.
+- **Computer SVG Host Icons**: Replace misleading online status dots on host items with clean computer SVG icons matching OCS Inventory design standards.
 
 ## Capabilities
 
 ### Modified Capabilities
-- `ui/explorer-panel`: The right side panel, which switches content contextually between Hosts Explorer (View Mode) and Layers Tree (Edit Mode), features floating card headers, dynamic properties panel visibility, and SVG host icons.
+- `ui/explorer-panel`: The right side panel functions as a unified right dock housing all catalogs, layer trees, and host inspectors, dynamically driven by the bottom floating toolbar.
 
 ## Impact
 
-- **Affected Code**: `explorer.js` (rendering layers, host icons, and conditional details panel), `style.css` (floating card header styling and visibility toggles), `index.html` and `ms_floorplan.php` (DOM layout updates).
+- **Affected Code**: `index.html` & `ms_floorplan.php` (moving all catalog/picker panels into `.fp-explorer`), `style.css` (single right dock styling, removing left sidebar styles, dynamic `#properties-panel` visibility), `toolbar.js` & `explorer.js` (wiring toolbar buttons to activate sub-views in `.fp-explorer`).
+
