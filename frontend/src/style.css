@@ -803,6 +803,17 @@ body {
   background: var(--fp-bg-sidebar);
 }
 
+.fp-explorer__header {
+  margin: 10px 10px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--fp-border);
+  padding: 8px 12px;
+}
+
+#properties-panel.is-hidden {
+  display: none !important;
+}
+
 .fp-panel-title {
   margin: 0;
   font-size: 11px;

@@ -16,3 +16,28 @@ The system SHALL provide an edit action (pencil icon) for Furniture nodes within
 #### Scenario: User clicks edit on a furniture node
 - **WHEN** the user clicks the pencil icon next to a furniture item in the Layers Tree
 - **THEN** the Layout Configuration modal opens for that specific furniture node
+
+### Requirement: Floating Card Header in Explorer panel
+The system SHALL render panel headers inside the Explorer panel as floating cards with a top gap margin and rounded corners.
+
+#### Scenario: Header rendering
+- **WHEN** any header inside the Explorer panel is displayed (Hosts, Layers, or Details)
+- **THEN** it renders with a top gap margin and rounded corners as a distinct floating card component
+
+### Requirement: Dynamic visibility of Details panel
+The system SHALL hide the Details panel when no item is selected, and show it only when an item or host is selected.
+
+#### Scenario: No item selected
+- **WHEN** no host or canvas node is selected
+- **THEN** the Details panel (`#properties-panel`) is completely hidden from the Explorer panel
+
+#### Scenario: Item selected
+- **WHEN** a host or canvas node is selected
+- **THEN** the Details panel (`#properties-panel`) becomes visible with selection properties
+
+### Requirement: Computer SVG icon for Host items
+The system SHALL render a computer SVG icon instead of a colored status dot next to each host item in the Explorer panel.
+
+#### Scenario: Host item icon rendering
+- **WHEN** host items are rendered in the Explorer list
+- **THEN** each item displays an SVG computer icon in place of the colored status dot

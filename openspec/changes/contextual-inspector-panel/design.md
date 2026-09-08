@@ -26,3 +26,15 @@ The user wants a Figma-like "Layers" tree on the right side of the screen during
 
 ### 3. Edit Action
 **Decision:** Update `explorer.js` where the Layers list is rendered to inject an edit button for furniture nodes, wired up to call `showLayoutConfigModal(node)`.
+
+### 4. Floating Card Header Design Component
+**Decision:** Standardize `.fp-explorer__header` with a top margin gap (`margin: 10px 10px 6px`), rounded corners (`border-radius: 8px`), subtle background, and padding (`8px 12px`).
+- **Rationale:** Separates panel headers from the top container edge, creating a reusable floating header component for Hosts, Layers, and Details.
+
+### 5. Dynamic Details Panel Visibility
+**Decision:** Hide `#properties-panel` completely (`display: none` or `.is-hidden`) when no object or host is selected in the canvas or list.
+- **Rationale:** Prevents empty placeholder clutter ("Details / No selection") and maximizes vertical viewport area for the primary list.
+
+### 6. Computer SVG Host Icons
+**Decision:** Replace colored status dots (`.fp-explorer__item-icon`) with a standard computer/monitor SVG icon.
+- **Rationale:** OCS Inventory does not perform real-time machine pinging; status dots are misleading. An SVG computer icon reflects static system inventory data accurately.
